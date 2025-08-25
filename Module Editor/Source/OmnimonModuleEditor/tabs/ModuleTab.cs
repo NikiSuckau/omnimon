@@ -335,6 +335,7 @@ namespace OmnimonModuleEditor.Tabs
                 CareProteinDpGain = (int)(mainPanel.numCareProteinDpGain?.Value ?? 0),
                 CareProteinCareMistakeTime = (int)(mainPanel.numCareProteinCareMistakeTime?.Value ?? 0),
                 CareProteinOverdoseMax = (int)(mainPanel.numCareProteinOverdoseMax?.Value ?? 0),
+                CareProteinPenalty = (int)(mainPanel.numCareProteinPenalty?.Value ?? 10),
                 CareDisturbancePenaltyMax = (int)(mainPanel.numCareDisturbancePenaltyMax?.Value ?? 0),
                 CareSleepCareMistakeTimer = (int)(mainPanel.numCareSleepCareMistakeTimer?.Value ?? 0),
                 TrainingEffortGain = (int)(mainPanel.numTrainingEffortGain?.Value ?? 0),
@@ -418,6 +419,7 @@ namespace OmnimonModuleEditor.Tabs
             mainPanel.numCareProteinDpGain.Value = module.CareProteinDpGain;
             mainPanel.numCareProteinCareMistakeTime.Value = module.CareProteinCareMistakeTime;
             mainPanel.numCareProteinOverdoseMax.Value = module.CareProteinOverdoseMax;
+            mainPanel.numCareProteinPenalty.Value = module.CareProteinPenalty ?? 10;
             mainPanel.numCareDisturbancePenaltyMax.Value = module.CareDisturbancePenaltyMax;
 
             // Care Sleep
@@ -493,7 +495,7 @@ namespace OmnimonModuleEditor.Tabs
             public NumericUpDown numCareBackToSleepTime;
 
             // Care Protein
-            public NumericUpDown numCareProteinWeightGain, numCareProteinStrenghGain, numCareProteinDpGain, numCareProteinCareMistakeTime, numCareProteinOverdoseMax, numCareDisturbancePenaltyMax;
+            public NumericUpDown numCareProteinWeightGain, numCareProteinStrenghGain, numCareProteinDpGain, numCareProteinCareMistakeTime, numCareProteinOverdoseMax, numCareProteinPenalty, numCareDisturbancePenaltyMax;
 
             // Care Sleep
             public NumericUpDown numCareSleepCareMistakeTimer;
@@ -689,6 +691,7 @@ namespace OmnimonModuleEditor.Tabs
                     ("Care Protein Dp Gain:", numCareProteinDpGain = CreateNumeric(0, 100, 0)),
                     ("Care Protein Care Mistake Time:", numCareProteinCareMistakeTime = CreateNumeric(0, 1000, 10)),
                     ("Care Protein Overdose Max:", numCareProteinOverdoseMax = CreateNumeric(0, 100, 7)),
+                    ("Care Protein Penalty:", numCareProteinPenalty = CreateNumeric(0, 100, 10)),
                     ("Care Disturbance Penalty Max:", numCareDisturbancePenaltyMax = CreateNumeric(0, 100, 0)),
                     ("Care Sleep Care Mistake Timer:", numCareSleepCareMistakeTimer = CreateNumeric(0, 1000, 60)),
                     ("", new Label()),
@@ -712,7 +715,7 @@ namespace OmnimonModuleEditor.Tabs
                     ("", new Label()),
                 };
 
-                // Descobrir o maior número de linhas
+                // Descobrir o maior nï¿½mero de linhas
                 int maxRows = Math.Max(col1.Length, Math.Max(col2.Length, col3.Length));
                 fieldsTable.RowCount = maxRows;
 
@@ -1114,7 +1117,7 @@ namespace OmnimonModuleEditor.Tabs
                     Version = 0,
                     Area = 0,
                     To = new System.Collections.Generic.List<string>(),
-                    Amount = 1, // valor padrão
+                    Amount = 1, // valor padrï¿½o
                     List = new System.Collections.Generic.List<string>()
                 };
                 unlocks.Add(unlock);
@@ -1348,7 +1351,7 @@ namespace OmnimonModuleEditor.Tabs
                 buttonPanel.Controls.Add(btnAdd);
                 buttonPanel.Controls.Add(btnRemove);
                 buttonPanel.Controls.Add(btnRefresh);
-                buttonPanel.Controls.Add(btnImport); // Adicione o botão de importação
+                buttonPanel.Controls.Add(btnImport); // Adicione o botï¿½o de importaï¿½ï¿½o
 
                 layout.Controls.Add(buttonPanel, 0, 1);
 
@@ -1466,7 +1469,7 @@ namespace OmnimonModuleEditor.Tabs
                 }
             }
 
-            // Lógica do botão Import
+            // Lï¿½gica do botï¿½o Import
             private void BtnImport_Click(object sender, EventArgs e)
             {
                 if (string.IsNullOrWhiteSpace(modulePath))
@@ -1500,7 +1503,7 @@ namespace OmnimonModuleEditor.Tabs
                             }
                         }
 
-                        // Verifica se já existe
+                        // Verifica se jï¿½ existe
                         if (backgrounds.Any(b => b.Name == name))
                         {
                             MessageBox.Show(
@@ -1512,7 +1515,7 @@ namespace OmnimonModuleEditor.Tabs
                             return;
                         }
 
-                        // Adiciona à lista
+                        // Adiciona ï¿½ lista
                         var bg = new OmnimonModuleEditor.Models.Background
                         {
                             Name = name,
@@ -1530,7 +1533,7 @@ namespace OmnimonModuleEditor.Tabs
                 }
             }
 
-            // Novo método para validação HiRes:
+            // Novo mï¿½todo para validaï¿½ï¿½o HiRes:
             private bool ValidateHiRes(OmnimonModuleEditor.Models.Background bg)
             {
                 if (string.IsNullOrWhiteSpace(modulePath) || string.IsNullOrWhiteSpace(bg.Name))

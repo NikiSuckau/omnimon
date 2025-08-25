@@ -967,7 +967,7 @@ class GamePet:
             sick_chance = get_module(self.module).battle_base_sick_chance_lose
             if self.protein_overdose > get_module(self.module).protein_overdose_max:
                 self.protein_overdose = get_module(self.module).protein_overdose_max
-            sick_chance += self.protein_overdose * 10
+            sick_chance += self.protein_overdose * get_module(self.module).protein_penalty
             self.protein_overdose = 0
 
             if self.disturbance_penalty > get_module(self.module).disturbance_penalty_max:

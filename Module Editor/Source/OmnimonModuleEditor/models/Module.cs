@@ -67,6 +67,9 @@ namespace OmnimonModuleEditor.Models
         [JsonPropertyName("care_protein_overdose_max")]
         public int CareProteinOverdoseMax { get; set; }
 
+        [JsonPropertyName("care_protein_penalty")]
+        public int? CareProteinPenalty { get; set; }
+
         [JsonPropertyName("care_disturbance_penalty_max")]
         public int CareDisturbancePenaltyMax { get; set; }
 
