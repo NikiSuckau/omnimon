@@ -126,6 +126,16 @@ class SceneBattle:
     def update(self):
         if self.mode:
             self.mode.update()
+        
+        # Update menu windows for mouse hover if in menu phases
+        if not self.mode and runtime_globals.game_input.mouse_enabled:
+            if self.phase in ["menu", "module", "battle_select"] and hasattr(self, 'menu'):
+                self.menu.update()
+            elif self.phase == "armor":
+                if hasattr(self, 'menu_window1'):
+                    self.menu_window1.update()
+                if hasattr(self, 'menu_window2'):
+                    self.menu_window2.update()
 
     def draw(self, surface: pygame.Surface):
         # Compose a cache key that reflects the dynamic state of the menu
@@ -336,6 +346,13 @@ class SceneBattle:
             self.mode.handle_event(input_action)
 
     def handle_menu_input(self, input_action):
+        # Handle mouse clicks on navigation arrows for multi-option menus
+        if input_action == "A" and runtime_globals.game_input.mouse_enabled:
+            mouse_pos = runtime_globals.game_input.get_mouse_position()
+            if hasattr(self, 'menu') and self.menu.handle_mouse_click(mouse_pos):
+                # Mouse click was handled by the menu (navigation arrow click)
+                return
+        
         if input_action == "B":
             runtime_globals.game_sound.play("cancel")
             change_scene("game")
@@ -408,6 +425,12 @@ class SceneBattle:
             runtime_globals.game_sound.play("cancel")
             self.phase = "menu"
             self.menu = self.menu_window1
+        elif input_action == "A" and runtime_globals.game_input.mouse_enabled:
+            # Handle mouse clicks on navigation arrows for multi-option menus
+            mouse_pos = runtime_globals.game_input.get_mouse_position()
+            if hasattr(self, 'menu') and self.menu.handle_mouse_click(mouse_pos):
+                # Mouse click was handled by the menu (navigation arrow click)
+                return
         elif input_action in ("LEFT", "RIGHT"):
             runtime_globals.game_sound.play("menu")
             delta = -1 if input_action == "LEFT" else 1
@@ -455,6 +478,13 @@ class SceneBattle:
             runtime_globals.game_console.log("Starting Battle.")
 
     def handle_battle_select_input(self, input_action):
+        # Handle mouse clicks on navigation arrows for multi-option menus
+        if input_action == "A" and runtime_globals.game_input.mouse_enabled:
+            mouse_pos = runtime_globals.game_input.get_mouse_position()
+            if hasattr(self, 'menu') and self.menu.handle_mouse_click(mouse_pos):
+                # Mouse click was handled by the menu (navigation arrow click)
+                return
+        
         if input_action == "B":
             runtime_globals.game_sound.play("cancel")
             self.phase = "module"

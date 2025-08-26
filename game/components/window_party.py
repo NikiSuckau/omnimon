@@ -114,3 +114,42 @@ class WindowParty:
         elif input_action == "DOWN":
             runtime_globals.game_sound.play("menu")
             self.selected_index = (self.selected_index + cols) % max_pets
+
+    def update(self):
+        """Update method called every frame to handle mouse hover."""
+        if runtime_globals.game_input.mouse_enabled:
+            mouse_pos = runtime_globals.game_input.get_mouse_position()
+            self.check_mouse_hover(mouse_pos)
+
+    def check_mouse_hover(self, mouse_pos):
+        """Check if mouse is hovering over any party slot and update selection accordingly."""
+        mouse_x, mouse_y = mouse_pos
+        
+        # Calculate grid layout (same logic as in draw method)
+        max_pets = constants.MAX_PETS
+        rows, cols = get_grid_dimensions(max_pets)
+        
+        # Use a reference surface size for calculations
+        win_w, win_h = constants.SCREEN_WIDTH, constants.SCREEN_HEIGHT
+        margin = int(20 * (win_w / 240))
+        top_margin = int(40 * (win_h / 240))
+        grid_area_w = win_w - 2 * margin
+        grid_area_h = win_h - top_margin - margin
+        
+        slot_w = grid_area_w // cols
+        slot_h = grid_area_h // rows
+        
+        for i in range(max_pets):
+            row = i // cols
+            col = i % cols
+            x = margin + col * slot_w
+            y = top_margin + row * slot_h
+            
+            # Check if mouse is within this slot's bounds
+            slot_rect = pygame.Rect(x, y, slot_w, slot_h)
+            
+            if slot_rect.collidepoint(mouse_x, mouse_y):
+                if self.selected_index != i:
+                    self.selected_index = i
+                    self._cache_key = None  # Invalidate cache to redraw
+                break

@@ -101,6 +101,10 @@ class SceneConnect:
         """
         Updates the connect scene.
         """
+        # Update menu window for mouse hover if in menu phase
+        if self.phase == "menu" and runtime_globals.game_input.mouse_enabled:
+            self.menu_window.update()
+        
         # Handle phase changes from network threads
         if hasattr(self, '_phase_changed'):
             self._cache_surface = None
@@ -220,6 +224,14 @@ class SceneConnect:
     def handle_menu_input(self, input_action) -> None:
         """Handles input for the main menu phase."""
         runtime_globals.game_console.log(f"[SceneConnect] Menu input: {input_action}")
+        
+        # Handle mouse clicks on navigation arrows for multi-option menus
+        if input_action == "A" and runtime_globals.game_input.mouse_enabled:
+            mouse_pos = runtime_globals.game_input.get_mouse_position()
+            if self.menu_window.handle_mouse_click(mouse_pos):
+                # Mouse click was handled by the menu (navigation arrow click)
+                return
+        
         if input_action == "B":  # ESC or START
             runtime_globals.game_sound.play("cancel")
             runtime_globals.game_console.log("[SceneConnect] Exiting to main game")

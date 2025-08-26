@@ -207,6 +207,9 @@ class SceneFeedingMenu:
         """
         self._update_options_cache()
 
+        if runtime_globals.game_input.mouse_enabled:
+            self.menu_window.update()
+
         # Update pet list targets only if strategy or food index changes
         if self._last_food_index != runtime_globals.food_index or self._last_strategy_index != runtime_globals.strategy_index:
             self.pet_list_window.targets = self.get_targets()
@@ -218,6 +221,9 @@ class SceneFeedingMenu:
         """
         Draws the feeding menu and pet list.
         """
+        # Update window components for mouse hover
+        self.pet_list_window.update()
+        
         # Compose a cache key that reflects the dynamic state of the menu
         cache_key = (
             runtime_globals.food_index,
@@ -249,6 +255,15 @@ class SceneFeedingMenu:
         """
         Handles keyboard and GPIO button inputs for food and strategy selection.
         """
+        # Handle mouse clicks on navigation arrows for multi-option menus
+        if input_action == "A" and runtime_globals.game_input.mouse_enabled:
+            mouse_pos = runtime_globals.game_input.get_mouse_position()
+            if self.menu_window.handle_mouse_click(mouse_pos):
+                # Mouse click was handled by the menu (navigation arrow click)
+                self.pet_list_window.targets = self.get_targets()
+                self.pet_list_window._last_cache_key = None  # Invalidate cache to redraw
+                return
+        
         if input_action == "B":  # Escape (Cancel/Menu)
             runtime_globals.game_sound.play("cancel")
             change_scene("game")

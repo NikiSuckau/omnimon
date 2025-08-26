@@ -30,7 +30,9 @@ def load_input_config():
     pin_map = {int(pin): action for pin, action in config.get("gpio", {}).items()}
     # Joystick: button index to action
     joystick_button_map = {int(btn): action for btn, action in config.get("joystick", {}).items()}
-    return key_map, reverse_key_map, pin_map, joystick_button_map
+    # Mouse: configuration
+    mouse_config = config.get("mouse", {})
+    return key_map, reverse_key_map, pin_map, joystick_button_map, mouse_config
 
 class InputManager:
     """
@@ -42,21 +44,30 @@ class InputManager:
         self.device = "PC" if platform.system() != "Linux" else "Pi"
 
         # --- Load mappings from config ---
-        key_map, reverse_key_map, pin_map, joystick_button_map = load_input_config()
+        key_map, reverse_key_map, pin_map, joystick_button_map, mouse_config = load_input_config()
         self.key_map = key_map
         self.reverse_key_map = reverse_key_map
         self.pin_map = pin_map
         self.default_joystick_button_map = joystick_button_map
 
+        # Mouse configuration
+        self.mouse_enabled = mouse_config.get("enabled", False)
+        self.mouse_left_action = mouse_config.get("left_click", "A")
+        self.mouse_right_action = mouse_config.get("right_click", "B")
+        self.mouse_position = (0, 0)
+
         # We’ll populate per‑joystick button maps after init (allows overrides).
         self.joystick_button_maps = {}  # joy_id -> {button_index: action}
 
-        # --- State tracking sets (GPIO + joystick unified) ---
+        # --- State tracking sets (GPIO + joystick + mouse unified) ---
         self.just_pressed_gpio = set()
         self.active_gpio_inputs = set()
 
         self.joystick_just_pressed = set()
         self.joystick_active_inputs = set()
+        
+        self.mouse_just_pressed = set()
+        self.mouse_active_inputs = set()
 
         # Track directional states separately so we emit clean changes
         self.axis_state = {}   # joy_id -> {"x": -1/0/+1, "y": 0}
@@ -152,6 +163,37 @@ class InputManager:
         self.joystick_just_pressed.clear()
         return pressed
 
+    def get_mouse_just_pressed(self):
+        """Returns only mouse inputs (used internally by process_event)"""
+        pressed = list(self.mouse_just_pressed)
+        self.mouse_just_pressed.clear()
+        return pressed
+
+    def get_mouse_position(self):
+        """Get the current mouse position."""
+        return self.mouse_position
+
+    def is_mouse_in_rect(self, rect):
+        """Check if mouse position is inside a rectangle (x, y, width, height)."""
+        if not self.mouse_enabled:
+            return False
+        mouse_x, mouse_y = self.mouse_position
+        x, y, width, height = rect
+        return x <= mouse_x <= x + width and y <= mouse_y <= y + height
+
+    def is_mouse_hovering_option(self, options_rects):
+        """
+        Check which option the mouse is hovering over.
+        options_rects: List of tuples (x, y, width, height) for each option
+        Returns: Index of hovered option or -1 if none
+        """
+        if not self.mouse_enabled:
+            return -1
+        for i, rect in enumerate(options_rects):
+            if self.is_mouse_in_rect(rect):
+                return i
+        return -1
+
     # ------------------------------------------------------------------
     # Event processing
     # ------------------------------------------------------------------
@@ -190,6 +232,39 @@ class InputManager:
         elif event.type == pygame.JOYAXISMOTION:
             jid = self._event_instance_id(event)
             self._update_axis_state(jid, event.axis, event.value)
+            return None
+
+        # --- Mouse ---
+        elif event.type == pygame.MOUSEBUTTONDOWN:
+            if self.mouse_enabled:
+                self.mouse_position = event.pos
+                if event.button == 1:  # Left click
+                    action = self.mouse_left_action
+                    if action not in self.mouse_active_inputs:
+                        self.mouse_just_pressed.add(action)
+                        self.mouse_active_inputs.add(action)
+                        return action
+                elif event.button == 3:  # Right click
+                    action = self.mouse_right_action
+                    if action not in self.mouse_active_inputs:
+                        self.mouse_just_pressed.add(action)
+                        self.mouse_active_inputs.add(action)
+                        return action
+
+        elif event.type == pygame.MOUSEBUTTONUP:
+            if self.mouse_enabled:
+                self.mouse_position = event.pos
+                if event.button == 1:  # Left click
+                    action = self.mouse_left_action
+                    self.mouse_active_inputs.discard(action)
+                elif event.button == 3:  # Right click
+                    action = self.mouse_right_action
+                    self.mouse_active_inputs.discard(action)
+            return None
+
+        elif event.type == pygame.MOUSEMOTION:
+            if self.mouse_enabled:
+                self.mouse_position = event.pos
             return None
 
         # --- Device add/remove ---
