@@ -34,9 +34,25 @@ except Exception:
     user_config = {}
 
 SCREEN_WIDTH = user_config.get("SCREEN_WIDTH", DEFAULT_CONFIG["SCREEN_WIDTH"])
+# Same sanity logic needed in main.py setup_display()
+if not SCREEN_WIDTH:
+    SCREEN_WIDTH = 240
+if SCREEN_WIDTH < 32:
+    SCREEN_WIDTH = 32
 SCREEN_HEIGHT = user_config.get("SCREEN_HEIGHT", DEFAULT_CONFIG["SCREEN_HEIGHT"])
+# Same sanity logic needed in main.py setup_display()
+if not SCREEN_HEIGHT:
+    SCREEN_HEIGHT = 240
+if SCREEN_HEIGHT < 32:
+    SCREEN_HEIGHT = 32
 FRAME_RATE = user_config.get("FRAME_RATE", DEFAULT_CONFIG["FRAME_RATE"])
+# Bare minimum required in game_pet.py update_idle_movement() to not divide by zero
+if FRAME_RATE < 3:
+    FRAME_RATE = 3
 MAX_PETS = user_config.get("MAX_PETS", DEFAULT_CONFIG["MAX_PETS"])
+# Required to not divide by zero
+if MAX_PETS < 1:
+    MAX_PETS = 1
 FULLSCREEN = user_config.get("FULLSCREEN", DEFAULT_CONFIG["FULLSCREEN"])
 
 # Debug and logging configuration
