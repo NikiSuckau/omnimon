@@ -15,9 +15,8 @@ from components.window_mainmenu import WindowMenu
 from core import game_globals, runtime_globals
 import game.core.constants as constants
 from core.game_evolution_entity import GameEvolutionEntity
-from core.utils.module_utils import get_module
 from core.utils.pet_utils import all_pets_hatched, distribute_pets_evenly, draw_pet_outline, get_selected_pets
-from core.utils.pygame_utils import blit_with_cache, get_font, sprite_load
+from core.utils.pygame_utils import blit_with_cache, get_font
 from core.utils.scene_utils import change_scene
 from core.utils.inventory_utils import add_to_inventory, get_item_by_name
 from game.core.utils.quest_event_utils import generate_daily_quests, get_hourly_random_event
@@ -437,10 +436,70 @@ class SceneMainGame:
 
         return surf
 
+    def update_mouse_hover(self):
+        """Update menu selection based on mouse hover and handle pet area clicks."""
+        if not runtime_globals.game_input.mouse_enabled or self.lock_inputs:
+            return
+        
+        mouse_pos = runtime_globals.game_input.get_mouse_position()
+        mouse_x, mouse_y = mouse_pos
+        
+        # Check if mouse is hovering over any menu icon
+        hovered_index = self.get_hovered_menu_index(mouse_x, mouse_y)
+        
+        # Update menu index based on hover (-1 if not hovering any)
+        if hovered_index != runtime_globals.main_menu_index:
+            runtime_globals.main_menu_index = hovered_index
+
+    def get_hovered_menu_index(self, mouse_x, mouse_y):
+        """Get the menu index that the mouse is hovering over, or -1 if none."""
+        icon_size = constants.MENU_ICON_SIZE * 2
+        
+        # Calculate menu positions (same logic as WindowMenu.calculate_spacing)
+        spacing_x = (constants.SCREEN_WIDTH - (5 * icon_size)) // 5
+        top_y = 20 * constants.UI_SCALE if game_globals.showClock else 5 * constants.UI_SCALE
+        bottom_y = constants.SCREEN_HEIGHT - icon_size - 10
+        
+        # Check top row (icons 0-4)
+        for i in range(5):
+            icon_x = spacing_x + i * (icon_size + spacing_x)
+            icon_rect = pygame.Rect(icon_x, top_y, icon_size, icon_size)
+            if icon_rect.collidepoint(mouse_x, mouse_y):
+                return i
+        
+        # Check bottom row (icons 5-9)
+        for i in range(5):
+            icon_x = spacing_x + i * (icon_size + spacing_x)
+            icon_rect = pygame.Rect(icon_x, bottom_y, icon_size, icon_size)
+            if icon_rect.collidepoint(mouse_x, mouse_y):
+                return i + 5
+        
+        return -1
+
+    def is_mouse_in_pet_area(self, mouse_pos):
+        """Check if mouse is in the pet area (from pet Y to pet Y + height across full screen width)."""
+        if not game_globals.pet_list:
+            return False
+        
+        mouse_x, mouse_y = mouse_pos
+        
+        # Find the pet area bounds - use Y range from pets
+        min_pet_y = min(pet.y for pet in game_globals.pet_list)
+        max_pet_y = max(pet.y + constants.PET_HEIGHT for pet in game_globals.pet_list)
+        
+        # Pet area spans full screen width, from minimum pet Y to maximum pet Y + height
+        pet_area_rect = pygame.Rect(0, min_pet_y, constants.SCREEN_WIDTH, max_pet_y - min_pet_y)
+        
+        return pet_area_rect.collidepoint(mouse_x, mouse_y)
+
     def draw(self, surface: pygame.Surface) -> None:
         """
         Draws the cached static surface and dynamic elements like pets, poops, and animations.
         """
+        # Update mouse hover for menu items if mouse is enabled
+        if runtime_globals.game_input.mouse_enabled:
+            self.update_mouse_hover()
+        
         # Screensaver: check timeout (seconds) using frame-based timing to avoid frequent time.time() calls
         timeout = getattr(game_globals, 'screen_timeout', 0)
         last_frame = getattr(runtime_globals, 'last_input_frame', self.frame_counter)
@@ -735,6 +794,15 @@ class SceneMainGame:
             self.fade_out_timer = 60 * constants.FRAME_RATE  # Reset on any input
             # Update last input frame so screensaver does not trigger erroneously
             runtime_globals.last_input_frame = getattr(self, 'frame_counter', 0)
+
+        # Handle mouse clicks in pet area to toggle hearts view
+        if input_action == "A" and runtime_globals.game_input.mouse_enabled:
+            mouse_pos = runtime_globals.game_input.get_mouse_position()
+            if self.is_mouse_in_pet_area(mouse_pos):
+                runtime_globals.show_hearts = not runtime_globals.show_hearts
+                runtime_globals.game_sound.play("menu")
+                runtime_globals.game_console.log(f"[SceneMainGame] Hearts view toggled: {runtime_globals.show_hearts}")
+                return
 
         if self.lock_inputs:
             return

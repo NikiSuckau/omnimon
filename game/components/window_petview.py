@@ -117,3 +117,34 @@ class WindowPetList:
                     self.selected_indices.append(self.cursor_index)
             else:
                 runtime_globals.game_sound.play("cancel")
+
+    def update(self):
+        """Update method called every frame to handle mouse hover."""
+        if runtime_globals.game_input.mouse_enabled:
+            mouse_pos = runtime_globals.game_input.get_mouse_position()
+            self.check_mouse_hover(mouse_pos)
+
+    def check_mouse_hover(self, mouse_pos):
+        """Check if mouse is hovering over any pet icon and update cursor accordingly."""
+        mouse_x, mouse_y = mouse_pos
+        pets = game_globals.pet_list
+        
+        # Calculate pet icon positions (same logic as in draw method)
+        available_width = constants.SCREEN_WIDTH
+        spacing = available_width // max(1, len(pets))
+        start_x = 0
+        bg_height = self.selectionBackground.get_height()
+        y = constants.SCREEN_HEIGHT - bg_height + int(24 * constants.UI_SCALE)
+        
+        for i, pet in enumerate(pets):
+            x = start_x + i * spacing + (spacing - constants.PET_ICON_SIZE) // 2
+            
+            # Check if mouse is within this pet's icon bounds
+            icon_rect = pygame.Rect(x, y, constants.PET_ICON_SIZE, constants.PET_ICON_SIZE)
+            
+            if icon_rect.collidepoint(mouse_x, mouse_y):
+                if self.cursor_index != i:
+                    self.cursor_index = i
+                    self.targets = tuple(self.get_targets_callback())
+                    self._last_cache_key = None  # Invalidate cache to redraw
+                break

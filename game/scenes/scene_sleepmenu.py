@@ -39,7 +39,9 @@ class SceneSleepMenu:
         runtime_globals.game_console.log("[SceneSleepMenu] Sleep menu initialized.")
 
     def update(self) -> None:
-        pass
+        # Update menu window for mouse hover
+        if runtime_globals.game_input.mouse_enabled:
+            self.menu_window.update()
 
     def pets_can(self):
         if self.selected_index == 0:
@@ -73,6 +75,14 @@ class SceneSleepMenu:
 
     def handle_event(self, input_action) -> None:
         if input_action:
+            # Handle mouse clicks on navigation arrows for multi-option menus
+            if input_action == "A" and runtime_globals.game_input.mouse_enabled:
+                mouse_pos = runtime_globals.game_input.get_mouse_position()
+                if self.menu_window.handle_mouse_click(mouse_pos):
+                    # Mouse click was handled by the menu (navigation arrow click)
+                    self._cache_surface = None  # Invalidate cache to redraw
+                    return
+            
             if input_action == "B":  # ESC or START
                 runtime_globals.game_sound.play("cancel")
                 change_scene("game")

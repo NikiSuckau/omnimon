@@ -25,7 +25,7 @@
     "F12": "K_F12"
   },
   "mouse": {
-    "enabled": true,
+    "enabled": false,
     "left_click": "A",
     "right_click": "B"
   },
