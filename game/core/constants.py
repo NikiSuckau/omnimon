@@ -339,7 +339,8 @@ def update_resolution_constants(width, height):
     FONT_SIZE_MEDIUM_LARGE = int(30 * UI_SCALE)
     FONT_SIZE_LARGE = int(40 * UI_SCALE)
 
-    PET_WIDTH = PET_HEIGHT = SCREEN_HEIGHT // MAX_PETS
+    # Prevent oversized sprites when MAX_PETS == 1
+    PET_WIDTH = PET_HEIGHT = SCREEN_HEIGHT // max(MAX_PETS, 2)
 
     # Also update combat constants
     try:

@@ -129,7 +129,10 @@ class GamePet:
     def begin_position(self):
         self.subpixel_x = float(constants.SCREEN_WIDTH - constants.PET_WIDTH) / 2
         self.x = int(self.subpixel_x)
-        self.y = (24 * constants.UI_SCALE) + (constants.SCREEN_HEIGHT - constants.PET_HEIGHT) // 2
+        # Old formula did not work well when MAX_PETS != 4:
+        # self.y = (24 * constants.UI_SCALE) + (constants.SCREEN_HEIGHT - constants.PET_HEIGHT) // 2
+        # New formula to keep the placement of the bottom of the sprite in the same place when MAX_PETS != 4:
+        self.y = 174 * constants.UI_SCALE - constants.PET_HEIGHT
         self.x_range = (0, constants.SCREEN_WIDTH - constants.PET_WIDTH)
 
     def get_sprite(self, index):
@@ -228,7 +231,11 @@ class GamePet:
 
         if overlay:
             x = self.x + constants.PET_WIDTH
-            y = self.y - (constants.PET_WIDTH // 2)
+            # Prevent overlay from overlapping menu icons
+            y_offset = 20 * constants.UI_SCALE if game_globals.showClock else 5 * constants.UI_SCALE
+            icon_size = 2 * constants.MENU_ICON_SIZE
+            y_min = y_offset + icon_size
+            y = max(y_min, self.y - (constants.PET_WIDTH // 2))
             if self.state in ["happy2", "happy3"]:
                 y = self.y
             base_pos = (x, y)
