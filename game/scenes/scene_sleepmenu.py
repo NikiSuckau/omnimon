@@ -50,7 +50,7 @@ class SceneSleepMenu:
             return self.pets_can_wake()
 
     def pets_can_sleep(self):
-        return [pet for pet in get_selected_pets() if pet.stage > 1 and pet.state != "nap" and pet.state != "dead"]
+        return [pet for pet in get_selected_pets() if pet.stage > 0 and pet.state != "nap" and pet.state != "dead" and pet.sleeps and pet.wakes]
 
     def pets_can_wake(self):
         return [pet for pet in get_selected_pets() if pet.state == "nap"]

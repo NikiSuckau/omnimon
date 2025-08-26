@@ -7,6 +7,7 @@ Transitions automatically to either Egg Selection or Main Game based on pet list
 import platform
 import pygame
 import os
+import pickle
 
 from components.window_background import WindowBackground
 from core import game_globals, runtime_globals
@@ -15,6 +16,28 @@ from core.utils.module_utils import get_module
 from core.utils.pet_utils import distribute_pets_evenly
 from core.utils.pygame_utils import blit_with_cache, sprite_load_percent
 from core.utils.scene_utils import change_scene
+
+
+def has_freezer_pets() -> bool:
+    """
+    Check if there are any pets stored in the freezer save file.
+    Returns True if freezer.pkl exists and contains at least one pet.
+    """
+    freezer_path = "save/freezer.pkl"
+    if not os.path.exists(freezer_path):
+        return False
+    
+    try:
+        with open(freezer_path, "rb") as f:
+            freezer_data = pickle.load(f)
+            # Check if any of the freezer pages have pets
+            for page in freezer_data:
+                if hasattr(page, 'pets') and page.pets and any(pet is not None for pet in page.pets):
+                    return True
+            return False
+    except Exception:
+        # If there's any error reading the file, assume no pets
+        return False
 
 
 #=====================================================================
@@ -104,5 +127,10 @@ class SceneBoot:
                 pet.patch()
             distribute_pets_evenly()
         else:
-            change_scene("egg")
-            runtime_globals.game_console.log("[SceneBoot] Transitioning to EggSelection (no pets)")
+            # No active pets, check if there are pets in the freezer
+            if has_freezer_pets():
+                change_scene("freezer")
+                runtime_globals.game_console.log("[SceneBoot] Transitioning to Freezer (pets found in freezer)")
+            else:
+                change_scene("egg")
+                runtime_globals.game_console.log("[SceneBoot] Transitioning to EggSelection (no pets)")
