@@ -467,8 +467,8 @@ class SceneMainGame:
             if icon_rect.collidepoint(mouse_x, mouse_y):
                 return i
         
-        # Check bottom row (icons 5-9)
-        for i in range(5):
+        # Check bottom row (icons 5-8), not selecting Call icon
+        for i in range(4):
             icon_x = spacing_x + i * (icon_size + spacing_x)
             icon_rect = pygame.Rect(icon_x, bottom_y, icon_size, icon_size)
             if icon_rect.collidepoint(mouse_x, mouse_y):
