@@ -37,7 +37,7 @@ class WindowParty:
             grid_area_w = win_w - 2 * margin
             grid_area_h = win_h - top_margin - margin
 
-            max_pets = constants.MAX_PETS
+            max_pets = max(constants.MAX_PETS, len(game_globals.pet_list))
             rows, cols = get_grid_dimensions(max_pets)
 
             slot_w = grid_area_w // cols
@@ -100,7 +100,7 @@ class WindowParty:
         blit_with_cache(surface, self._cache_surface, (0, 0))
 
     def handle_event(self, input_action):
-        max_pets = constants.MAX_PETS
+        max_pets = max(constants.MAX_PETS, len(game_globals.pet_list))
         rows, cols = get_grid_dimensions(max_pets)
         if input_action == "LEFT":
             runtime_globals.game_sound.play("menu")

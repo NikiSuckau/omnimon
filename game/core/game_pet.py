@@ -102,6 +102,7 @@ class GamePet:
         self.starvation_counter = 0
         self.disturbance_penalty = 0
         self.overfeed_timer = 0
+        self.protein_feedings = 0
         self.protein_overdose = 0
         self.shake_counter = 0
         self.death_save_counter = 0
@@ -114,7 +115,6 @@ class GamePet:
         self.vital_values = 100
         self.overfeed = 0
         self.sleep_disturbances = 0
-        self.protein_overdose = 0
 
         module = get_module(self.module)
 
@@ -129,7 +129,14 @@ class GamePet:
     def begin_position(self):
         self.subpixel_x = float(constants.SCREEN_WIDTH - constants.PET_WIDTH) / 2
         self.x = int(self.subpixel_x)
-        self.y = (24 * constants.UI_SCALE) + (constants.SCREEN_HEIGHT - constants.PET_HEIGHT) // 2
+        # Old formula did not work well when MAX_PETS != 4:
+        # self.y = (24 * constants.UI_SCALE) + (constants.SCREEN_HEIGHT - constants.PET_HEIGHT) // 2
+        # New formula keeps the placement of the bottom of the sprite in the same place for most MAX_PETS as the previous
+        # formula for MAX_PETS = 4. Slight offset to sprite for MAX_PETS <= 2 as to not overlap the top menu icons.
+        if constants.MAX_PETS > 2:
+            self.y = int(174 * constants.UI_SCALE - constants.PET_HEIGHT)
+        else:
+            self.y = int(190 * constants.UI_SCALE - constants.PET_HEIGHT - 5)
         self.x_range = (0, constants.SCREEN_WIDTH - constants.PET_WIDTH)
 
     def get_sprite(self, index):
@@ -228,7 +235,11 @@ class GamePet:
 
         if overlay:
             x = self.x + constants.PET_WIDTH
-            y = self.y - (constants.PET_WIDTH // 2)
+            # Prevent overlay from overlapping menu icons
+            y_offset = 20 * constants.UI_SCALE if game_globals.showClock else 5 * constants.UI_SCALE
+            icon_size = 2 * constants.MENU_ICON_SIZE
+            y_min = y_offset + icon_size
+            y = max(y_min, self.y - (constants.PET_WIDTH // 2))
             if self.state in ["happy2", "happy3"]:
                 y = self.y
             base_pos = (x, y)
@@ -530,11 +541,14 @@ class GamePet:
         elif food_type == "strength":
             self.set_state("eat")
             self.strength = min(4, self.strength + module.protein_strengh_gain)
-            self.protein_overdose += 1
+            self.protein_feedings += 1
             if self.stage > 1 and self.weight < 99:
                 self.weight += module.protein_weight_gain
-            if self.dp < self.energy and self.protein_overdose % 4 == 0:
-                self.dp += module.protein_dp_gain
+            if self.protein_feedings % 4 == 0:
+                self.protein_overdose += 1
+                self.protein_feedings = 0
+                if self.dp < self.energy:
+                    self.dp = min(self.energy, self.dp + module.protein_dp_gain)
             self.care_strength_mistake_timer = 0
             accepted = True
             runtime_globals.game_console.log(f"{self.name} ate food (strength). Strength {self.strength}")
@@ -964,7 +978,7 @@ class GamePet:
             sick_chance = get_module(self.module).battle_base_sick_chance_lose
             if self.protein_overdose > get_module(self.module).protein_overdose_max:
                 self.protein_overdose = get_module(self.module).protein_overdose_max
-            sick_chance += self.protein_overdose * 10
+            sick_chance += self.protein_overdose * get_module(self.module).protein_penalty
             self.protein_overdose = 0
 
             if self.disturbance_penalty > get_module(self.module).disturbance_penalty_max:
@@ -1097,3 +1111,5 @@ class GamePet:
             self.pvp_wins = 0
         if not hasattr(self, "pvp_battles"):
             self.pvp_battles = 0
+        if not hasattr(self, "protein_feedings"):
+            self.protein_feedings = 0

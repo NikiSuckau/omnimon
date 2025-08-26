@@ -5,5 +5,5 @@
     "MAX_PETS": 6,
     "FULLSCREEN": false,
     "AUTO_RESOLUTION": false,
-    "SHOW_FPS": false,
+    "SHOW_FPS": false
 }

@@ -40,6 +40,8 @@ namespace OmnimonModuleEditor.docgenerators
                 .Replace("#MODULECAREPROTEINCAREMISTAKETIME", GetIntegerDisplayValue(module?.CareProteinCareMistakeTime))
                 .Replace("#MODULECAREPROTEINOVERDOSEMAXCLASS", GetIntegerCssClass(module?.CareProteinOverdoseMax))
                 .Replace("#MODULECAREPROTEINOVERDOSEMAX", GetIntegerDisplayValue(module?.CareProteinOverdoseMax))
+                .Replace("#MODULECAREPROTEINPENALTYCLASS", GetIntegerCssClass(module?.CareProteinPenalty ?? 10))
+                .Replace("#MODULECAREPROTEINPENALTY", GetIntegerDisplayValue(module?.CareProteinPenalty ?? 10))
                 .Replace("#MODULECARESDISTURBANCEPENALTYCLASS", GetIntegerCssClass(module?.CareDisturbancePenaltyMax))
                 .Replace("#MODULECARESDISTURBANCEPENALTY", GetIntegerDisplayValue(module?.CareDisturbancePenaltyMax))
 

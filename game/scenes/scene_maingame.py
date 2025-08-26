@@ -467,8 +467,8 @@ class SceneMainGame:
             if icon_rect.collidepoint(mouse_x, mouse_y):
                 return i
         
-        # Check bottom row (icons 5-9)
-        for i in range(5):
+        # Check bottom row (icons 5-8), not selecting Call icon
+        for i in range(4):
             icon_x = spacing_x + i * (icon_size + spacing_x)
             icon_rect = pygame.Rect(icon_x, bottom_y, icon_size, icon_size)
             if icon_rect.collidepoint(mouse_x, mouse_y):
@@ -646,8 +646,19 @@ class SceneMainGame:
                             frame_idx = (pet.animation_counter // frame_duration) % total_frames
                         food_sprite = anim_frames[frame_idx]
                         x = pet.x
-                        y = pet.y - (food_sprite.get_height() // 2)
-                        surface.blit(food_sprite, (x, y))
+                        # Prevent food from overlapping menu icons
+                        y_offset = 20 * constants.UI_SCALE if game_globals.showClock else 5 * constants.UI_SCALE
+                        y_min = y_offset + 2 * constants.MENU_ICON_SIZE
+                        if constants.MAX_PETS == 4:
+                            y = max(y_min, pet.y - (food_sprite.get_height() // 2))
+                            surface.blit(food_sprite, (x, y))
+                        else:
+                            # Scale the food sprite
+                            food_size = food_sprite.get_height()
+                            food_size = food_size * max(constants.MAX_PETS, 2) // 4
+                            food_sprite_scaled = pygame.transform.scale(food_sprite, (food_size, food_size))
+                            y = max(y_min, pet.y - (food_size // 2))
+                            surface.blit(food_sprite_scaled, (x, y))
                 elif idx in self.food_anims:
                     # Clean up if pet is no longer eating
                     game_pet_eating.pop(idx, None)
