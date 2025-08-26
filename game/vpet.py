@@ -52,6 +52,19 @@ class VirtualPetGame:
         print("[Init] Omnibot initialized with SceneBoot")
         self.rotated = False
         self.stat_font = pygame.font.Font(None, 16)
+        
+        # Load mouse pointer sprite
+        self.mouse_pointer = None
+        try:
+            pointer_path = "assets/Pointer.png"
+            self.mouse_pointer = pygame.image.load(pointer_path).convert_alpha()
+            # Scale the pointer to an appropriate size
+            pointer_size = int(16 * constants.UI_SCALE)
+            self.mouse_pointer = pygame.transform.scale(self.mouse_pointer, (pointer_size, pointer_size))
+            print(f"[Init] Mouse pointer sprite loaded: {pointer_path}")
+        except (pygame.error, FileNotFoundError) as e:
+            print(f"[Init] Could not load mouse pointer sprite: {e}")
+            self.mouse_pointer = None
         # Clock is now managed by main.py
 
     def update(self) -> None:
@@ -89,12 +102,25 @@ class VirtualPetGame:
         global last_stats_update, cached_stats
 
         # Draw debug stats if DEBUG_MODE is enabled and clock is provided
-        if constants.DEBUG_MODE and clock is not None:
+        if constants.SHOW_FPS and clock is not None:
             now = time.time()
             if now - last_stats_update >= 3:  # Update stats every 3 seconds
                 cached_stats = get_system_stats()
                 last_stats_update = now
             draw_system_stats(clock, surface, cached_stats, self.stat_font)
+
+        # Draw mouse pointer if enabled and sprite is loaded
+        if (runtime_globals.game_input.mouse_enabled and 
+            self.mouse_pointer is not None):
+            mouse_pos = runtime_globals.game_input.get_mouse_position()
+            if mouse_pos != (0, 0):  # Only draw if mouse position is valid
+                # Draw pointer slightly offset so the tip points to the actual position
+                pointer_x = mouse_pos[0] - 2
+                pointer_y = mouse_pos[1] - 2
+                # Ensure pointer stays within screen bounds
+                pointer_x = max(0, min(pointer_x, constants.SCREEN_WIDTH - self.mouse_pointer.get_width()))
+                pointer_y = max(0, min(pointer_y, constants.SCREEN_HEIGHT - self.mouse_pointer.get_height()))
+                blit_with_cache(surface, self.mouse_pointer, (pointer_x, pointer_y))
 
         if self.rotated:
             rotated_surface = pygame.transform.rotate(surface, 180)  # Rotate only the surface
@@ -107,7 +133,7 @@ class VirtualPetGame:
         input_action = runtime_globals.game_input.process_event(event)
         if input_action:
             self.scene.handle_event(input_action)
-        else: #Analog inputs
+        else: #Analog inputs only
             for action in runtime_globals.game_input.get_just_pressed_joystick():
                 if action in ("ANALOG_UP", "ANALOG_DOWN", "ANALOG_LEFT", "ANALOG_RIGHT"):
                     self.scene.handle_event(action.replace("ANALOG_", ""))

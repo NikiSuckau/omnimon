@@ -29,6 +29,10 @@ class SceneStatusMenu:
         pass
 
     def draw(self, surface):
+        # Update window components for mouse hover
+        if self.selecting_pet:
+            self.selector.update()
+        
         # Determine current state key that affects drawing
         cache_key = (
             self.selecting_pet,

@@ -73,6 +73,14 @@ class SceneFreezerBox:
             self.bg_frame = (self.bg_frame + 1) % 6
 
     def draw(self, surface):
+        # Update window components for mouse hover
+        if self.mode == "party":
+            self.party_view.update()
+        else:
+            self.freezer_view.update()
+        if self.menu.active:
+            self.menu.update()
+        
         # Draw animated background, scaled and positioned
         width_scale = constants.SCREEN_WIDTH / 240
         height_scale = constants.SCREEN_HEIGHT / 240
