@@ -134,9 +134,9 @@ class GamePet:
         # New formula keeps the placement of the bottom of the sprite in the same place for most MAX_PETS as the previous
         # formula for MAX_PETS = 4. Slight offset to sprite for MAX_PETS <= 2 as to not overlap the top menu icons.
         if constants.MAX_PETS > 2:
-            self.y = 174 * constants.UI_SCALE - constants.PET_HEIGHT
+            self.y = int(174 * constants.UI_SCALE - constants.PET_HEIGHT)
         else:
-            self.y = 188 * constants.UI_SCALE - constants.PET_HEIGHT
+            self.y = int(190 * constants.UI_SCALE - constants.PET_HEIGHT - 5)
         self.x_range = (0, constants.SCREEN_WIDTH - constants.PET_WIDTH)
 
     def get_sprite(self, index):
