@@ -139,6 +139,7 @@ def setup_display():
         scale_to_screen = False
     else:
         screen_width = config.get("SCREEN_WIDTH", 240)
+        # Same sanity checks as in constants.py and main_nuitka.py
         if not screen_width:
             screen_width = 240
         if screen_width < 100:
