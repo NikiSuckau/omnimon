@@ -11,6 +11,7 @@
   "care_can_eat_sleeping": true,
   "care_back_to_sleep_time": 10,
   "care_enable_shaken_egg": false,
+  "care_flush_disturbance_sleep": true,
   "care_protein_weight_gain": 1,
   "care_protein_strengh_gain": 1,
   "care_protein_dp_gain": 0,
@@ -43,6 +44,8 @@
   "death_save_by_b_press": 0,
   "death_save_by_shake": 0,
   "death_old_age": 0,
+  "vital_value_base": 1,
+  "vital_value_loss": 1,
   "unlocks": [
     
   ],

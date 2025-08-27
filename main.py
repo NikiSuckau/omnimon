@@ -141,13 +141,13 @@ def setup_display():
         screen_width = config.get("SCREEN_WIDTH", 240)
         if not screen_width:
             screen_width = 240
-        if screen_width < 32:
-            screen_width = 32
+        if screen_width < 100:
+            screen_width = 100
         screen_height = config.get("SCREEN_HEIGHT", 240)
         if not screen_height:
             screen_height = 240
-        if screen_height < 32:
-            screen_height = 32
+        if screen_height < 100:
+            screen_height = 100
         print(f"[Display] Using config resolution: {screen_width}x{screen_height}")
 
         if fullscreen_requested:

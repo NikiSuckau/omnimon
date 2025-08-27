@@ -814,7 +814,7 @@ class GamePet:
         return self.stage > 0 and self.state != "dead" and self.atk_main > 0
 
     def set_back_to_sleep(self):
-        self.back_to_sleep = get_module(self.module).care_back_to_sleep_time
+        self.back_to_sleep = get_module(self.module).back_to_sleep_time
 
     def check_disturbed_sleep(self):
         if self.state == "nap":

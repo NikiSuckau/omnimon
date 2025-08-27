@@ -330,6 +330,7 @@ namespace OmnimonModuleEditor.Tabs
                 CareCanEatSleeping = mainPanel.chkCareCanEatSleeping?.Checked ?? false,
                 CareBackToSleepTime = (int)(mainPanel.numCareBackToSleepTime?.Value ?? 0),
                 CareEnableShakenEgg = mainPanel.chkCareEnableShakenEgg?.Checked ?? false,
+                CareFlushDisturbanceSleep = mainPanel.chkCareFlushDisturbanceSleep?.Checked ?? true,
                 CareProteinWeightGain = (int)(mainPanel.numCareProteinWeightGain?.Value ?? 0),
                 CareProteinStrenghGain = (float)(mainPanel.numCareProteinStrenghGain?.Value ?? 0),
                 CareProteinDpGain = (int)(mainPanel.numCareProteinDpGain?.Value ?? 0),
@@ -412,6 +413,7 @@ namespace OmnimonModuleEditor.Tabs
             mainPanel.chkCareCanEatSleeping.Checked = module.CareCanEatSleeping;
             mainPanel.numCareBackToSleepTime.Value = module.CareBackToSleepTime;
             mainPanel.chkCareEnableShakenEgg.Checked = module.CareEnableShakenEgg;
+            mainPanel.chkCareFlushDisturbanceSleep.Checked = module.CareFlushDisturbanceSleep;
 
             // Care Protein
             mainPanel.numCareProteinWeightGain.Value = module.CareProteinWeightGain;
@@ -491,7 +493,7 @@ namespace OmnimonModuleEditor.Tabs
 
             // Care Meat
             public NumericUpDown numCareMeatWeightGain, numCareMeatHungerGain, numCareMeatCareMistakeTime, numCareOverfeedTimer;
-            public CheckBox chkCareConditionHeart, chkCareCanEatSleeping, chkCareEnableShakenEgg;
+            public CheckBox chkCareConditionHeart, chkCareCanEatSleeping, chkCareEnableShakenEgg, chkCareFlushDisturbanceSleep;
             public NumericUpDown numCareBackToSleepTime;
 
             // Care Protein
@@ -686,6 +688,7 @@ namespace OmnimonModuleEditor.Tabs
                     ("Care Can Eat Sleeping:", chkCareCanEatSleeping = new CheckBox() { Checked = true }),
                     ("Care Back To Sleep Time:", numCareBackToSleepTime = CreateNumeric(1, 1000, 10)),
                     ("Care Enable Shaken Egg:", chkCareEnableShakenEgg = new CheckBox()),
+                    ("Care Flush Disturbance Sleep:", chkCareFlushDisturbanceSleep = new CheckBox() { Checked = true }),
                     ("Care Protein Weight Gain:", numCareProteinWeightGain = CreateNumeric(0, 100, 1)),
                     ("Care Protein Strengh Gain:", numCareProteinStrenghGain = CreateFloatNumeric(0, 100, 1)),
                     ("Care Protein Dp Gain:", numCareProteinDpGain = CreateNumeric(0, 100, 0)),

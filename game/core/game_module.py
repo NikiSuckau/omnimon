@@ -66,6 +66,8 @@ class GameModule:
                     self.protein_penalty = int(data.get("care_protein_penalty", 10))
                     self.disturbance_penalty_max = int(data.get("care_disturbance_penalty_max", 0))
 
+                    self.care_flush_disturbance_sleep = bool(data.get("care_flush_disturbance_sleep", True))
+
                     self.sleep_care_mistake_timer = int(data.get("care_sleep_care_mistake_timer"))
 
                     self.training_effort_gain = int(data.get("training_effort_gain", 0))

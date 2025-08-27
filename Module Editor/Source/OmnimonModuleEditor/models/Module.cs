@@ -51,6 +51,9 @@ namespace OmnimonModuleEditor.Models
         [JsonPropertyName("care_enable_shaken_egg")]
         public bool CareEnableShakenEgg { get; set; }
 
+        [JsonPropertyName("care_flush_disturbance_sleep")]
+        public bool CareFlushDisturbanceSleep { get; set; } = true;
+
         // Care Protein
         [JsonPropertyName("care_protein_weight_gain")]
         public int CareProteinWeightGain { get; set; }

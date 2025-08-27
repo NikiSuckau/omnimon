@@ -28,6 +28,8 @@ namespace OmnimonModuleEditor.docgenerators
                 .Replace("#MODULECAREBACKTOSLEEPTIME", GetIntegerDisplayValue(module?.CareBackToSleepTime))
                 .Replace("#MODULECARESHAKENEEGGCLASS", module?.CareEnableShakenEgg == true ? "boolean-true" : "boolean-false")
                 .Replace("#MODULECARESHAKENEGG", module?.CareEnableShakenEgg == true ? "Yes" : "No")
+                .Replace("#MODULECAREFLUSHDETURBANCESLEEPCLASS", module?.CareFlushDisturbanceSleep == true ? "boolean-true" : "boolean-false")
+                .Replace("#MODULECAREFLUSHDETURBANCESLEEP", module?.CareFlushDisturbanceSleep == true ? "Yes" : "No")
 
                 // Care Protein
                 .Replace("#MODULECAREPROTEINWEIGHTGAINCLASS", GetIntegerCssClass(module?.CareProteinWeightGain))

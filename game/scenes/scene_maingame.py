@@ -19,6 +19,7 @@ from core.utils.pet_utils import all_pets_hatched, distribute_pets_evenly, draw_
 from core.utils.pygame_utils import blit_with_cache, get_font
 from core.utils.scene_utils import change_scene
 from core.utils.inventory_utils import add_to_inventory, get_item_by_name
+from game.core.utils.module_utils import get_module
 from game.core.utils.quest_event_utils import generate_daily_quests, get_hourly_random_event
 from core.utils.inventory_utils import add_to_inventory
 
@@ -237,7 +238,10 @@ class SceneMainGame:
             self.cleaning_x = constants.SCREEN_WIDTH
             runtime_globals.game_sound.play("happy")
             for pet in game_globals.pet_list:
-                pet.set_state("happy2")
+                module = get_module(pet.module)
+                if module.care_flush_disturbance_sleep:
+                    pet.check_disturbed_sleep()
+                    pet.set_state("happy2")
             runtime_globals.game_console.log("[SceneMainGame] Cleaning complete.")
 
     def update_events(self) -> None:
