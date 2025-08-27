@@ -89,8 +89,12 @@ class WindowBackground:
             return
 
         try:
-            # Use the new sprite loading method to cover the screen, keeping proportions, base on width
-            self.image = sprite_load_percent(path, percent=100, keep_proportion=True, base_on="width", alpha=False)
+            # Use the new sprite loading method to cover the screen, keeping proportions
+            # Use "Fill" method for both landscape and portrait devices
+            if constants.SCREEN_WIDTH >= constants.SCREEN_HEIGHT:
+                self.image = sprite_load_percent(path, percent=100, keep_proportion=True, base_on="width", alpha=False)
+            else:
+                self.image = sprite_load_percent(path, percent=100, keep_proportion=True, base_on="height", alpha=False)
             self.last_background = game_globals.game_background
             self.last_module = game_globals.background_module_name
             self.last_image_path = path

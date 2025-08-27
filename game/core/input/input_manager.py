@@ -12,10 +12,23 @@ except ImportError:
     HAS_GPIO = False
 
 CONFIG_PATH = "config/input_config.json"
+if platform.system() == "Linux":
+        if os.path.exists("/usr/bin/batocera-info"):
+            input_config = "config/input_config_batocera.json"
+        elif os.path.exists("/boot/config.txt"):
+            input_config = "config/input_config_raspberry.json"
+        else:
+            input_config = "config/input_config_python_desktop.json"
+elif platform.system() == "Windows":
+    input_config = "config/input_config_windows.json"
+elif platform.system() == "Darwin":
+    input_config = "config/input_config_python_desktop.json"
+else:
+    input_config = CONFIG_PATH
 
 def load_input_config():
     # Load and parse the config file
-    with open(CONFIG_PATH, "r") as f:
+    with open(input_config, "r") as f:
         config = json.load(f)
     # Keyboard: convert string to pygame constant
     key_map = {}

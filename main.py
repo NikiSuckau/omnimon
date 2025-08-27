@@ -41,8 +41,22 @@ native_height = 0
 
 def load_display_config():
     """Load display configuration with auto-detection for embedded systems"""
+    if platform.system() == "Linux":
+        if os.path.exists("/usr/bin/batocera-info"):
+            display_config = "config/config_batocera.json"
+        elif os.path.exists("/boot/config.txt"):
+            display_config = "config/config_raspberry.json"
+        else:
+            display_config = "config/config_python_desktop.json"
+    elif platform.system() == "Windows":
+        display_config = "config/config_windows.json"
+    elif platform.system() == "Darwin":
+        display_config = "config/config_python_desktop.json"
+    else:
+        display_config = "config/config.json"
+
     try:
-        with open("config/config.json", "r", encoding="utf-8") as f:
+        with open(display_config, "r", encoding="utf-8") as f:
             config = json.load(f)
     except Exception:
         config = {
@@ -139,6 +153,7 @@ def setup_display():
         scale_to_screen = False
     else:
         screen_width = config.get("SCREEN_WIDTH", 240)
+        # Same sanity checks as in constants.py and main_nuitka.py
         if not screen_width:
             screen_width = 240
         if screen_width < 100:

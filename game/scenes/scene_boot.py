@@ -54,7 +54,11 @@ class SceneBoot:
         Initializes the boot scene with a temporary timer.
         """
         self.background = WindowBackground(True)
-        self.logo = sprite_load_percent(constants.OMNIMON_LOGO_PATH, percent=100, keep_proportion=True, base_on="height")
+        # Use "Fit" method for logo image for both landscape and portrait devices
+        if constants.SCREEN_WIDTH >= constants.SCREEN_HEIGHT:
+            self.logo = sprite_load_percent(constants.OMNIMON_LOGO_PATH, percent=100, keep_proportion=True, base_on="height")
+        else:
+            self.logo = sprite_load_percent(constants.OMNIMON_LOGO_PATH, percent=100, keep_proportion=True, base_on="width")
 
         # --- Platform detection ---
         is_batocera = os.path.exists("/usr/share/batocera") or os.path.exists("/etc/batocera-release")
@@ -74,7 +78,11 @@ class SceneBoot:
         else:
             image_path = constants.CONTROLLERS_JOY_PATH  # Fallback for other Linux
 
-        self.controller_sprite = sprite_load_percent(image_path, percent=100, keep_proportion=True, base_on="height")
+        # Use "Fit" method for controller images for both landscape and portrait devices
+        if constants.SCREEN_WIDTH >= constants.SCREEN_HEIGHT:
+            self.controller_sprite = sprite_load_percent(image_path, percent=100, keep_proportion=True, base_on="height")
+        else:
+            self.controller_sprite = sprite_load_percent(image_path, percent=100, keep_proportion=True, base_on="width")
         self.boot_timer = int(150 * (constants.FRAME_RATE / 30)) 
         runtime_globals.game_console.log("[SceneBoot] Initialized")
 
@@ -97,7 +105,10 @@ class SceneBoot:
             sprite_rect = self.controller_sprite.get_rect(center=(constants.SCREEN_WIDTH // 2, constants.SCREEN_HEIGHT // 2))
             blit_with_cache(surface, self.controller_sprite, sprite_rect)
         else:
-            blit_with_cache(surface, self.logo, ((constants.SCREEN_WIDTH - self.logo.get_width()) // 2, 0))
+            # Old way: blit_with_cache(surface, self.logo, ((constants.SCREEN_WIDTH - self.logo.get_width()) // 2, 0))
+            # Center the logo image as well
+            sprite_rect = self.logo.get_rect(center=(constants.SCREEN_WIDTH // 2, constants.SCREEN_HEIGHT // 2))
+            blit_with_cache(surface, self.logo, sprite_rect)
 
     def handle_event(self, input_action) -> None:
         """

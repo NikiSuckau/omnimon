@@ -456,7 +456,7 @@ class SceneMainGame:
             runtime_globals.main_menu_index = hovered_index
 
     def get_hovered_menu_index(self, mouse_x, mouse_y):
-        """Get the menu index that the mouse is hovering over, or -1 if none."""
+        """Get the menu index that the mouse is hovering over, or the last index if none."""
         icon_size = constants.MENU_ICON_SIZE * 2
         
         # Calculate menu positions (same logic as WindowMenu.calculate_spacing)
@@ -478,7 +478,9 @@ class SceneMainGame:
             if icon_rect.collidepoint(mouse_x, mouse_y):
                 return i + 5
         
-        return -1
+        # Return the previous menu index instead of -1 to allow keyboard inputs to change the index
+        # when the mouse is not hovering over the menu.
+        return runtime_globals.main_menu_index
 
     def is_mouse_in_pet_area(self, mouse_pos):
         """Check if mouse is in the pet area (from pet Y to pet Y + height across full screen width)."""

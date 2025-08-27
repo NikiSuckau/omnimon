@@ -1,6 +1,7 @@
 import json
 import os
 import pygame
+import platform
 
 #=====================================================================
 # Pygame Version Compatibility
@@ -27,24 +28,38 @@ DEFAULT_CONFIG = {
     "DEBUG_BATTLE_INFO": False
 }
 
+if platform.system() == "Linux":
+        if os.path.exists("/usr/bin/batocera-info"):
+            config = "config/config_batocera.json"
+        elif os.path.exists("/boot/config.txt"):
+            config = "config/config_raspberry.json"
+        else:
+            config = "config/config_python_desktop.json"
+elif platform.system() == "Windows":
+        config = "config/config_windows.json"
+elif platform.system() == "Darwin":
+        config = "config/config_python_desktop.json"
+else:
+        config = CONFIG_PATH
+
 try:
-    with open(CONFIG_PATH, "r", encoding="utf-8") as f:
+    with open(config, "r", encoding="utf-8") as f:
         user_config = json.load(f)
 except Exception:
     user_config = {}
 
 SCREEN_WIDTH = user_config.get("SCREEN_WIDTH", DEFAULT_CONFIG["SCREEN_WIDTH"])
-# Same sanity logic needed in main.py setup_display()
+# Same sanity logic needed in main.py and main_nuitka.py setup_display()
 if not SCREEN_WIDTH:
     SCREEN_WIDTH = 240
-if SCREEN_WIDTH < 32:
-    SCREEN_WIDTH = 32
+if SCREEN_WIDTH < 100:
+    SCREEN_WIDTH = 100
 SCREEN_HEIGHT = user_config.get("SCREEN_HEIGHT", DEFAULT_CONFIG["SCREEN_HEIGHT"])
-# Same sanity logic needed in main.py setup_display()
+# Same sanity logic needed in main.py and main_nuitka.py setup_display()
 if not SCREEN_HEIGHT:
     SCREEN_HEIGHT = 240
-if SCREEN_HEIGHT < 32:
-    SCREEN_HEIGHT = 32
+if SCREEN_HEIGHT < 100:
+    SCREEN_HEIGHT = 100
 FRAME_RATE = user_config.get("FRAME_RATE", DEFAULT_CONFIG["FRAME_RATE"])
 # Bare minimum required in game_pet.py update_idle_movement() to not divide by zero
 if FRAME_RATE < 3:
