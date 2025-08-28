@@ -59,7 +59,8 @@ class WindowMenu:
 
     def calculate_spacing(self):
         """Precomputes icon positions to avoid unnecessary calculations."""
-        self.spacing_x = (constants.SCREEN_WIDTH - (5 * constants.MENU_ICON_SIZE * 2)) // 5
+        # Divide by 6 to evenly space the icons on the screen. Dividing by 5 shifts the icons to the right on wide screens.
+        self.spacing_x = (constants.SCREEN_WIDTH - (5 * constants.MENU_ICON_SIZE * 2)) // 6
         self.top_y = 20 * constants.UI_SCALE if game_globals.showClock else 5 * constants.UI_SCALE
 
         self.top_positions = [

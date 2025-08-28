@@ -61,7 +61,9 @@ namespace OmnimonModuleEditor.Utils
             pets.Sort((a, b) =>
             {
                 int cmp = a.Version.CompareTo(b.Version);
-                if (cmp != 0) return cmp;
+                if (cmp != 0)
+                    if (b.Version == 0) return (cmp * (-1));
+                    else return cmp;
                 cmp = a.Stage.CompareTo(b.Stage);
                 if (cmp != 0) return cmp;
                 return string.Compare(a.Name, b.Name, StringComparison.OrdinalIgnoreCase);
