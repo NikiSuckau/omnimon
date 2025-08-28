@@ -34,6 +34,7 @@ pet_sprites = {}
 evolution_data = []
 evolution_pet = None
 last_headtohead_pattern = random.randint(0, 5)
+special_encounter = []
 
 # --- Global Managers ---
 game_sound = GameSound()

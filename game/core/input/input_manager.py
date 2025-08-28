@@ -14,15 +14,15 @@ except ImportError:
 CONFIG_PATH = "config/input_config.json"
 if platform.system() == "Linux":
         if os.path.exists("/usr/bin/batocera-info"):
-            input_config = "config/input_config_batocera.json"
+            input_config = "config/input_config.json"
         elif os.path.exists("/boot/config.txt"):
-            input_config = "config/input_config_raspberry.json"
+            input_config = "config/input_config.json"
         else:
-            input_config = "config/input_config_python_desktop.json"
+            input_config = "config/input_config.json"
 elif platform.system() == "Windows":
-    input_config = "config/input_config_windows.json"
+    input_config = "config/input_config.json"
 elif platform.system() == "Darwin":
-    input_config = "config/input_config_python_desktop.json"
+    input_config = "config/input_config.json"
 else:
     input_config = CONFIG_PATH
 

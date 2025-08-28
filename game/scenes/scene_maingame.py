@@ -249,27 +249,28 @@ class SceneMainGame:
         Updates the event system - checks for new events every hour based on XAI and pet awakeness.
         """
         # Stage 1: Check for new events every hour (optimized using frame counter)
-        if game_globals.event is None and self.event_stage == 0:
-            # Count minutes using frame rate - every 60 seconds * frame rate = 1 minute
-            if self.frame_counter % (constants.FRAME_RATE * 60) == 0:
-                game_globals.event_time -= 1
-                if game_globals.event_time <= 0:
-                    # Check if all pets are awake before triggering events
-                    all_pets_awake = all(pet.state != "nap" and pet.state != "sleep" for pet in game_globals.pet_list)
-                    
-                    if all_pets_awake:
-                        # Time to check for an event with XAI-based probability
-                        game_globals.event = get_hourly_random_event()
-                        runtime_globals.game_console.log(f"[Event] Event check with XAI {game_globals.xai} (all pets awake)")
-                    else:
-                        runtime_globals.game_console.log(f"[Event] Skipping event check - some pets are sleeping")
-                    
-                    game_globals.event_time = 60  # Reset timer for next hour
-                    
-                    if game_globals.event:
-                        self.event_stage = 1  # Move to alert stage
-                        self.event_sound_played = False
-                        runtime_globals.game_console.log(f"[Event] New event: {game_globals.event.name}")
+        if game_globals.event is None:
+            if self.event_stage == 0:
+                # Count minutes using frame rate - every 60 seconds * frame rate = 1 minute
+                if self.frame_counter % (constants.FRAME_RATE * 60) == 0:
+                    game_globals.event_time -= 1
+                    if game_globals.event_time <= 0:
+                        # Check if all pets are awake before triggering events
+                        all_pets_awake = all(pet.state != "nap" and pet.state != "sleep" for pet in game_globals.pet_list)
+                        
+                        if all_pets_awake:
+                            # Time to check for an event with XAI-based probability
+                            game_globals.event = get_hourly_random_event()
+                            runtime_globals.game_console.log(f"[Event] Event check with XAI {game_globals.xai} (all pets awake)")
+                        else:
+                            runtime_globals.game_console.log(f"[Event] Skipping event check - some pets are sleeping")
+                        
+                        game_globals.event_time = 60  # Reset timer for next hour
+        elif game_globals.event is not None and self.event_stage == 0:
+            if game_globals.event:
+                self.event_stage = 1  # Move to alert stage
+                self.event_sound_played = False
+                runtime_globals.game_console.log(f"[Event] New event: {game_globals.event.name}")
         
         # Stage 2: Alert stage - blink alert icon and wait for player input
         elif game_globals.event is not None and self.event_stage == 1:
@@ -291,8 +292,7 @@ class SceneMainGame:
                 # Change to battle scene
                 runtime_globals.game_console.log(f"[Event] Starting battle event: {game_globals.event.name}")
                 # Set battle parameters based on event
-                game_globals.battle_area[game_globals.event.module] = game_globals.event.area
-                game_globals.battle_round[game_globals.event.module] = game_globals.event.round
+                runtime_globals.special_encounter = [game_globals.event.module, game_globals.event.area, game_globals.event.round]
                 change_scene("battle")
                 # Reset event
                 game_globals.event = None

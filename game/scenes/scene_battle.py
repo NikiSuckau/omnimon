@@ -123,6 +123,21 @@ class SceneBattle:
         self._cache_surface = None
         self._cache_key = None
 
+        if runtime_globals.special_encounter is not None and len(runtime_globals.special_encounter) == 3:
+            self.phase = "battle"
+            self.selected_module = runtime_globals.special_encounter[0]
+            self.area = runtime_globals.special_encounter[1]
+            self.round = runtime_globals.special_encounter[2]
+            runtime_globals.special_encounter = None
+            self.mode = BattleEncounter(
+                self.selected_module,
+                self.area,
+                self.round,
+                1
+            )
+            self.mode.boss = True
+            runtime_globals.game_console.log(f"[SceneTraining] Special encounter mode: {self.selected_module} Area {self.area}-{self.round}")
+
     def update(self):
         if self.mode:
             self.mode.update()

@@ -28,22 +28,8 @@ DEFAULT_CONFIG = {
     "DEBUG_BATTLE_INFO": False
 }
 
-if platform.system() == "Linux":
-        if os.path.exists("/usr/bin/batocera-info"):
-            config = "config/config_batocera.json"
-        elif os.path.exists("/boot/config.txt"):
-            config = "config/config_raspberry.json"
-        else:
-            config = "config/config_python_desktop.json"
-elif platform.system() == "Windows":
-        config = "config/config_windows.json"
-elif platform.system() == "Darwin":
-        config = "config/config_python_desktop.json"
-else:
-        config = CONFIG_PATH
-
 try:
-    with open(config, "r", encoding="utf-8") as f:
+    with open(CONFIG_PATH, "r", encoding="utf-8") as f:
         user_config = json.load(f)
 except Exception:
     user_config = {}

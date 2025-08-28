@@ -43,15 +43,15 @@ def load_display_config():
     """Load display configuration with auto-detection for embedded systems"""
     if platform.system() == "Linux":
         if os.path.exists("/usr/bin/batocera-info"):
-            display_config = "config/config_batocera.json"
+            display_config = "config/config.json"
         elif os.path.exists("/boot/config.txt"):
-            display_config = "config/config_raspberry.json"
+            display_config = "config/config.json"
         else:
-            display_config = "config/config_python_desktop.json"
+            display_config = "config/config.json"
     elif platform.system() == "Windows":
-        display_config = "config/config_windows.json"
+        display_config = "config/config.json"
     elif platform.system() == "Darwin":
-        display_config = "config/config_python_desktop.json"
+        display_config = "config/config.json"
     else:
         display_config = "config/config.json"
 

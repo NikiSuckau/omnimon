@@ -10,16 +10,20 @@ from core.utils.sprite_utils import load_pet_sprites
 from core.utils.utils_unlocks import is_unlocked, unlock_item
 
 class SceneEggSelection:
-    GRID_COLUMNS = 3
+    GRID_COLUMNS = 4
     GRID_ROWS = 2  # Number of visible rows per page
 
     @property
     def EGG_SIZE(self):
-        return (int(40 * constants.UI_SCALE), int(40 * constants.UI_SCALE))
+        # Use similar sizing to digidex for consistency
+        return (int(36 * constants.UI_SCALE), int(36 * constants.UI_SCALE))
 
     @property
     def LOGO_SIZE(self):
-        return (int(160 * constants.UI_SCALE), int(80 * constants.UI_SCALE))
+        # Make logo larger and more prominent
+        logo_width = min(constants.SCREEN_WIDTH // 1.5, int(constants.SCREEN_HEIGHT * 0.6))
+        logo_height = logo_width // 2
+        return (logo_width, logo_height)
 
     def __init__(self) -> None:
         self.eggs_by_module = self.load_eggs_by_module()
@@ -29,15 +33,19 @@ class SceneEggSelection:
         self.scroll_offset = 0  # For vertical scrolling
         self.egg_sprites = {}
         self.module_logo = None
-        self.font = get_font(constants.FONT_SIZE_SMALL)
+        # Use same font sizing as digidex
+        self.font = get_font(int(14 * constants.UI_SCALE))
 
         # Use new method for unknown sprite and scale
-        self.unknown_sprite = sprite_load_percent(
-            constants.UNKNOWN_SPRITE_PATH,
-            percent=(self.EGG_SIZE[1] / constants.SCREEN_HEIGHT) * 100,
-            keep_proportion=True,
-            base_on="height"
-        )
+        try:
+            self.unknown_sprite = sprite_load_percent(
+                constants.UNKNOWN_SPRITE_PATH,
+                percent=(self.EGG_SIZE[1] / constants.SCREEN_HEIGHT) * 100,
+                keep_proportion=True,
+                base_on="height"
+            )
+        except Exception:
+            self.unknown_sprite = None
 
         # Traited overlay (same size as egg sprite) - optional
         try:
@@ -51,7 +59,7 @@ class SceneEggSelection:
             self.traited_sprite = None
 
         runtime_globals.game_console.log(f"[SceneEggSelection] Modules loaded: {len(self.eggs_by_module)}")
-        # Use new method for background, scale to screen height
+        # Use same background handling as SceneDigidex
         if constants.SCREEN_WIDTH > constants.SCREEN_HEIGHT:
             self.bg_sprite = sprite_load_percent(
                 constants.DIGIDEX_BACKGROUND_PATH,
@@ -66,6 +74,7 @@ class SceneEggSelection:
                 keep_proportion=True,
                 base_on="height"
             )
+        
         self.bg_frame = 0
         self.bg_timer = 0
         self.bg_frame_width = self.bg_sprite.get_width() // 6  # 326
@@ -241,16 +250,34 @@ class SceneEggSelection:
         if self._last_cache_key != cache_key or self._last_cache is None:
             cached_surface = pygame.Surface((constants.SCREEN_WIDTH, constants.SCREEN_HEIGHT), pygame.SRCALPHA)
 
-            # Draw module logo
+            # Draw module logo with better positioning
             if self.module_logo:
                 logo_x = (constants.SCREEN_WIDTH - self.module_logo.get_width()) // 2
-                cached_surface.blit(self.module_logo, (logo_x, int(10 * constants.UI_SCALE)))
+                logo_y = int(20 * constants.UI_SCALE)  # Fixed top margin
+                cached_surface.blit(self.module_logo, (logo_x, logo_y))
 
             module_name = list(self.eggs_by_module.keys())[self.current_module_index]
             eggs = self.eggs_by_module[module_name]
 
-            start_y = constants.SCREEN_HEIGHT - int(150 * constants.UI_SCALE)
-            col_width = constants.SCREEN_WIDTH // self.GRID_COLUMNS
+            # Calculate layout similar to digidex but for grid
+            logo_height = self.module_logo.get_height() if self.module_logo else 0
+            start_y = logo_height + int(30 * constants.UI_SCALE)  # More spacing after logo
+            
+            # Calculate proper spacing for eggs based on available space
+            available_height = constants.SCREEN_HEIGHT - start_y - int(10 * constants.UI_SCALE)  # Bottom margin
+            row_height = available_height // self.GRID_ROWS
+            egg_spacing_y = max(row_height - self.EGG_SIZE[1], int(15 * constants.UI_SCALE))
+            
+            # Calculate adaptive horizontal spacing based on screen width
+            available_width = constants.SCREEN_WIDTH - int(40 * constants.UI_SCALE)  # Side margins
+            total_egg_width = self.GRID_COLUMNS * self.EGG_SIZE[0]
+            remaining_width = available_width - total_egg_width
+            col_spacing_x = max(remaining_width // (self.GRID_COLUMNS - 1), int(10 * constants.UI_SCALE)) if self.GRID_COLUMNS > 1 else 0
+            
+            # Calculate grid positioning - center the entire grid
+            total_grid_width = total_egg_width + (self.GRID_COLUMNS - 1) * col_spacing_x
+            grid_start_x = (constants.SCREEN_WIDTH - total_grid_width) // 2
+            col_spacing = self.EGG_SIZE[0] + col_spacing_x
 
             for index, egg in enumerate(eggs):
                 row = index // self.GRID_COLUMNS
@@ -260,8 +287,8 @@ class SceneEggSelection:
                     continue  # Skip rows outside of the visible range
 
                 visible_row = row - self.scroll_offset
-                x = (col_width * col) + (col_width // 2 - self.EGG_SIZE[0] // 2)
-                y = start_y + (visible_row * (self.EGG_SIZE[1] + int(35 * constants.UI_SCALE)))
+                x = grid_start_x + (col * col_spacing)
+                y = start_y + (visible_row * (self.EGG_SIZE[1] + egg_spacing_y))
 
                 egg_name = egg["name"]
                 egg_sprite = self.egg_sprites.get(egg_name, None)
@@ -270,25 +297,28 @@ class SceneEggSelection:
                 module = egg.get("module", module_name)
                 is_locked_special = self.locked_special_eggs.get((module, egg_name), False)
 
-                # Semi-transparent background rectangle
-                rect_surface = pygame.Surface((self.EGG_SIZE[0] + int(30 * constants.UI_SCALE), self.EGG_SIZE[1] + int(30 * constants.UI_SCALE)), pygame.SRCALPHA)
+                # Background rectangle with proper padding - smaller boxes
+                padding = int(4 * constants.UI_SCALE)  # Reduced from 15 to 8
+                rect_surface = pygame.Surface((self.EGG_SIZE[0] + padding * 2, self.EGG_SIZE[1] + padding * 2), pygame.SRCALPHA)
                 rect_surface.fill((206, 202, 239, 128))  # RGBA with alpha 128 (~50%)
-                cached_surface.blit(rect_surface, (x - int(15 * constants.UI_SCALE), y))
+                cached_surface.blit(rect_surface, (x - padding, y - padding))
 
                 if is_locked_special:
-                    blit_with_shadow(cached_surface, self.unknown_sprite, (x, y))
+                    if self.unknown_sprite:
+                        blit_with_shadow(cached_surface, self.unknown_sprite, (x, y - (padding * 2)))
                 elif egg_sprite:
-                    blit_with_shadow(cached_surface, egg_sprite, (x, y))
+                    blit_with_shadow(cached_surface, egg_sprite, (x, y - (padding * 2)))
 
                 # Overlay trait mark if this egg/version is marked as traited
                 egg_key = f"{module_name}@{egg.get('version')}"
-                if egg_key in game_globals.traited:
-                    blit_with_shadow(cached_surface, self.traited_sprite, (x, y))
-
+                if egg_key in game_globals.traited and self.traited_sprite:
+                    blit_with_shadow(cached_surface, self.traited_sprite, (x, y - (padding * 2)))
 
                 display_name = "???" if is_locked_special else egg_name.replace("DmC", "").replace("PenC", "").replace("Version", "")
                 text = self.font.render(display_name, True, constants.FONT_COLOR_DEFAULT)
-                blit_with_shadow(cached_surface, text, (x + (self.EGG_SIZE[0] // 2) - (text.get_width() // 2), y + self.EGG_SIZE[1]))
+                text_x = x + (self.EGG_SIZE[0] // 2) - (text.get_width() // 2)
+                text_y = y + self.EGG_SIZE[1] + int(5 * constants.UI_SCALE)
+                blit_with_shadow(cached_surface, text, (text_x, text_y - (padding * 3)))
 
             self._last_cache = cached_surface
             self._last_cache_key = cache_key
@@ -296,29 +326,48 @@ class SceneEggSelection:
         # Blit cached content (eggs, logo, names)
         surface.blit(self._last_cache, (0, 0))
 
-        # Draw cursor highlight (always on top, not cached)
+        # Draw cursor highlight (always on top, not cached) with proper positioning
         module_name = list(self.eggs_by_module.keys())[self.current_module_index]
         eggs = self.eggs_by_module[module_name]
-        start_y = constants.SCREEN_HEIGHT - int(150 * constants.UI_SCALE)
-        col_width = constants.SCREEN_WIDTH // self.GRID_COLUMNS
+        
+        # Use the same calculation as in the cached section
+        logo_height = self.module_logo.get_height() if self.module_logo else 0
+        start_y = logo_height + int(30 * constants.UI_SCALE)
+        
+        available_height = constants.SCREEN_HEIGHT - start_y - int(10 * constants.UI_SCALE)
+        row_height = available_height // self.GRID_ROWS
+        egg_spacing_y = max(row_height - self.EGG_SIZE[1], int(15 * constants.UI_SCALE))
+        
+        # Calculate adaptive horizontal spacing (same as cached section)
+        available_width = constants.SCREEN_WIDTH - int(40 * constants.UI_SCALE)  # Side margins
+        total_egg_width = self.GRID_COLUMNS * self.EGG_SIZE[0]
+        remaining_width = available_width - total_egg_width
+        col_spacing_x = max(remaining_width // (self.GRID_COLUMNS - 1), int(10 * constants.UI_SCALE)) if self.GRID_COLUMNS > 1 else 0
+        
+        # Calculate grid positioning - center the entire grid
+        total_grid_width = total_egg_width + (self.GRID_COLUMNS - 1) * col_spacing_x
+        grid_start_x = (constants.SCREEN_WIDTH - total_grid_width) // 2
+        col_spacing = self.EGG_SIZE[0] + col_spacing_x
+        
         index = self.current_egg_row * self.GRID_COLUMNS + self.current_egg_col
         if 0 <= index < len(eggs):
             row = self.current_egg_row
             col = self.current_egg_col
             visible_row = row - self.scroll_offset
             if 0 <= visible_row < self.GRID_ROWS:
-                x = (col_width * col) + (col_width // 2 - self.EGG_SIZE[0] // 2)
-                y = start_y + (visible_row * (self.EGG_SIZE[1] + int(35 * constants.UI_SCALE)))
+                x = grid_start_x + (col * col_spacing)
+                y = start_y + (visible_row * (self.EGG_SIZE[1] + egg_spacing_y))
+                padding = int(8 * constants.UI_SCALE)  # Match the reduced padding
                 pygame.draw.rect(
                     surface,
                     constants.FONT_COLOR_GREEN,
-                    (x - int(15 * constants.UI_SCALE), y, self.EGG_SIZE[0] + int(30 * constants.UI_SCALE), self.EGG_SIZE[1] + int(30 * constants.UI_SCALE)),
-                    3
+                    (x - padding, y - padding, self.EGG_SIZE[0] + padding * 2, self.EGG_SIZE[1] + padding * 2),
+                    int(3 * constants.UI_SCALE)  # Border thickness
                 )
 
     def update(self):
         self.bg_timer += 1
-        if self.bg_timer >= int(3 * (constants.FRAME_RATE / 30)):  # Change frame every 3 seconds
+        if self.bg_timer >= 3 * (constants.FRAME_RATE / 30):  # Change frame every 3 seconds like digidex
             self.bg_timer = 0
             self.bg_frame = (self.bg_frame + 1) % 6
 
