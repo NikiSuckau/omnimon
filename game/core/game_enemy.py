@@ -34,6 +34,7 @@ class GameEnemy:
         """
         # Determine module name from path to get module object for name_format
         module_name = module_path
+        module_path = os.path.join("modules", module_name)
         
         # Try to get module object to access name_format
         try:
