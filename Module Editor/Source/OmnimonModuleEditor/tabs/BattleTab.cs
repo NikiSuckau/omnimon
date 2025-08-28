@@ -634,7 +634,7 @@ namespace OmnimonModuleEditor.Tabs
                 NumHp = new NumericUpDown { Minimum = 0, Maximum = 999999, Value = 1 };
                 NumArea = new NumericUpDown { Minimum = 1, Maximum = 999999, Value = 1 };
                 NumRound = new NumericUpDown { Minimum = 1, Maximum = 999999, Value = 1 };
-                NumVersion = new NumericUpDown { Minimum = 1, Maximum = 999999, Value = 1 };
+                NumVersion = new NumericUpDown { Minimum = 0, Maximum = 999999, Value = 1 };
                 NumHandicap = new NumericUpDown { Minimum = 0, Maximum = 999999, Value = 0 };
                 CmbPrize = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList };
                 TxtUnlock = new TextBox();
