@@ -8,12 +8,27 @@ def get_grid_dimensions(max_pets):
     if max_pets == 1:
         return (1, 1)
     elif max_pets == 2:
-        return (1, 2)
+        if constants.SCREEN_WIDTH >= constants.SCREEN_HEIGHT:
+            return (1, 2)
+        else:
+            return (2, 1)
     else:
-        cols = math.ceil(math.sqrt(max_pets))
-        rows = math.ceil(max_pets / cols)
-        if (rows - 1) * cols >= max_pets:
-            rows -= 1
+        if constants.SCREEN_WIDTH >= constants.SCREEN_HEIGHT:
+            aspect_ratio = constants.SCREEN_WIDTH / constants.SCREEN_HEIGHT
+            cols = math.ceil(math.sqrt(max_pets))
+            if aspect_ratio * cols > (cols + 1):
+                cols = int(min((aspect_ratio * cols), max_pets))
+            rows = math.ceil(max_pets / cols)
+            if (rows - 1) * cols >= max_pets:
+                rows -= 1
+        else:
+            aspect_ratio = constants.SCREEN_HEIGHT / constants.SCREEN_WIDTH
+            rows = math.ceil(math.sqrt(max_pets))
+            if aspect_ratio * rows > (rows + 1):
+                rows = int(min((aspect_ratio * rows), max_pets))
+            cols = math.ceil(max_pets / rows)
+            if (cols - 1) * rows >= max_pets:
+                cols -= 1
         return (rows, cols)
 
 class WindowParty:
@@ -35,7 +50,7 @@ class WindowParty:
             margin = int(20 * (win_w / 240))
             top_margin = int(40 * (win_h / 240))
             grid_area_w = win_w - 2 * margin
-            grid_area_h = win_h - top_margin - margin
+            grid_area_h = win_h - top_margin - min(margin, top_margin)
 
             max_pets = max(constants.MAX_PETS, len(game_globals.pet_list))
             rows, cols = get_grid_dimensions(max_pets)
@@ -45,7 +60,7 @@ class WindowParty:
 
             # Scale sprite and font sizes
             sprite_size = int(min(slot_w, slot_h) * 0.6)
-            font_size = max(10, int(slot_h * 0.18))
+            font_size = max(10, int(min(slot_h,slot_w) * 0.18))
             font = get_font(font_size)
 
             for i in range(max_pets):
@@ -126,7 +141,7 @@ class WindowParty:
         mouse_x, mouse_y = mouse_pos
         
         # Calculate grid layout (same logic as in draw method)
-        max_pets = constants.MAX_PETS
+        max_pets = max(constants.MAX_PETS, len(game_globals.pet_list))
         rows, cols = get_grid_dimensions(max_pets)
         
         # Use a reference surface size for calculations
@@ -134,7 +149,7 @@ class WindowParty:
         margin = int(20 * (win_w / 240))
         top_margin = int(40 * (win_h / 240))
         grid_area_w = win_w - 2 * margin
-        grid_area_h = win_h - top_margin - margin
+        grid_area_h = win_h - top_margin - min(margin, top_margin)
         
         slot_w = grid_area_w // cols
         slot_h = grid_area_h // rows
