@@ -758,29 +758,17 @@ class BattleEncounter:
         if constants.DEBUG_MODE:
             self.update_debug_battle_logs()
 
-        # Allow PvP to reverse processing order so host team acts first.
-        if getattr(self, 'enemy_first', False):
-            # Process enemy attacks before pet attacks
-            for i in range(len(self.battle_player.team2)):
-                if self.battle_player.turns[i] <= self.turn_limit and self.battle_player.team2_shot[i] and self.battle_player.phase[i] == "enemy_attack":
-                    self.setup_enemy_attack(self.battle_player.team2[i])
-                    self.battle_player.team2_shot[i] = False
+        # For PvP, always process attacks in the same order (team1 then team2)
+        # The battle log device labels are pre-swapped for clients so the correct attacks are found
+        for i in range(len(self.battle_player.team1)):
+            if self.battle_player.turns[i] <= self.turn_limit and self.battle_player.team1_shot[i] and self.battle_player.phase[i] == "pet_attack":
+                self.setup_pet_attack(self.battle_player.team1[i])
+                self.battle_player.team1_shot[i] = False
 
-            for i in range(len(self.battle_player.team1)):
-                if self.battle_player.turns[i] <= self.turn_limit and self.battle_player.team1_shot[i] and self.battle_player.phase[i] == "pet_attack":
-                    self.setup_pet_attack(self.battle_player.team1[i])
-                    self.battle_player.team1_shot[i] = False
-        else:
-            # Default: pets then enemies
-            for i in range(len(self.battle_player.team1)):
-                if self.battle_player.turns[i] <= self.turn_limit and self.battle_player.team1_shot[i] and self.battle_player.phase[i] == "pet_attack":
-                    self.setup_pet_attack(self.battle_player.team1[i])
-                    self.battle_player.team1_shot[i] = False
-
-            for i in range(len(self.battle_player.team2)):
-                if self.battle_player.turns[i] <= self.turn_limit and self.battle_player.team2_shot[i] and self.battle_player.phase[i] == "enemy_attack":
-                    self.setup_enemy_attack(self.battle_player.team2[i])
-                    self.battle_player.team2_shot[i] = False
+        for i in range(len(self.battle_player.team2)):
+            if self.battle_player.turns[i] <= self.turn_limit and self.battle_player.team2_shot[i] and self.battle_player.phase[i] == "enemy_attack":
+                self.setup_enemy_attack(self.battle_player.team2[i])
+                self.battle_player.team2_shot[i] = False
 
         self.update_battle_pet_projectiles()
         self.update_battle_enemy_projectiles()
@@ -822,13 +810,13 @@ class BattleEncounter:
         turn_log = self.global_battle_log.battle_log[turn - 1]
 
         # For PvP, determine which device this pet belongs to from the perspective of the battle log
-        # Host device: device1 attacks are my pets, device2 attacks are enemy pets  
-        # Client device: device1 attacks are enemy pets, device2 attacks are my pets (swapped)
-        if self.pvp_mode and hasattr(self, 'enemy_first') and self.enemy_first:
-            # Client perspective: my pets are actually device2 in the battle log
-            device_label = "device2"
+        # Both devices use the same battle log and same visual team arrangement:
+        # Team1 (left) = device1 pets, Team2 (right) = device2 pets
+        if self.pvp_mode:
+            # Both host and client: team1 maps to device1
+            device_label = "device1"
         else:
-            # Host perspective or PvE: my pets are device1 in the battle log
+            # PvE: my pets are always device1
             device_label = "device1"
 
         # Find the attack entry for this pet
@@ -836,6 +824,8 @@ class BattleEncounter:
             (a for a in turn_log.attacks if a.device == device_label and a.attacker == pet_index),
             None
         )
+
+        runtime_globals.game_console.log(f"Device {device_label} turn {turn} attack {attack_entry}")
 
         if not attack_entry:
             runtime_globals.game_console.log(f"[BattleEncounter] No attack entry found for pet {pet_index} in turn {turn} for device {device_label}")
@@ -918,13 +908,13 @@ class BattleEncounter:
         turn_log = self.global_battle_log.battle_log[turn - 1]
 
         # For PvP, determine which device this enemy belongs to from the perspective of the battle log
-        # Host device: device2 attacks are enemy attacks
-        # Client device: device1 attacks are enemy attacks (swapped)
-        if self.pvp_mode and hasattr(self, 'enemy_first') and self.enemy_first:
-            # Client perspective: enemy attacks are actually device1 in the battle log
-            device_label = "device1"
+        # Both devices use the same battle log and same visual team arrangement:
+        # Team1 (left) = device1 pets, Team2 (right) = device2 pets
+        if self.pvp_mode:
+            # Both host and client: team2 maps to device2
+            device_label = "device2"
         else:
-            # Host perspective or PvE: enemy attacks are device2 in the battle log
+            # PvE: enemy attacks are always device2
             device_label = "device2"
 
         # For bosses, collect all attacks by this enemy in this turn
@@ -932,6 +922,8 @@ class BattleEncounter:
             a for a in turn_log.attacks
             if a.device == device_label and a.attacker == enemy_index
         ]
+
+        runtime_globals.game_console.log(f"Device {device_label} turn {turn} attack {attack_entries}")
 
         if not attack_entries:
             runtime_globals.game_console.log(f"[BattleEncounter] No attack entries found for enemy {enemy_index} in turn {turn} for device {device_label}")
@@ -1035,7 +1027,7 @@ class BattleEncounter:
                 if hit:
                     enemy = self.battle_player.team2[defender_idx]
                     enemy_y = self.get_y(defender_idx, len(self.battle_player.team2))
-                    enemy_x = self.get_team2_x(defender_idx) - (constants.PET_WIDTH * constants.BOSS_MULTIPLIER if self.boss else constants.PET_WIDTH) // 2
+                    enemy_x = self.get_team2_x(defender_idx) + (constants.PET_WIDTH * constants.BOSS_MULTIPLIER if self.boss else constants.PET_WIDTH) // 2
                     self.hit_animations.append([0, [enemy_x, enemy_y + (16 * constants.UI_SCALE)]])
                     runtime_globals.game_sound.play("attack_hit")
 
@@ -1378,7 +1370,30 @@ class BattleEncounter:
         blit_with_cache(surface, header, (20 * constants.UI_SCALE, 30 * constants.UI_SCALE))
 
         # Draw pet sprites horizontally (half size)
-        pets = self.battle_player.team1
+        # For PvP, client should show their own pets (team2), not team1
+        if self.pvp_mode and hasattr(self, 'show_team2_in_result') and self.show_team2_in_result:
+            pets = [enemy for enemy in self.battle_player.team2 if hasattr(enemy, 'get_sprite')]
+            # Use team2 indices for frame counters and winners
+            team1_count = len(self.battle_player.team1)
+            pet_frame_counters = []
+            pet_winners = []
+            for i in range(len(pets)):
+                frame_counter_idx = team1_count + i
+                if frame_counter_idx < len(self.battle_player.frame_counters):
+                    pet_frame_counters.append(self.battle_player.frame_counters[frame_counter_idx])
+                else:
+                    pet_frame_counters.append(0)  # Default frame counter
+                
+                winner_idx = team1_count + i  
+                if winner_idx < len(self.battle_player.winners):
+                    pet_winners.append(self.battle_player.winners[winner_idx])
+                else:
+                    pet_winners.append("team1")  # Default winner
+        else:
+            pets = self.battle_player.team1
+            pet_frame_counters = self.battle_player.frame_counters[:len(self.battle_player.team1)]
+            pet_winners = self.battle_player.winners[:len(self.battle_player.team1)]
+            
         total = len(pets)
         sprite_width = constants.PET_WIDTH // 2
         sprite_height = constants.PET_HEIGHT // 2
@@ -1387,8 +1402,14 @@ class BattleEncounter:
         offset_x = 30 +(constants.SCREEN_WIDTH - total_width) // 2
         y = int(86 * constants.UI_SCALE)
         for i, pet in enumerate(pets):
-            anim_toggle = (self.battle_player.frame_counters[i] + i * 5) // (15 * constants.FRAME_RATE / 30) % 2
-            if self.battle_player.winners[i] == "team2" or self.victory_status == "Defeat":
+            # Safety check for frame counters
+            if i < len(pet_frame_counters):
+                anim_toggle = (pet_frame_counters[i] + i * 5) // (15 * constants.FRAME_RATE / 30) % 2
+            else:
+                anim_toggle = 0
+                
+            # Safety check for winners
+            if (i < len(pet_winners) and pet_winners[i] == "team2") or self.victory_status == "Defeat":
                 frame_id = PetFrame.LOSE.value
             else:
                 frame_id = PetFrame.IDLE1.value if anim_toggle == 0 else PetFrame.HAPPY.value
@@ -1416,9 +1437,14 @@ class BattleEncounter:
                 if pet.module == "DMX":
                     # Level
                     level = getattr(pet, "level", "-")
+                    # For PvP, no level ups occur
+                    level_up_indicator = ""
+                    if not self.pvp_mode and i < len(self.battle_player.level_up):
+                        level_up_indicator = '+' if self.battle_player.level_up[i] else ''
+                    
                     level_text = self.font_small.render(
-                        f"{level}{'+' if self.battle_player.level_up[i] else ''}", True,
-                        constants.FONT_COLOR_YELLOW if self.battle_player.level_up[i] else constants.FONT_COLOR_DEFAULT
+                        f"{level}{level_up_indicator}", True,
+                        constants.FONT_COLOR_YELLOW if level_up_indicator else constants.FONT_COLOR_DEFAULT
                     ).convert_alpha()
                     level_text_width = level_text.get_width()
                     blit_with_cache(surface, level_text, (col_xs[i] - level_text_width // 2, label_y))
@@ -1426,7 +1452,20 @@ class BattleEncounter:
                     # Exp (show XP gained this battle)
                     exp = self.battle_player.xp if self.victory_status == "Victory" else 0
                     xp_color = constants.FONT_COLOR_DEFAULT
-                    if not self.battle_player.level_up[i] and self.battle_player.team1[i].level == constants.MAX_LEVEL[self.battle_player.team1[i].stage]:
+                    
+                    # For PvP client showing team2 pets, check team2 max level
+                    if (self.pvp_mode and hasattr(self, 'show_team2_in_result') and self.show_team2_in_result):
+                        max_level_check = pet.level == constants.MAX_LEVEL.get(pet.stage, 99)
+                        level_up_check = False  # No level ups in PvP
+                    else:
+                        # Safety check for team1 access
+                        if i < len(self.battle_player.team1):
+                            max_level_check = self.battle_player.team1[i].level == constants.MAX_LEVEL[self.battle_player.team1[i].stage]
+                        else:
+                            max_level_check = False
+                        level_up_check = self.battle_player.level_up[i] if i < len(self.battle_player.level_up) else False
+                    
+                    if not level_up_check and max_level_check:
                         exp = 0
                         xp_color = constants.FONT_COLOR_RED
                     exp_text = self.font_small.render(str(exp), True, xp_color).convert_alpha()
@@ -1746,12 +1785,14 @@ class BattleEncounter:
         """
         Handles input events for the battle encounter, phase and ruleset specific.
         """
-        if self.phase in ["battle"]:
-            if input_action == "B":
-                if self.phase == "battle":
-                    runtime_globals.game_sound.play("cancel")
-                    self.phase = "result"
-                    self.frame_counter = 0
+        if input_action == "B":
+            if self.phase == "battle":
+                runtime_globals.game_sound.play("cancel")
+                self.phase = "result"
+                self.frame_counter = 0
+            else:
+                runtime_globals.game_sound.play("cancel")
+                change_scene("game")
         elif self.module.ruleset == 'dmc':
             if self.phase == "charge":
                 if input_action == "A":

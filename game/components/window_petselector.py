@@ -26,7 +26,7 @@ class WindowPetSelector:
                 if flag_path:
                     flag = pygame.image.load(flag_path).convert_alpha()
                     self.module_flags[pet.module] = pygame.transform.scale(
-                        flag, (constants.FOPTION_ICON_SIZE, constants.OPTION_ICON_SIZE)
+                        flag, (constants.OPTION_ICON_SIZE, constants.OPTION_ICON_SIZE)
                     )
                 else:
                     self.module_flags[pet.module] = pygame.transform.scale(

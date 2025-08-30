@@ -86,18 +86,72 @@ class SceneBattlePvP:
             
             runtime_globals.game_console.log(f"[SceneBattlePvP] Battle encounter created for module: {self.module_name}")
             
+            # Both devices should show the same visual arrangement:
+            # Team1 (left) = device1 pets, Team2 (right) = device2 pets
+            # Determine which pets belong to device1 and device2 from the battle log
+            
             if self.is_host:
-                # Host: use my_team_data vs enemy_team_data (already correctly ordered)
-                runtime_globals.game_console.log("[SceneBattlePvP] Setting up as host")
-                self.battle_encounter.setup_pvp_teams(self.my_pets, self.enemy_team_data)
+                # Host created the battle log: device1 = host pets, device2 = client pets
+                team1_pets = self.my_pets  # Host pets (GamePet objects)
+                team2_pet_data = self.enemy_team_data  # Client pets (pet data dicts)
             else:
-                # Non-host: keep teams arranged so the battle engine has local pets as team1.
-                # Use the BattleEncounter helper to prime the enemy (team2) to fire first
-                # so the host team's actions are processed on the first update.
-                runtime_globals.game_console.log("[SceneBattlePvP] Setting up as non-host; priming enemy to attack first")
-                self.battle_encounter.setup_pvp_teams(self.my_pets, self.enemy_team_data)
-                # Use centralized priming to avoid direct manipulation of GameBattle internals
-                self.battle_encounter.prime_enemy_first()
+                # Client: device1 = host pets, device2 = client pets (same as host perspective)
+                # For client, we need to convert host's pet data to GamePet objects for team1
+                # and convert client's GamePet objects to pet data dicts for team2
+                
+                # Convert host pet data dicts to GamePet objects for team1
+                from core.game_pet import GamePet
+                team1_pets = []
+                for pet_data in self.enemy_team_data:  # Host pets (pet data dicts)
+                    # Add missing keys that GamePet constructor expects
+                    complete_pet_data = pet_data.copy()
+                    complete_pet_data.setdefault("version", 1)  # Default version
+                    complete_pet_data.setdefault("special", False)  # Default special
+                    complete_pet_data.setdefault("evolve", [])  # Default evolve list
+                    complete_pet_data.setdefault("sleeps", None)  # Default sleep time
+                    complete_pet_data.setdefault("wakes", None)  # Default wake time
+                    complete_pet_data.setdefault("time", 0)  # Default time
+                    complete_pet_data.setdefault("poop_timer", 60)  # Default poop timer
+                    complete_pet_data.setdefault("min_weight", 10)  # Default min weight
+                    complete_pet_data.setdefault("evol_weight", 0)  # Default evol weight
+                    complete_pet_data.setdefault("stomach", 4)  # Default stomach
+                    complete_pet_data.setdefault("hunger_loss", 60)  # Default hunger loss
+                    complete_pet_data.setdefault("strength_loss", 60)  # Default strength loss
+                    complete_pet_data.setdefault("energy", 100)  # Default energy
+                    complete_pet_data.setdefault("heal_doses", 1)  # Default heal doses
+                    complete_pet_data.setdefault("condition_hearts", 0)  # Default condition hearts
+                    complete_pet_data.setdefault("jogress_avaliable", 0)  # Default jogress
+                    
+                    # Create GamePet object using complete pet_data
+                    temp_pet = GamePet(complete_pet_data)
+                    team1_pets.append(temp_pet)
+                
+                # Convert client GamePet objects to pet data dicts for team2
+                team2_data = []
+                for pet in self.my_pets:  # Client pets (GamePet objects)
+                    pet_data = {
+                        "name": pet.name,
+                        "stage": pet.stage,
+                        "level": pet.level,
+                        "hp": pet.get_hp() if hasattr(pet, "get_hp") else getattr(pet, "hp", 100),
+                        "power": pet.get_power() if hasattr(pet, "get_power") else getattr(pet, "power", 1),
+                        "attribute": pet.attribute,
+                        "atk_main": pet.atk_main,
+                        "atk_alt": pet.atk_alt,
+                        "module": pet.module,
+                        "sick": getattr(pet, "sick", 0) > 0,
+                        "traited": getattr(pet, "traited", False),
+                        "shook": getattr(pet, "shook", False)
+                    }
+                    team2_data.append(pet_data)
+                team2_pet_data = team2_data
+            
+            runtime_globals.game_console.log(f"[SceneBattlePvP] Setting up teams: team1_pets={len(team1_pets)}, team2_pet_data={len(team2_pet_data)}")
+            self.battle_encounter.setup_pvp_teams(team1_pets, team2_pet_data)
+            
+            # Set flag for which team to show in result phase
+            # Host should show team1 (their pets), client should show team2 (their pets)
+            self.battle_encounter.show_team2_in_result = not self.is_host
             
             # Set the simulation data
             # Try to use original battle log object first (for host)
@@ -105,59 +159,54 @@ class SceneBattlePvP:
             if original_battle_log is not None:
                 runtime_globals.game_console.log("[SceneBattlePvP] Using original battle log object")
                 self.battle_encounter.global_battle_log = original_battle_log
+                # Log the winner from the battle log
+                if hasattr(original_battle_log, 'winner'):
+                    runtime_globals.game_console.log(f"[SceneBattlePvP] Battle log winner: {original_battle_log.winner}")
             else:
                 # Fallback to serialized data (for non-host)
                 battle_log = self.simulation_data.get('battle_log', {})
                 runtime_globals.game_console.log("[SceneBattlePvP] Using serialized battle log data")
+                # Log the winner from serialized data
+                if isinstance(battle_log, dict) and 'winner' in battle_log:
+                    runtime_globals.game_console.log(f"[SceneBattlePvP] Serialized battle log winner: {battle_log['winner']}")
 
-                # Check if host pre-swapped the battle log for non-host devices
-                pre_swapped = bool(self.simulation_data.get('pre_swapped', False))
-                if not self.is_host and pre_swapped:
-                    runtime_globals.game_console.log("[SceneBattlePvP] Received pre-swapped battle log from host; deserializing directly")
-                    try:
-                        from core.combat.sim.models import battle_result_from_serialized
-                        self.battle_encounter.global_battle_log = battle_result_from_serialized(battle_log)
-                    except Exception as e:
-                        runtime_globals.game_console.log(f"[SceneBattlePvP] Failed to deserialize pre-swapped battle log: {e}")
-                        self.battle_encounter.global_battle_log = battle_log
-                else:
-                    # For host or cases where swapping wasn't done, use as-is
-                    runtime_globals.game_console.log("[SceneBattlePvP] Using battle log as-is (host or no pre-swap)")
-                    try:
-                        from core.combat.sim.models import battle_result_from_serialized
-                        self.battle_encounter.global_battle_log = battle_result_from_serialized(battle_log)
-                    except Exception as e:
-                        runtime_globals.game_console.log(f"[SceneBattlePvP] Failed to deserialize battle log: {e}")
-                        self.battle_encounter.global_battle_log = battle_log
+                # Deserialize the battle log data
+                try:
+                    from core.combat.sim.models import battle_result_from_serialized
+                    self.battle_encounter.global_battle_log = battle_result_from_serialized(battle_log)
+                except Exception as e:
+                    runtime_globals.game_console.log(f"[SceneBattlePvP] Failed to deserialize battle log: {e}")
+                    self.battle_encounter.global_battle_log = battle_log
                 
-            # The simulation payload's victory_status was produced from the
-            # simulator using the canonical device labels (device1=device that
-            # ran the sim, i.e. the host). For non-host clients we need to 
-            # invert the Victory/Defeat value so it represents the local 
-            # player's perspective (team1 is local on both devices).
-            self.battle_encounter.victory_status = self.simulation_data.get('victory_status', 'Victory')
+            # The simulation payload's victory_status represents the canonical result:
+            # "Victory" = device1 won, "Defeat" = device2 won
+            # Since both devices now show device1 pets on left, device2 pets on right:
+            # - Host sees their pets (device1) on left, so "Victory" = their victory
+            # - Client sees host pets (device1) on left, so "Victory" = host victory = client defeat
+            original_victory_status = self.simulation_data.get('victory_status', 'Victory')
+            runtime_globals.game_console.log(f"[SceneBattlePvP] Original victory status from simulation: {original_victory_status}")
+            
+            self.battle_encounter.victory_status = original_victory_status
 
-            # For client: if this device is the non-host, flip Victory/Defeat
-            # so the local player's result is correct. Also handle older
-            # messages that might still carry "device1"/"device2" values.
             if not self.is_host:
+                # Client: since they see host pets (device1) on left side:
+                # The victory_status represents: "Victory" = device1 won, "Defeat" = device2 won
+                # Client sees device1 pets on left, device2 pets (theirs) on right
+                # So if device1 won ("Victory"), client lost and should see "Defeat"
+                # If device2 won ("Defeat"), client won and should see "Victory"
                 vs = self.battle_encounter.victory_status
-                if isinstance(vs, str):
-                    if vs.lower() in ("device1", "device2"):  # legacy shape
-                        # If host reported device1/device2, swap the labels
-                        self.battle_encounter.victory_status = "device2" if vs == "device1" else "device1"
-                    elif vs == "Victory":
-                        # Host said Victory -> host (device1) won -> local player lost
-                        self.battle_encounter.victory_status = "Defeat"
-                    elif vs == "Defeat":
-                        # Host said Defeat -> host lost -> local player won
-                        self.battle_encounter.victory_status = "Victory"
-                # If battle log was pre-swapped, the victory status should match the swapped perspective
-                pre_swapped = bool(self.simulation_data.get('pre_swapped', False))
-                if pre_swapped:
-                    # Battle log was pre-swapped, so victory status should already be from client perspective
-                    # Override the inversion above
-                    self.battle_encounter.victory_status = self.simulation_data.get('victory_status', 'Victory')
+                if vs == "Victory":  # device1 (host) won
+                    self.battle_encounter.victory_status = "Defeat"  # client lost
+                elif vs == "Defeat":  # device2 (client) won
+                    self.battle_encounter.victory_status = "Victory"  # client won
+                # Handle legacy device labels
+                elif vs == "device1":
+                    self.battle_encounter.victory_status = "Defeat" 
+                elif vs == "device2":
+                    self.battle_encounter.victory_status = "Victory"
+                runtime_globals.game_console.log(f"[SceneBattlePvP] Client flipped victory status from {vs} to {self.battle_encounter.victory_status}")
+            else:
+                runtime_globals.game_console.log(f"[SceneBattlePvP] Host perspective. Victory status: {self.battle_encounter.victory_status}")
             
             # Log battle data info
             if hasattr(self.battle_encounter.global_battle_log, 'battle_log'):

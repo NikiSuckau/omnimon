@@ -1181,16 +1181,18 @@ class SceneConnect:
 
             # Swap the serialized battle log for client perspective so they don't
             # need to do extra work when starting the battle.
-            if 'battle_log' in sim_payload:
-                sim_payload['battle_log'] = _swap_serialized_battle_log(sim_payload['battle_log'])
-                sim_payload['pre_swapped'] = True
+            # REMOVED: No longer swapping battle log - both devices use same log
+            # if 'battle_log' in sim_payload:
+            #     sim_payload['battle_log'] = _swap_serialized_battle_log(sim_payload['battle_log'])
+            #     sim_payload['pre_swapped'] = True
                 
                 # Also swap the victory status for client perspective
-                vs = sim_payload.get('victory_status', 'Victory')
-                if vs == "Victory":
-                    sim_payload['victory_status'] = "Defeat"
-                elif vs == "Defeat":
-                    sim_payload['victory_status'] = "Victory"
+                # REMOVED: No longer swapping victory status - handled in battle scene
+                # vs = sim_payload.get('victory_status', 'Victory')
+                # if vs == "Victory":
+                #     sim_payload['victory_status'] = "Defeat"
+                # elif vs == "Defeat":
+                #     sim_payload['victory_status'] = "Victory"
 
             sim_message = {
                 "type": "battle_simulation",
