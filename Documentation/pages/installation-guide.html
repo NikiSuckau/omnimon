@@ -133,6 +133,7 @@
         <div class="platform-tab active" onclick="showPlatform('windows')">🪟 Windows</div>
         <div class="platform-tab" onclick="showPlatform('linux')">🐧 Linux</div>
         <div class="platform-tab" onclick="showPlatform('batocera')">🎮 Batocera</div>
+        <div class="platform-tab" onclick="showPlatform('gamepi')">🥧 GamePi</div>
         <div class="platform-tab" onclick="showPlatform('macos')">🍎 macOS</div>
       </div>
 
@@ -140,6 +141,18 @@
       <div id="windows-content" class="platform-content active">
         <div class="platform-section">
           <h3>🪟 Windows Installation</h3>
+          
+          <div style="text-align: center; margin-bottom: 20px;">
+            <a href="https://github.com/sundeth/omnimon/releases/latest" target="_blank" class="download-button">📦 Download Latest Release</a>
+          </div>
+
+          <div class="requirements-box">
+            <strong>📋 Available Windows Downloads:</strong>
+            <ul>
+              <li><strong>Omnimon_Windows_Ver_0.9.8.zip</strong> - Standard Windows distribution with Module Editor</li>
+              <li><strong>Omnimon_Nuitka_Windows_Ver_0.9.8.zip</strong> - Experimental faster compilation (use if standard version has performance issues)</li>
+            </ul>
+          </div>
           
           <h4>Option 1: Standalone Executable (Recommended for most users)</h4>
           <p>The easiest way to run Omnimon on Windows is using the pre-built executable.</p>
@@ -241,6 +254,19 @@
         <div class="platform-section">
           <h3>🐧 Linux Installation</h3>
           
+          <div style="text-align: center; margin-bottom: 20px;">
+            <a href="https://github.com/sundeth/omnimon/releases/latest" target="_blank" class="download-button">📦 Download Python Desktop Release</a>
+          </div>
+
+          <div class="requirements-box">
+            <strong>📋 Available Linux Download:</strong>
+            <ul>
+              <li><strong>Omnimon_Python_Desktop_Ver_0.9.8.zip</strong> - Cross-platform Python version for Linux/macOS</li>
+              <li><strong>Required Dependencies:</strong> <code>pip install pygame psutil</code></li>
+              <li><strong>Module Editor:</strong> Source code available on GitHub repository</li>
+            </ul>
+          </div>
+          
           <div class="requirements-box">
             <strong>📋 System Requirements:</strong>
             <ul>
@@ -341,6 +367,19 @@
         <div class="platform-section">
           <h3>🎮 Batocera Installation</h3>
           <p>Omnimon can run natively on Batocera systems as a Pygame application, perfect for handheld devices and retro gaming setups.</p>
+          
+          <div style="text-align: center; margin-bottom: 20px;">
+            <a href="https://github.com/sundeth/omnimon/releases/latest" target="_blank" class="download-button">📦 Download Batocera Release</a>
+          </div>
+
+          <div class="requirements-box">
+            <strong>📋 Available Batocera Download:</strong>
+            <ul>
+              <li><strong>Omnimon_Batocera_Ver_0.9.8.zip</strong> - Optimized for Batocera systems</li>
+              <li><strong>Module Editor:</strong> Not included (Linux incompatible) - available on GitHub</li>
+              <li><strong>Input Configuration:</strong> May require adjustment for your specific device</li>
+            </ul>
+          </div>
           
           <div class="requirements-box">
             <strong>📋 Batocera Requirements:</strong>
@@ -452,12 +491,108 @@ if __name__ == "__main__":
           </div>
         </div>
       </div>
+
+      <!-- GamePi Installation -->
+      <div id="gamepi-content" class="platform-content">
+        <div class="platform-section">
+          <h3>🥧 GamePi (Raspberry Pi Zero 2W) Installation</h3>
+          <p>Omnimon runs excellently on Raspberry Pi Zero 2W devices, offering a portable handheld gaming experience.</p>
+          
+          <div style="text-align: center; margin-bottom: 20px;">
+            <a href="https://github.com/sundeth/omnimon/releases/latest" target="_blank" class="download-button">📦 Download GamePi Release</a>
+          </div>
+
+          <div class="requirements-box">
+            <strong>📋 Available GamePi Download:</strong>
+            <ul>
+              <li><strong>Omnimon_GamePi_Ver_0.9.8.zip</strong> - Optimized for Raspberry Pi Zero 2W</li>
+              <li><strong>Module Editor:</strong> Not included (Linux incompatible) - available on GitHub</li>
+              <li><strong>Installation Options:</strong> Upgrade existing installation or use pre-made image</li>
+            </ul>
+          </div>
+
+          <h4>Option 1: Upgrade Existing Installation</h4>
+          <p>If you already have Omnimon installed on your GamePi device:</p>
+          
+          <p><span class="step-number">1</span>SSH into your GamePi device:</p>
+          <div class="code-block">ssh pi@[your-gamepi-ip]</div>
+          
+          <p><span class="step-number">2</span>Backup your save data (optional but recommended):</p>
+          <div class="code-block">cp -r /home/Games/Omnimon/save ~/omnimon_save_backup</div>
+          
+          <p><span class="step-number">3</span>Extract the new version over the existing installation:</p>
+          <div class="code-block">
+            cd /home/Games/<br>
+            # Upload and extract Omnimon_GamePi_Ver_0.9.8.zip here<br>
+            unzip -o Omnimon_GamePi_Ver_0.9.8.zip
+          </div>
+
+          <h4>Option 2: Clean Installation with Pre-made Image</h4>
+          <p>For new setups or complete reinstalls:</p>
+          
+          <p><span class="step-number">1</span>Download the GamePi pre-made image (if available)</p>
+          
+          <p><span class="step-number">2</span>Use Raspberry Pi Imager to flash the image:</p>
+          <ul>
+            <li>Download and install <a href="https://rpi.org/imager">Raspberry Pi Imager</a></li>
+            <li>Select the Omnimon GamePi image file</li>
+            <li>Click the gear icon for advanced options</li>
+            <li><strong>Configure WiFi settings</strong> - Essential for remote access!</li>
+            <li>Enable SSH and set a username/password</li>
+            <li>Flash to your SD card</li>
+          </ul>
+          
+          <p><span class="step-number">3</span>Insert SD card and boot your GamePi device</p>
+          
+          <p><span class="step-number">4</span>Omnimon will load automatically as a service on startup</p>
+
+          <div class="warning-box">
+            <strong>⚠️ Important WiFi Setup:</strong> Configure WiFi during image flashing with Raspberry Pi Imager's advanced options. Without WiFi, you won't be able to SSH into the device for updates or maintenance.
+          </div>
+
+          <div class="note">
+            <strong>💡 Update Process:</strong> Currently there's no auto-update system. To update, you'll need to SSH into the device and manually overwrite the contents of <code>/home/Games/Omnimon</code> with new releases.
+          </div>
+
+          <h4>GamePi-Specific Features</h4>
+          <ul>
+            <li><strong>Battery Optimization:</strong> Achieves ~7 hours battery life on Pi Zero 2W with 2000mAh battery</li>
+            <li><strong>Handheld Controls:</strong> Optimized button mapping for portable gaming</li>
+            <li><strong>Auto-Boot Service:</strong> Game starts automatically when device powers on</li>
+            <li><strong>Power Management:</strong> Built-in battery monitoring and low-power optimizations</li>
+          </ul>
+
+          <div class="requirements-box">
+            <strong>📋 Hardware Requirements:</strong>
+            <ul>
+              <li>Raspberry Pi Zero 2W</li>
+              <li>MicroSD card (16GB+ recommended)</li>
+              <li>GamePi case with LCD screen and controls</li>
+              <li>Battery pack (2000mAh+ recommended)</li>
+              <li>WiFi connectivity for updates</li>
+            </ul>
+          </div>
+        </div>
+      </div>
     </div>
 
         <!-- macOS Installation -->
       <div id="macos-content" class="platform-content">
         <div class="platform-section">
           <h3>🍎 macOS Installation</h3>
+          
+          <div style="text-align: center; margin-bottom: 20px;">
+            <a href="https://github.com/sundeth/omnimon/releases/latest" target="_blank" class="download-button">📦 Download Python Desktop Release</a>
+          </div>
+
+          <div class="requirements-box">
+            <strong>📋 Available macOS Download:</strong>
+            <ul>
+              <li><strong>Omnimon_Python_Desktop_Ver_0.9.8.zip</strong> - Cross-platform Python version for Linux/macOS</li>
+              <li><strong>Required Dependencies:</strong> <code>pip3 install pygame psutil</code></li>
+              <li><strong>Module Editor:</strong> Source code available on GitHub repository</li>
+            </ul>
+          </div>
           
           <div class="requirements-box">
             <strong>📋 System Requirements:</strong>

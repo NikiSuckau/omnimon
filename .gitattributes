@@ -1,0 +1,67 @@
+# Auto detect text files and perform LF normalization
+* text=auto
+
+# Force Unix-style line endings for shell scripts
+*.sh text eol=lf
+
+# Force Unix-style line endings for Python scripts with shebang
+*.py text eol=lf
+
+# Force Windows-style line endings for Windows batch files
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+
+# Force Unix-style line endings for configuration files
+*.json text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.toml text eol=lf
+*.ini text eol=lf
+*.cfg text eol=lf
+
+# Force Unix-style line endings for documentation
+*.md text eol=lf
+*.txt text eol=lf
+README* text eol=lf
+LICENSE* text eol=lf
+CHANGELOG* text eol=lf
+
+# Force Unix-style line endings for web files
+*.html text eol=lf
+*.css text eol=lf
+*.js text eol=lf
+
+# Binary files - don't modify
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.bmp binary
+*.tiff binary
+*.webp binary
+*.mp3 binary
+*.wav binary
+*.ogg binary
+*.flac binary
+*.mp4 binary
+*.avi binary
+*.mov binary
+*.zip binary
+*.7z binary
+*.tar binary
+*.gz binary
+*.exe binary
+*.dll binary
+*.so binary
+*.dylib binary
+*.pyd binary
+*.whl binary
+
+# Pygame specific files
+*.pygame text eol=lf
+
+# Buildozer/Android files
+buildozer.spec text eol=lf
+*.spec text eol=lf
