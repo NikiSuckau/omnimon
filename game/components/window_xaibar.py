@@ -4,7 +4,7 @@ import game.core.constants as constants
 from core.utils.pygame_utils import blit_with_shadow, sprite_load_percent
 
 
-XAIARROW_ICON_PATH = "resources/XaiArrow.png"  # Update this path as needed
+XAIARROW_ICON_PATH = "assets/XaiArrow.png"  # Update this path as needed
 
 class WindowXaiBar:
     SCALE_WIDTH = constants.SCREEN_WIDTH / 240

@@ -9,7 +9,8 @@
       "status": "armor",
       "amount": 3,
       "boost_time": 0,
-      "component_item": "Courage DigiMental"
+      "component_item": "Courage DigiMental",
+      "weight_gain": 0
     },
     {
       "id": "1443c5cc-a74f-48c1-bfdf-82e907daacf2",
@@ -20,7 +21,8 @@
       "status": "armor",
       "amount": 3,
       "boost_time": 0,
-      "component_item": "Friendship DigiMental"
+      "component_item": "Friendship DigiMental",
+      "weight_gain": 0
     },
     {
       "id": "a9c0fab5-e26f-4ca2-bb45-f69c999d8864",
@@ -31,7 +33,8 @@
       "status": "armor",
       "amount": 3,
       "boost_time": 0,
-      "component_item": "Love DigiMental"
+      "component_item": "Love DigiMental",
+      "weight_gain": 0
     },
     {
       "id": "abd37752-0963-4e05-8e0a-6994f1f853ea",
@@ -42,7 +45,8 @@
       "status": "armor",
       "amount": 3,
       "boost_time": 0,
-      "component_item": "Knowledge DigiMental"
+      "component_item": "Knowledge DigiMental",
+      "weight_gain": 0
     },
     {
       "id": "09b3aa6f-a73c-415d-a66e-1fbf2fba424b",
@@ -53,7 +57,8 @@
       "status": "armor",
       "amount": 3,
       "boost_time": 0,
-      "component_item": "Sincerity DigiMental"
+      "component_item": "Sincerity DigiMental",
+      "weight_gain": 0
     },
     {
       "id": "80a9213f-8fa2-4c3b-9962-e5f9aeada9dd",
@@ -64,7 +69,8 @@
       "status": "armor",
       "amount": 3,
       "boost_time": 0,
-      "component_item": "Reliability DigiMental"
+      "component_item": "Reliability DigiMental",
+      "weight_gain": 0
     },
     {
       "id": "aaa2ae7f-6e60-462e-a375-cdb1a32ec86f",
@@ -75,7 +81,8 @@
       "status": "armor",
       "amount": 3,
       "boost_time": 0,
-      "component_item": "Hope DigiMental"
+      "component_item": "Hope DigiMental",
+      "weight_gain": 0
     },
     {
       "id": "061de913-84db-4337-81a9-cc5e55a11f3b",
@@ -86,7 +93,8 @@
       "status": "armor",
       "amount": 3,
       "boost_time": 0,
-      "component_item": "Light DigiMental"
+      "component_item": "Light DigiMental",
+      "weight_gain": 0
     },
     {
       "id": "dd9d3807-a4c0-4c08-8a17-1b93786f6558",
@@ -97,7 +105,8 @@
       "status": "armor",
       "amount": 3,
       "boost_time": 0,
-      "component_item": "Kindness DigiMental"
+      "component_item": "Kindness DigiMental",
+      "weight_gain": 0
     },
     {
       "id": "dc0b6991-3bdb-4b47-b0eb-053b7f0e49e1",
@@ -108,7 +117,8 @@
       "status": "armor",
       "amount": 5,
       "boost_time": 0,
-      "component_item": "Miracles DigiMental"
+      "component_item": "Miracles DigiMental",
+      "weight_gain": 0
     },
     {
       "id": "2f5eda41-534f-4f24-9fb2-dbdcc6db33e7",
@@ -119,7 +129,8 @@
       "status": "armor",
       "amount": 5,
       "boost_time": 0,
-      "component_item": "Destiny DigiMental"
+      "component_item": "Destiny DigiMental",
+      "weight_gain": 0
     },
     {
       "id": "eef15173-a07f-4ce1-86d6-ef3643c8ad27",
@@ -129,7 +140,8 @@
       "effect": "digimental",
       "status": "armor",
       "amount": 1,
-      "boost_time": 0
+      "boost_time": 0,
+      "weight_gain": 0
     },
     {
       "id": "e1b43ecb-2f9a-447f-9dc4-a3dc61f3f7e2",
@@ -139,7 +151,8 @@
       "effect": "digimental",
       "status": "armor",
       "amount": 1,
-      "boost_time": 0
+      "boost_time": 0,
+      "weight_gain": 0
     },
     {
       "id": "49823dc2-4d17-4d3d-9ee5-f28ec8f94b64",
@@ -149,7 +162,8 @@
       "effect": "digimental",
       "status": "armor",
       "amount": 1,
-      "boost_time": 0
+      "boost_time": 0,
+      "weight_gain": 0
     },
     {
       "id": "6dfff7e2-7306-419b-842e-081f341e3aab",
@@ -159,7 +173,8 @@
       "effect": "digimental",
       "status": "armor",
       "amount": 1,
-      "boost_time": 0
+      "boost_time": 0,
+      "weight_gain": 0
     },
     {
       "id": "40e30454-3c91-4793-8718-212fd029062d",
@@ -170,7 +185,8 @@
       "status": "armor",
       "amount": 1,
       "boost_time": 0,
-      "component_item": ""
+      "component_item": "",
+      "weight_gain": 0
     },
     {
       "id": "7eed3fbe-b0d0-4865-a8f8-cd576f4e5da9",
@@ -180,7 +196,8 @@
       "effect": "digimental",
       "status": "armor",
       "amount": 1,
-      "boost_time": 0
+      "boost_time": 0,
+      "weight_gain": 0
     },
     {
       "id": "8d1f96b1-13a9-4874-8afd-a840766026b9",
@@ -191,7 +208,8 @@
       "status": "armor",
       "amount": 1,
       "boost_time": 0,
-      "component_item": ""
+      "component_item": "",
+      "weight_gain": 0
     },
     {
       "id": "9d8ac21c-9871-46dc-b744-9993ff216f44",
@@ -201,7 +219,8 @@
       "effect": "digimental",
       "status": "armor",
       "amount": 1,
-      "boost_time": 0
+      "boost_time": 0,
+      "weight_gain": 0
     },
     {
       "id": "c9739cd1-f04d-4b52-a0d6-1719df613561",
@@ -212,7 +231,8 @@
       "status": "armor",
       "amount": 1,
       "boost_time": 0,
-      "component_item": ""
+      "component_item": "",
+      "weight_gain": 0
     },
     {
       "id": "28f42fcf-12cd-4540-81c2-c2e3820e7bf5",
@@ -222,7 +242,8 @@
       "effect": "digimental",
       "status": "armor",
       "amount": 1,
-      "boost_time": 0
+      "boost_time": 0,
+      "weight_gain": 0
     },
     {
       "id": "cf91e11a-067c-4e3b-81a5-a7b589959ab2",
@@ -232,7 +253,8 @@
       "effect": "digimental",
       "status": "armor",
       "amount": 1,
-      "boost_time": 0
+      "boost_time": 0,
+      "weight_gain": 0
     },
     {
       "id": "a1e5fc86-2b78-43b5-a458-8ebc0bf149cf",
@@ -242,7 +264,8 @@
       "effect": "digimental",
       "status": "armor",
       "amount": 1,
-      "boost_time": 0
+      "boost_time": 0,
+      "weight_gain": 0
     }
   ]
 }

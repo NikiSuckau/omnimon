@@ -28,7 +28,7 @@ namespace OmnimonModuleEditor.Tabs
         private void InitializeComponent()
         {
             this.Text = "Edit Group Unlock List";
-            this.Size = new Size(400, 500);
+            this.Size = new Size(450, 550);
             this.StartPosition = FormStartPosition.CenterParent;
             this.FormBorderStyle = FormBorderStyle.FixedDialog;
             this.MaximizeBox = false;
@@ -39,7 +39,7 @@ namespace OmnimonModuleEditor.Tabs
                 Dock = DockStyle.Fill,
                 RowCount = 3,
                 ColumnCount = 1,
-                Padding = new Padding(10)
+                Padding = new Padding(15)
             };
             mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             mainLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
@@ -51,7 +51,8 @@ namespace OmnimonModuleEditor.Tabs
                 Text = "Select which unlocks must be completed for this group unlock to trigger:",
                 Dock = DockStyle.Fill,
                 AutoSize = true,
-                Font = new Font(SystemFonts.DefaultFont, FontStyle.Bold)
+                Font = new Font(SystemFonts.DefaultFont, FontStyle.Bold),
+                Padding = new Padding(0, 0, 0, 10)
             };
             mainLayout.Controls.Add(titleLabel, 0, 0);
 
@@ -61,55 +62,29 @@ namespace OmnimonModuleEditor.Tabs
                 Dock = DockStyle.Fill,
                 CheckOnClick = true,
                 IntegralHeight = false,
-                AutoSize = false // <- importante
+                AutoSize = false
             };
             mainLayout.Controls.Add(checkedListBox, 0, 1);
 
             // Buttons panel
-            var buttonPanel = new FlowLayoutPanel
+            var buttonPanel = new TableLayoutPanel
             {
                 Dock = DockStyle.Fill,
-                FlowDirection = FlowDirection.RightToLeft,
-                Height = 35
+                RowCount = 1,
+                ColumnCount = 4,
+                Height = 40,
+                Padding = new Padding(0, 10, 0, 0)
             };
-
-            btnCancel = new Button
-            {
-                Text = "Cancel",
-                DialogResult = DialogResult.Cancel,
-                Width = 75,
-                Height = 25,
-                Margin = new Padding(5, 5, 0, 0)
-            };
-
-            btnOK = new Button
-            {
-                Text = "OK",
-                DialogResult = DialogResult.OK,
-                Width = 75,
-                Height = 25,
-                Margin = new Padding(5, 5, 0, 0)
-            };
-
-            btnSelectNone = new Button
-            {
-                Text = "Select None",
-                Width = 80,
-                Height = 25,
-                Margin = new Padding(5, 5, 0, 0)
-            };
-            btnSelectNone.Click += (s, e) =>
-            {
-                for (int i = 0; i < checkedListBox.Items.Count; i++)
-                    checkedListBox.SetItemChecked(i, false);
-            };
+            buttonPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 25));
+            buttonPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 25));
+            buttonPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 25));
+            buttonPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 25));
 
             btnSelectAll = new Button
             {
                 Text = "Select All",
-                Width = 80,
-                Height = 25,
-                Margin = new Padding(5, 5, 0, 0)
+                Dock = DockStyle.Fill,
+                Margin = new Padding(0, 0, 5, 0)
             };
             btnSelectAll.Click += (s, e) =>
             {
@@ -117,10 +92,37 @@ namespace OmnimonModuleEditor.Tabs
                     checkedListBox.SetItemChecked(i, true);
             };
 
-            buttonPanel.Controls.Add(btnCancel);
-            buttonPanel.Controls.Add(btnOK);
-            buttonPanel.Controls.Add(btnSelectNone);
-            buttonPanel.Controls.Add(btnSelectAll);
+            btnSelectNone = new Button
+            {
+                Text = "Select None",
+                Dock = DockStyle.Fill,
+                Margin = new Padding(0, 0, 5, 0)
+            };
+            btnSelectNone.Click += (s, e) =>
+            {
+                for (int i = 0; i < checkedListBox.Items.Count; i++)
+                    checkedListBox.SetItemChecked(i, false);
+            };
+
+            btnOK = new Button
+            {
+                Text = "OK",
+                DialogResult = DialogResult.OK,
+                Dock = DockStyle.Fill,
+                Margin = new Padding(0, 0, 5, 0)
+            };
+
+            btnCancel = new Button
+            {
+                Text = "Cancel",
+                DialogResult = DialogResult.Cancel,
+                Dock = DockStyle.Fill
+            };
+
+            buttonPanel.Controls.Add(btnSelectAll, 0, 0);
+            buttonPanel.Controls.Add(btnSelectNone, 1, 0);
+            buttonPanel.Controls.Add(btnOK, 2, 0);
+            buttonPanel.Controls.Add(btnCancel, 3, 0);
 
             mainLayout.Controls.Add(buttonPanel, 0, 2);
 
@@ -142,12 +144,13 @@ namespace OmnimonModuleEditor.Tabs
                     if (unlock.Type != "group") // Don't allow group unlocks to reference other group unlocks to avoid circular dependencies
                     {
                         string displayText = $"{unlock.Label ?? unlock.Name ?? "Unnamed"} ({unlock.Type})";
-                        checkedListBox.Items.Add(new UnlockItem { Unlock = unlock, DisplayText = displayText });
+                        var unlockItem = new UnlockItem { Unlock = unlock, DisplayText = displayText };
+                        int index = checkedListBox.Items.Add(unlockItem);
                         
                         // Check if this unlock is in the current selection
                         if (currentSelection != null && currentSelection.Contains(unlock.Name))
                         {
-                            checkedListBox.SetItemChecked(checkedListBox.Items.Count - 1, true);
+                            checkedListBox.SetItemChecked(index, true);
                         }
                     }
                 }
@@ -316,26 +319,30 @@ namespace OmnimonModuleEditor.Tabs
                 Version = mainPanel.txtVersion?.Text ?? "",
                 Description = mainPanel.txtDescription?.Text ?? "",
                 Author = mainPanel.txtAuthor?.Text ?? "",
-                NameFormat = mainPanel.txtNameFormat?.Text ?? "",
+                NameFormat = OmnimonModuleEditor.Utils.PetUtils.FixedNameFormat, // Always use fixed format
                 Ruleset = mainPanel.cmbRuleset?.SelectedItem?.ToString() ?? "",
                 AdventureMode = mainPanel.chkAdventureMode?.Checked ?? false,
                 CareMeatWeightGain = (int)(mainPanel.numCareMeatWeightGain?.Value ?? 0),
-                CareMeatHungerGain = (int)(mainPanel.numCareMeatHungerGain?.Value ?? 0),
+                CareMeatHungerGain = (float)(mainPanel.numCareMeatHungerGain?.Value ?? 0),
                 CareMeatCareMistakeTime = (int)(mainPanel.numCareMeatCareMistakeTime?.Value ?? 0),
                 CareOverfeedTimer = (int)(mainPanel.numCareOverfeedTimer?.Value ?? 0),
                 CareConditionHeart = mainPanel.chkCareConditionHeart?.Checked ?? false,
                 CareCanEatSleeping = mainPanel.chkCareCanEatSleeping?.Checked ?? false,
                 CareBackToSleepTime = (int)(mainPanel.numCareBackToSleepTime?.Value ?? 0),
                 CareEnableShakenEgg = mainPanel.chkCareEnableShakenEgg?.Checked ?? false,
+                CareFlushDisturbanceSleep = mainPanel.chkCareFlushDisturbanceSleep?.Checked ?? true,
                 CareProteinWeightGain = (int)(mainPanel.numCareProteinWeightGain?.Value ?? 0),
-                CareProteinStrenghGain = (int)(mainPanel.numCareProteinStrenghGain?.Value ?? 0),
+                CareProteinStrenghGain = (float)(mainPanel.numCareProteinStrenghGain?.Value ?? 0),
                 CareProteinDpGain = (int)(mainPanel.numCareProteinDpGain?.Value ?? 0),
                 CareProteinCareMistakeTime = (int)(mainPanel.numCareProteinCareMistakeTime?.Value ?? 0),
                 CareProteinOverdoseMax = (int)(mainPanel.numCareProteinOverdoseMax?.Value ?? 0),
+                CareProteinPenalty = (int)(mainPanel.numCareProteinPenalty?.Value ?? 10),
                 CareDisturbancePenaltyMax = (int)(mainPanel.numCareDisturbancePenaltyMax?.Value ?? 0),
                 CareSleepCareMistakeTimer = (int)(mainPanel.numCareSleepCareMistakeTimer?.Value ?? 0),
                 TrainingEffortGain = (int)(mainPanel.numTrainingEffortGain?.Value ?? 0),
-                TrainingStrenghGain = (int)(mainPanel.numTrainingStrenghGain?.Value ?? 0),
+                TrainingStrenghGainWin = (int)(mainPanel.numTrainingStrenghGainWin?.Value ?? 0),
+                TrainingStrenghGainLose = (int)(mainPanel.numTrainingStrenghGainLose?.Value ?? 0),
+                TrainingStrenghMultiplier = (float)(mainPanel.numTrainingStrenghMultiplier?.Value ?? 0),
                 TrainingWeightWin = (int)(mainPanel.numTrainingWeightWin?.Value ?? 0),
                 TrainingWeightLose = (int)(mainPanel.numTrainingWeightLose?.Value ?? 0),
                 TraitedEggStartingLevel = (int)(mainPanel.numTraitedEggStartingLevel?.Value ?? 0),
@@ -355,6 +362,7 @@ namespace OmnimonModuleEditor.Tabs
                 DeathStage67Mistake = (int)(mainPanel.numDeathStage67Mistake?.Value ?? 0),
                 DeathSaveByBPress = (int)(mainPanel.numDeathSaveByBPress?.Value ?? 0),
                 DeathSaveByShake = (int)(mainPanel.numDeathSaveByShake?.Value ?? 0),
+                DeathOldAge = (int)(mainPanel.numDeathOldAge?.Value ?? 0),
                 VitalValueBase = (int)(mainPanel.numVitalValueBase?.Value ?? 0),
                 VitalValueLoss = (int)(mainPanel.numVitalValueLoss?.Value ?? 0)
             };
@@ -389,7 +397,7 @@ namespace OmnimonModuleEditor.Tabs
             mainPanel.txtVersion.Text = module.Version ?? "";
             mainPanel.txtDescription.Text = module.Description ?? "";
             mainPanel.txtAuthor.Text = module.Author ?? "";
-            mainPanel.txtNameFormat.Text = module.NameFormat ?? "";
+            mainPanel.txtNameFormat.Text = OmnimonModuleEditor.Utils.PetUtils.FixedNameFormat; // Always show fixed format
             if (mainPanel.cmbRuleset.Items.Contains(module.Ruleset))
                 mainPanel.cmbRuleset.SelectedItem = module.Ruleset;
             else if (mainPanel.cmbRuleset.Items.Count > 0)
@@ -398,28 +406,31 @@ namespace OmnimonModuleEditor.Tabs
 
             // Care Meat
             mainPanel.numCareMeatWeightGain.Value = module.CareMeatWeightGain;
-            mainPanel.numCareMeatHungerGain.Value = module.CareMeatHungerGain;
+            mainPanel.numCareMeatHungerGain.Value = (decimal)module.CareMeatHungerGain;
             mainPanel.numCareMeatCareMistakeTime.Value = module.CareMeatCareMistakeTime;
             mainPanel.numCareOverfeedTimer.Value = module.CareOverfeedTimer;
             mainPanel.chkCareConditionHeart.Checked = module.CareConditionHeart;
             mainPanel.chkCareCanEatSleeping.Checked = module.CareCanEatSleeping;
             mainPanel.numCareBackToSleepTime.Value = module.CareBackToSleepTime;
             mainPanel.chkCareEnableShakenEgg.Checked = module.CareEnableShakenEgg;
+            mainPanel.chkCareFlushDisturbanceSleep.Checked = module.CareFlushDisturbanceSleep;
 
             // Care Protein
             mainPanel.numCareProteinWeightGain.Value = module.CareProteinWeightGain;
-            mainPanel.numCareProteinStrenghGain.Value = module.CareProteinStrenghGain;
+            mainPanel.numCareProteinStrenghGain.Value = (decimal)module.CareProteinStrenghGain;
             mainPanel.numCareProteinDpGain.Value = module.CareProteinDpGain;
             mainPanel.numCareProteinCareMistakeTime.Value = module.CareProteinCareMistakeTime;
             mainPanel.numCareProteinOverdoseMax.Value = module.CareProteinOverdoseMax;
+            mainPanel.numCareProteinPenalty.Value = module.CareProteinPenalty ?? 10;
             mainPanel.numCareDisturbancePenaltyMax.Value = module.CareDisturbancePenaltyMax;
 
             // Care Sleep
             mainPanel.numCareSleepCareMistakeTimer.Value = module.CareSleepCareMistakeTimer;
 
             // Training
-            mainPanel.numTrainingEffortGain.Value = module.TrainingEffortGain;
-            mainPanel.numTrainingStrenghGain.Value = module.TrainingStrenghGain;
+            mainPanel.numTrainingStrenghGainWin.Value = module.TrainingStrenghGainWin;
+            mainPanel.numTrainingStrenghGainLose.Value = module.TrainingStrenghGainLose;
+            mainPanel.numTrainingStrenghMultiplier.Value = (decimal)module.TrainingStrenghMultiplier;
             mainPanel.numTrainingWeightWin.Value = module.TrainingWeightWin;
             mainPanel.numTrainingWeightLose.Value = module.TrainingWeightLose;
             mainPanel.numTraitedEggStartingLevel.Value = module.TraitedEggStartingLevel;
@@ -443,6 +454,7 @@ namespace OmnimonModuleEditor.Tabs
             mainPanel.numDeathStage67Mistake.Value = module.DeathStage67Mistake;
             mainPanel.numDeathSaveByBPress.Value = module.DeathSaveByBPress;
             mainPanel.numDeathSaveByShake.Value = module.DeathSaveByShake;
+            mainPanel.numDeathOldAge.Value = module.DeathOldAge;
 
             // Vital Values - NEW
             mainPanel.numVitalValueBase.Value = module.VitalValueBase;
@@ -454,7 +466,10 @@ namespace OmnimonModuleEditor.Tabs
 
             // Unlocks
             if (unlocksPanel != null)
-                unlocksPanel.LoadUnlocks(module.Unlocks ?? new System.Collections.Generic.List<OmnimonModuleEditor.Models.Unlock>());
+            {
+                var pets = OmnimonModuleEditor.Utils.PetUtils.LoadPetsFromJson(mainPanel.ModulePath);
+                unlocksPanel.LoadUnlocks(module.Unlocks ?? new System.Collections.Generic.List<OmnimonModuleEditor.Models.Unlock>(), pets);
+            }
         }
 
         #endregion
@@ -478,17 +493,17 @@ namespace OmnimonModuleEditor.Tabs
 
             // Care Meat
             public NumericUpDown numCareMeatWeightGain, numCareMeatHungerGain, numCareMeatCareMistakeTime, numCareOverfeedTimer;
-            public CheckBox chkCareConditionHeart, chkCareCanEatSleeping, chkCareEnableShakenEgg;
+            public CheckBox chkCareConditionHeart, chkCareCanEatSleeping, chkCareEnableShakenEgg, chkCareFlushDisturbanceSleep;
             public NumericUpDown numCareBackToSleepTime;
 
             // Care Protein
-            public NumericUpDown numCareProteinWeightGain, numCareProteinStrenghGain, numCareProteinDpGain, numCareProteinCareMistakeTime, numCareProteinOverdoseMax, numCareDisturbancePenaltyMax;
+            public NumericUpDown numCareProteinWeightGain, numCareProteinStrenghGain, numCareProteinDpGain, numCareProteinCareMistakeTime, numCareProteinOverdoseMax, numCareProteinPenalty, numCareDisturbancePenaltyMax;
 
             // Care Sleep
             public NumericUpDown numCareSleepCareMistakeTimer;
 
             // Training
-            public NumericUpDown numTrainingEffortGain, numTrainingStrenghGain, numTrainingWeightWin, numTrainingWeightLose, numTraitedEggStartingLevel;
+            public NumericUpDown numTrainingEffortGain, numTrainingStrenghGainWin, numTrainingStrenghGainLose, numTrainingStrenghMultiplier, numTrainingWeightWin, numTrainingWeightLose, numTraitedEggStartingLevel;
             public CheckBox chkReverseAtkFrames;
 
             // Battle
@@ -496,7 +511,7 @@ namespace OmnimonModuleEditor.Tabs
             public CheckBox chkBattleSequentialRounds;
 
             // Death
-            public NumericUpDown numDeathMaxInjuries, numDeathCareMistake, numDeathSickTimer, numDeathHungerTimer, numDeathStarvationCount, numDeathStrengthTimer, numDeathStage45Mistake, numDeathStage67Mistake, numDeathSaveByBPress, numDeathSaveByShake;
+            public NumericUpDown numDeathMaxInjuries, numDeathCareMistake, numDeathSickTimer, numDeathHungerTimer, numDeathStarvationCount, numDeathStrengthTimer, numDeathStage45Mistake, numDeathStage67Mistake, numDeathSaveByBPress, numDeathSaveByShake, numDeathOldAge;
 
             // Vital Values - NEW
             public NumericUpDown numVitalValueBase, numVitalValueLoss;
@@ -641,11 +656,13 @@ namespace OmnimonModuleEditor.Tabs
                 // Configuration fields (moved main fields out of here)
                 var col1 = new (string, Control)[]
                 {
-                    ("Name Format:", txtNameFormat = new TextBox() { Width = 140, Text = "$_dmc" }),
+                    ("Name Format:", txtNameFormat = new TextBox() { Width = 140, Text = "$_dmc", Enabled = false }),
                     ("Ruleset:", cmbRuleset = new ComboBox() { DropDownStyle = ComboBoxStyle.DropDownList, Width = 140 }),
                     ("Adventure Mode:", chkAdventureMode = new CheckBox()),
                     ("Training Effort Gain:", numTrainingEffortGain = CreateNumeric(0, 100, 1)),
-                    ("Training Strengh Gain:", numTrainingStrenghGain = CreateNumeric(0, 100, 1)),
+                    ("Training Strength Gain Win:", numTrainingStrenghGainWin = CreateNumeric(0, 100, 1)),
+                    ("Training Strength Gain Lose:", numTrainingStrenghGainLose = CreateNumeric(0, 100, 1)),
+                    ("Training Strength Multiplier:", numTrainingStrenghMultiplier = CreateFloatNumeric(0, 10, 1)),
                     ("Training Weight Win:", numTrainingWeightWin = CreateNumeric(0, 100, 4)),
                     ("Training Weight Lose:", numTrainingWeightLose = CreateNumeric(0, 100, 1)),
                     ("Traited Egg Starting Level:", numTraitedEggStartingLevel = CreateNumeric(0, 100, 3)),
@@ -655,6 +672,7 @@ namespace OmnimonModuleEditor.Tabs
                     ("Battle Atribute Advantage:", numBattleAtributeAdvantage = CreateNumeric(0, 100, 5)),
                     ("Battle Global Hit Points:", numBattleGlobalHitPoints = CreateNumeric(0, 100, 4)),
                     ("Battle Sequential Rounds:", chkBattleSequentialRounds = new CheckBox()),
+                    ("", new Label()),
                 };
 
                 cmbRuleset.Items.AddRange(Enum.GetNames(typeof(Models.RulesetType)));
@@ -663,18 +681,20 @@ namespace OmnimonModuleEditor.Tabs
                 var col2 = new (string, Control)[]
                 {
                     ("Care Meat Weight Gain:", numCareMeatWeightGain = CreateNumeric(0, 100, 1)),
-                    ("Care Meat Hunger Gain:", numCareMeatHungerGain = CreateNumeric(0, 100, 1)),
+                    ("Care Meat Hunger Gain:", numCareMeatHungerGain = CreateFloatNumeric(0, 100, 1)),
                     ("Care Meat Care Mistake Time:", numCareMeatCareMistakeTime = CreateNumeric(1, 1000, 10)),
                     ("Care Overfeed Timer:", numCareOverfeedTimer = CreateNumeric(1, 10000, 120)),
                     ("Care Condition Heart:", chkCareConditionHeart = new CheckBox()),
                     ("Care Can Eat Sleeping:", chkCareCanEatSleeping = new CheckBox() { Checked = true }),
                     ("Care Back To Sleep Time:", numCareBackToSleepTime = CreateNumeric(1, 1000, 10)),
                     ("Care Enable Shaken Egg:", chkCareEnableShakenEgg = new CheckBox()),
+                    ("Care Flush Disturbance Sleep:", chkCareFlushDisturbanceSleep = new CheckBox() { Checked = true }),
                     ("Care Protein Weight Gain:", numCareProteinWeightGain = CreateNumeric(0, 100, 1)),
-                    ("Care Protein Strengh Gain:", numCareProteinStrenghGain = CreateNumeric(0, 100, 1)),
+                    ("Care Protein Strengh Gain:", numCareProteinStrenghGain = CreateFloatNumeric(0, 100, 1)),
                     ("Care Protein Dp Gain:", numCareProteinDpGain = CreateNumeric(0, 100, 0)),
                     ("Care Protein Care Mistake Time:", numCareProteinCareMistakeTime = CreateNumeric(0, 1000, 10)),
                     ("Care Protein Overdose Max:", numCareProteinOverdoseMax = CreateNumeric(0, 100, 7)),
+                    ("Care Protein Penalty:", numCareProteinPenalty = CreateNumeric(0, 100, 10)),
                     ("Care Disturbance Penalty Max:", numCareDisturbancePenaltyMax = CreateNumeric(0, 100, 0)),
                     ("Care Sleep Care Mistake Timer:", numCareSleepCareMistakeTimer = CreateNumeric(0, 1000, 60)),
                     ("", new Label()),
@@ -692,11 +712,13 @@ namespace OmnimonModuleEditor.Tabs
                     ("Death Stage67 Mistake:", numDeathStage67Mistake = CreateNumeric(0, 100, 5)),
                     ("Death Save By B Press:", numDeathSaveByBPress = CreateNumeric(0, 100, 0)),
                     ("Death Save By Shake:", numDeathSaveByShake = CreateNumeric(0, 100, 0)),
+                    ("Death Old Age:", numDeathOldAge = CreateNumeric(0, 999999, 0)),
                     ("Vital Value Base:", numVitalValueBase = CreateNumeric(0, 1000, 1)),
                     ("Vital Value Loss:", numVitalValueLoss = CreateNumeric(0, 1000, 1)),
+                    ("", new Label()),
                 };
 
-                // Descobrir o maior número de linhas
+                // Descobrir o maior nï¿½mero de linhas
                 int maxRows = Math.Max(col1.Length, Math.Max(col2.Length, col3.Length));
                 fieldsTable.RowCount = maxRows;
 
@@ -765,13 +787,28 @@ namespace OmnimonModuleEditor.Tabs
 
             private NumericUpDown CreateNumeric(int min, int max, int value)
             {
-                return new NumericUpDown
+                var num = new NumericUpDown
                 {
                     Minimum = min,
                     Maximum = max,
                     Value = value,
                     Width = 80
                 };
+                return num;
+            }
+
+            private NumericUpDown CreateFloatNumeric(decimal min, decimal max, decimal value, decimal increment = 0.5m)
+            {
+                var num = new NumericUpDown
+                {
+                    Minimum = min,
+                    Maximum = max,
+                    Value = value,
+                    Width = 80,
+                    DecimalPlaces = 2,
+                    Increment = increment
+                };
+                return num;
             }
 
             public void ReloadSprites()
@@ -889,6 +926,7 @@ namespace OmnimonModuleEditor.Tabs
             private Button btnAdd;
             private Button btnRemove;
             private System.Collections.Generic.List<OmnimonModuleEditor.Models.Unlock> unlocks;
+            private List<OmnimonModuleEditor.Models.Pet> pets;
 
             public UnlocksPanel()
             {
@@ -931,7 +969,7 @@ namespace OmnimonModuleEditor.Tabs
                 {
                     DataPropertyName = "Type",
                     HeaderText = "Type",
-                    DataSource = new[] { "egg", "adventure", "evolution", "digidex", "group" },
+                    DataSource = new[] { "egg", "adventure", "evolution", "digidex", "group", "pvp", "versus" },
                     FlatStyle = FlatStyle.Flat
                 };
                 dgvUnlocks.Columns.Add(colType);
@@ -963,23 +1001,21 @@ namespace OmnimonModuleEditor.Tabs
                 };
                 dgvUnlocks.Columns.Add(colAmount);
 
-                // To column
+                // To column - make it consistent with List column
                 var colTo = new DataGridViewTextBoxColumn
                 {
-                    DataPropertyName = "To",
                     HeaderText = "To",
-                    ReadOnly = false,
+                    ReadOnly = true,
                     Name = "To"
                 };
                 dgvUnlocks.Columns.Add(colTo);
 
-                // List column (for group unlock type)
-                var colList = new DataGridViewButtonColumn
+                // List column - make it consistent with To column
+                var colList = new DataGridViewTextBoxColumn
                 {
                     HeaderText = "List",
-                    Name = "List",
-                    UseColumnTextForButtonValue = false,
-                    Text = "Edit"
+                    ReadOnly = true,
+                    Name = "List"
                 };
                 dgvUnlocks.Columns.Add(colList);
 
@@ -1032,11 +1068,13 @@ namespace OmnimonModuleEditor.Tabs
 
                 dgvUnlocks.CellFormatting += DgvUnlocks_CellFormatting;
                 dgvUnlocks.CellClick += DgvUnlocks_CellClick;
+                dgvUnlocks.CellBeginEdit += DgvUnlocks_CellBeginEdit;
             }
 
-            public void LoadUnlocks(System.Collections.Generic.List<OmnimonModuleEditor.Models.Unlock> unlocks)
+            public void LoadUnlocks(System.Collections.Generic.List<OmnimonModuleEditor.Models.Unlock> unlocks, List<OmnimonModuleEditor.Models.Pet> pets)
             {
                 this.unlocks = unlocks ?? new System.Collections.Generic.List<OmnimonModuleEditor.Models.Unlock>();
+                this.pets = pets ?? new List<OmnimonModuleEditor.Models.Pet>();
                 foreach (var u in this.unlocks)
                 {
                     u.To = u.To ?? new List<string>();
@@ -1053,23 +1091,6 @@ namespace OmnimonModuleEditor.Tabs
                 {
                     if (row.DataBoundItem is OmnimonModuleEditor.Models.Unlock unlock)
                     {
-                        // Sempre crie uma nova instância para evitar sobrescrever o objeto original
-                        var toCell = row.Cells["To"].Value;
-                        List<string> toList = new List<string>();
-
-                        if (toCell is string str)
-                        {
-                            toList = str.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).Select(s => s.Trim()).ToList();
-                        }
-                        else if (toCell is IEnumerable<string> strList)
-                        {
-                            toList = strList.ToList();
-                        }
-                        else if (toCell != null)
-                        {
-                            toList = toCell.ToString().Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).Select(s => s.Trim()).ToList();
-                        }
-
                         result.Add(new OmnimonModuleEditor.Models.Unlock
                         {
                             Name = unlock.Name,
@@ -1078,7 +1099,7 @@ namespace OmnimonModuleEditor.Tabs
                             Version = unlock.Version,
                             Area = unlock.Area,
                             Amount = unlock.Amount,
-                            To = toList,
+                            To = unlock.To ?? new List<string>(),
                             List = unlock.List ?? new List<string>()
                         });
                     }
@@ -1099,7 +1120,7 @@ namespace OmnimonModuleEditor.Tabs
                     Version = 0,
                     Area = 0,
                     To = new System.Collections.Generic.List<string>(),
-                    Amount = 1, // valor padrão
+                    Amount = 1, // valor padrï¿½o
                     List = new System.Collections.Generic.List<string>()
                 };
                 unlocks.Add(unlock);
@@ -1128,17 +1149,21 @@ namespace OmnimonModuleEditor.Tabs
                 if (dgvUnlocks.Columns[e.ColumnIndex].Name == "To")
                 {
                     var unlock = dgvUnlocks.Rows[e.RowIndex].DataBoundItem as OmnimonModuleEditor.Models.Unlock;
-                    if (unlock != null && unlock.To != null)
-                        e.Value = string.Join(",", unlock.To);
+                    if (unlock != null && unlock.To != null && unlock.To.Count > 0)
+                    {
+                        e.Value = string.Join(", ", unlock.To);
+                    }
+                    else
+                    {
+                        e.Value = "";
+                    }
                 }
                 else if (dgvUnlocks.Columns[e.ColumnIndex].Name == "List")
                 {
                     var unlock = dgvUnlocks.Rows[e.RowIndex].DataBoundItem as OmnimonModuleEditor.Models.Unlock;
-                    if (unlock != null && unlock.Type == "group")
+                    if (unlock != null && unlock.List != null && unlock.List.Count > 0)
                     {
-                        e.Value = unlock.List != null && unlock.List.Count > 0 
-                            ? $"{unlock.List.Count} items" 
-                            : "Edit";
+                        e.Value = string.Join(", ", unlock.List);
                     }
                     else
                     {
@@ -1149,21 +1174,44 @@ namespace OmnimonModuleEditor.Tabs
 
             private void DgvUnlocks_CellClick(object sender, DataGridViewCellEventArgs e)
             {
-                if (e.RowIndex >= 0 && e.ColumnIndex >= 0 && 
-                    dgvUnlocks.Columns[e.ColumnIndex].Name == "List")
+                if (e.RowIndex >= 0 && e.ColumnIndex >= 0)
                 {
                     var unlock = dgvUnlocks.Rows[e.RowIndex].DataBoundItem as OmnimonModuleEditor.Models.Unlock;
-                    if (unlock != null && unlock.Type == "group")
+                    if (unlock == null) return;
+
+                    // Handle 'To' column for evolution/digidex
+                    if (dgvUnlocks.Columns[e.ColumnIndex].Name == "To" && (unlock.Type == "evolution" || unlock.Type == "digidex"))
                     {
-                        using (var form = new GroupUnlockEditorForm(unlock.List ?? new List<string>(), unlocks))
+                        using (var form = new PetListEditorForm(unlock.To ?? new List<string>(), pets))
                         {
                             if (form.ShowDialog() == DialogResult.OK)
                             {
-                                unlock.List = form.SelectedUnlocks;
+                                unlock.To = form.SelectedPets ?? new List<string>();
                                 dgvUnlocks.InvalidateRow(e.RowIndex);
                             }
                         }
                     }
+                    // Handle 'List' column for group unlocks
+                    else if (dgvUnlocks.Columns[e.ColumnIndex].Name == "List" && unlock.Type == "group")
+                    {
+                        using (var form = new GroupUnlockEditorForm(unlock.List ?? new List<string>(), unlocks.Where(u => u.Type != "group").ToList()))
+                        {
+                            if (form.ShowDialog() == DialogResult.OK)
+                            {
+                                unlock.List = form.SelectedUnlocks ?? new List<string>();
+                                dgvUnlocks.InvalidateRow(e.RowIndex);
+                            }
+                        }
+                    }
+                }
+            }
+
+            private void DgvUnlocks_CellBeginEdit(object sender, DataGridViewCellCancelEventArgs e)
+            {
+                // Cancel editing for To and List columns since they use forms
+                if (dgvUnlocks.Columns[e.ColumnIndex].Name == "To" || dgvUnlocks.Columns[e.ColumnIndex].Name == "List")
+                {
+                    e.Cancel = true;
                 }
             }
         }
@@ -1306,7 +1354,7 @@ namespace OmnimonModuleEditor.Tabs
                 buttonPanel.Controls.Add(btnAdd);
                 buttonPanel.Controls.Add(btnRemove);
                 buttonPanel.Controls.Add(btnRefresh);
-                buttonPanel.Controls.Add(btnImport); // Adicione o botão de importação
+                buttonPanel.Controls.Add(btnImport); // Adicione o botï¿½o de importaï¿½ï¿½o
 
                 layout.Controls.Add(buttonPanel, 0, 1);
 
@@ -1424,7 +1472,7 @@ namespace OmnimonModuleEditor.Tabs
                 }
             }
 
-            // Lógica do botão Import
+            // Lï¿½gica do botï¿½o Import
             private void BtnImport_Click(object sender, EventArgs e)
             {
                 if (string.IsNullOrWhiteSpace(modulePath))
@@ -1458,7 +1506,7 @@ namespace OmnimonModuleEditor.Tabs
                             }
                         }
 
-                        // Verifica se já existe
+                        // Verifica se jï¿½ existe
                         if (backgrounds.Any(b => b.Name == name))
                         {
                             MessageBox.Show(
@@ -1470,7 +1518,7 @@ namespace OmnimonModuleEditor.Tabs
                             return;
                         }
 
-                        // Adiciona à lista
+                        // Adiciona ï¿½ lista
                         var bg = new OmnimonModuleEditor.Models.Background
                         {
                             Name = name,
@@ -1488,7 +1536,7 @@ namespace OmnimonModuleEditor.Tabs
                 }
             }
 
-            // Novo método para validação HiRes:
+            // Novo mï¿½todo para validaï¿½ï¿½o HiRes:
             private bool ValidateHiRes(OmnimonModuleEditor.Models.Background bg)
             {
                 if (string.IsNullOrWhiteSpace(modulePath) || string.IsNullOrWhiteSpace(bg.Name))
@@ -1508,6 +1556,175 @@ namespace OmnimonModuleEditor.Tabs
                 // Checa bg_bgname_high.png
                 string hiRes = Path.Combine(backgroundsDir, $"bg_{bg.Name}_high.png");
                 return File.Exists(hiRes);
+            }
+        }
+
+        // Pet List Editor Form class
+        public class PetListEditorForm : Form
+        {
+            private CheckedListBox checkedListBox;
+            private Button btnOK;
+            private Button btnCancel;
+            private Button btnSelectAll;
+            private Button btnSelectNone;
+        
+            public List<string> SelectedPets { get; private set; }
+
+            public PetListEditorForm(List<string> currentSelection, List<OmnimonModuleEditor.Models.Pet> allPets)
+            {
+                InitializeComponent();
+                PopulatePets(allPets, currentSelection);
+            }
+
+            private void InitializeComponent()
+            {
+                this.Text = "Edit Pet List";
+                this.Size = new Size(450, 550);
+                this.StartPosition = FormStartPosition.CenterParent;
+                this.FormBorderStyle = FormBorderStyle.FixedDialog;
+                this.MaximizeBox = false;
+                this.MinimizeBox = false;
+
+                var mainLayout = new TableLayoutPanel
+                {
+                    Dock = DockStyle.Fill,
+                    RowCount = 3,
+                    ColumnCount = 1,
+                    Padding = new Padding(15)
+                };
+                mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+                mainLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+                mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+
+                var titleLabel = new Label
+                {
+                    Text = "Select pets for this unlock:",
+                    Dock = DockStyle.Fill,
+                    AutoSize = true,
+                    Font = new Font(SystemFonts.DefaultFont, FontStyle.Bold),
+                    Padding = new Padding(0, 0, 0, 10)
+                };
+                mainLayout.Controls.Add(titleLabel, 0, 0);
+
+                checkedListBox = new CheckedListBox
+                {
+                    Dock = DockStyle.Fill,
+                    CheckOnClick = true,
+                    IntegralHeight = false,
+                    AutoSize = false
+                };
+                mainLayout.Controls.Add(checkedListBox, 0, 1);
+
+                // Buttons panel
+                var buttonPanel = new TableLayoutPanel
+                {
+                    Dock = DockStyle.Fill,
+                    RowCount = 1,
+                    ColumnCount = 4,
+                    Height = 40,
+                    Padding = new Padding(0, 10, 0, 0)
+                };
+                buttonPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 25));
+                buttonPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 25));
+                buttonPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 25));
+                buttonPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 25));
+
+                btnSelectAll = new Button
+                {
+                    Text = "Select All",
+                    Dock = DockStyle.Fill,
+                    Margin = new Padding(0, 0, 5, 0)
+                };
+                btnSelectAll.Click += (s, e) =>
+                {
+                    for (int i = 0; i < checkedListBox.Items.Count; i++)
+                        checkedListBox.SetItemChecked(i, true);
+                };
+
+                btnSelectNone = new Button
+                {
+                    Text = "Select None",
+                    Dock = DockStyle.Fill,
+                    Margin = new Padding(0, 0, 5, 0)
+                };
+                btnSelectNone.Click += (s, e) =>
+                {
+                    for (int i = 0; i < checkedListBox.Items.Count; i++)
+                        checkedListBox.SetItemChecked(i, false);
+                };
+
+                btnOK = new Button
+                {
+                    Text = "OK",
+                    DialogResult = DialogResult.OK,
+                    Dock = DockStyle.Fill,
+                    Margin = new Padding(0, 0, 5, 0)
+                };
+
+                btnCancel = new Button
+                {
+                    Text = "Cancel",
+                    DialogResult = DialogResult.Cancel,
+                    Dock = DockStyle.Fill
+                };
+
+                buttonPanel.Controls.Add(btnSelectAll, 0, 0);
+                buttonPanel.Controls.Add(btnSelectNone, 1, 0);
+                buttonPanel.Controls.Add(btnOK, 2, 0);
+                buttonPanel.Controls.Add(btnCancel, 3, 0);
+
+                mainLayout.Controls.Add(buttonPanel, 0, 2);
+
+                this.Controls.Add(mainLayout);
+                this.AcceptButton = btnOK;
+                this.CancelButton = btnCancel;
+
+                btnOK.Click += BtnOK_Click;
+            }
+
+            private void PopulatePets(List<OmnimonModuleEditor.Models.Pet> allPets, List<string> currentSelection)
+            {
+                checkedListBox.Items.Clear();
+                
+                if (allPets != null)
+                {
+                    foreach (var pet in allPets)
+                    {
+                        string displayText = $"{pet.Name} (Stage {pet.Stage})";
+                        var petItem = new PetItem { Pet = pet, DisplayText = displayText };
+                        int index = checkedListBox.Items.Add(petItem);
+                        
+                        // Check if this pet is in the current selection
+                        if (currentSelection != null && currentSelection.Contains(pet.Name))
+                        {
+                            checkedListBox.SetItemChecked(index, true);
+                        }
+                    }
+                }
+            }
+
+            private void BtnOK_Click(object sender, EventArgs e)
+            {
+                SelectedPets = new List<string>();
+                
+                foreach (var item in checkedListBox.CheckedItems)
+                {
+                    if (item is PetItem petItem)
+                    {
+                        SelectedPets.Add(petItem.Pet.Name);
+                    }
+                }
+            }
+
+            private class PetItem
+            {
+                public OmnimonModuleEditor.Models.Pet Pet { get; set; }
+                public string DisplayText { get; set; }
+
+                public override string ToString()
+                {
+                    return DisplayText;
+                }
             }
         }
 

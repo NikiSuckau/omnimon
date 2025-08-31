@@ -1,6 +1,7 @@
 import pygame
 import os
 from core import game_globals
+import game.core.constants as constants
 
 #=====================================================================
 # GameSound - Sound management (loading and playing sounds)
@@ -11,7 +12,7 @@ class GameSound:
     Handles loading and playing of game sounds.
     """
 
-    def __init__(self, base_path: str = "resources/dmc_sounds") -> None:
+    def __init__(self, base_path: str = constants.DMC_SOUNDS_PATH) -> None:
         """
         Initializes the sound system and loads all sounds.
 

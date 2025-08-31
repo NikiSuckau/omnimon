@@ -30,6 +30,7 @@ namespace OmnimonModuleEditor.docgenerators
                     sb.AppendLine($"  <td>{item.Effect ?? ""}</td>");
                     sb.AppendLine($"  <td>{item.Status ?? ""}</td>");
                     sb.AppendLine($"  <td>{item.Amount}</td>");
+                    sb.AppendLine($"  <td>{item.WeightGain}</td>");
                     sb.AppendLine("</tr>");
                 }
             }

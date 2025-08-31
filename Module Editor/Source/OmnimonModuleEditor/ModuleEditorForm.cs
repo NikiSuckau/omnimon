@@ -124,7 +124,7 @@ namespace OmnimonModuleEditor
         // =========================
 
         /// <summary>
-        /// Adds all main tabs (Module, Pet, Battle, Item) to the tab control.
+        /// Adds all main tabs (Module, Pet, Battle, Item, Quest/Event) to the tab control.
         /// </summary>
         private void AddTabs()
         {
@@ -162,6 +162,14 @@ namespace OmnimonModuleEditor
             var itemTab = new TabPage(Properties.Resources.TabItem);
             itemTab.Controls.Add(itemControl);
             tabControlMain.TabPages.Add(itemTab);
+
+            var questEventControl = new QuestEventTab();
+            questEventControl.Dock = DockStyle.Fill;
+            questEventControl.SetModule(currentPath, currentModule);
+
+            var questEventTab = new TabPage("Quests/Events");
+            questEventTab.Controls.Add(questEventControl);
+            tabControlMain.TabPages.Add(questEventTab);
         }
 
         private void buttonGenerateDoc_Click(object sender, EventArgs e)

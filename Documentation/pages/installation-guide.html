@@ -122,17 +122,18 @@
   <div class="page-content">
     <div class="page-header">
       <h1 class="page-title">Installation Guide</h1>
-      <p class="page-subtitle">Complete setup instructions for Windows, Linux, and Batocera</p>
+      <p class="page-subtitle">Complete setup instructions for Windows, Linux, Batocera, and macOS</p>
     </div>
 
     <div class="content-section">
       <h2 class="section-title">Quick Start</h2>
-      <p>Omnimon is a cross-platform virtual pet simulator that can run on Windows, Linux, and Batocera systems. Choose your platform below for detailed installation instructions:</p>
+      <p>Omnimon is a cross-platform virtual pet simulator that can run on Windows, Linux, Batocera, and macOS systems. Choose your platform below for detailed installation instructions:</p>
       
       <div class="platform-tabs">
         <div class="platform-tab active" onclick="showPlatform('windows')">🪟 Windows</div>
         <div class="platform-tab" onclick="showPlatform('linux')">🐧 Linux</div>
         <div class="platform-tab" onclick="showPlatform('batocera')">🎮 Batocera</div>
+        <div class="platform-tab" onclick="showPlatform('macos')">🍎 macOS</div>
       </div>
 
       <!-- Windows Installation -->
@@ -152,11 +153,22 @@
               <li>Works on any Windows 10/11 system</li>
             </ul>
           </div>
+
+          <div class="requirements-box">
+            <strong>📋 Requirements:</strong>
+            <ul>
+              <li>At least 400MB free disk space</li>
+            </ul>
+          </div>
           
           <p><span class="step-number">1</span>Download the latest Omnimon release:</p>
           <a href="https://github.com/sundeth/omnimon/releases" class="download-button">📥 Download Omnimon.exe</a>
+
+          <br>
           
           <p><span class="step-number">2</span>Extract the downloaded ZIP file to your desired location (e.g., <code>C:\Games\Omnimon\</code>)</p>
+
+          <br>
           
           <p><span class="step-number">3</span>Double-click <code>Omnimon.exe</code> to launch the game</p>
           
@@ -170,9 +182,9 @@
           <div class="requirements-box">
             <strong>📋 Requirements:</strong>
             <ul>
-              <li>Python 3.8 or higher</li>
+              <li>Python 3.9 or higher</li>
               <li>Pygame 2.0+ library</li>
-              <li>At least 100MB free disk space</li>
+              <li>At least 400MB free disk space</li>
             </ul>
           </div>
           
@@ -183,31 +195,44 @@
           
           <p><span class="step-number">2</span>Open Command Prompt and install Pygame:</p>
           <div class="code-block">pip install pygame</div>
+
+          <p><span class="step-number">3</span>OPTIONAL: Install psutil to enable power status in-game:</p>
+          <div class="code-block">pip install psutil</div>
           
-          <p><span class="step-number">3</span>Download and extract the Omnimon source code</p>
+          <p><span class="step-number">4</span>Download and extract the Omnimon source code</p>
+
+          <br>
           
-          <p><span class="step-number">4</span>Navigate to the game folder and run:</p>
-          <div class="code-block">cd path\to\omnimon
-python main.py</div>
+          <p><span class="step-number">5</span>Navigate to the game folder and run:</p>
+          <div class="code-block">
+            <ul style="list-style: none;">
+              <li>cd path\to\omnimon</li>
+              <li>python main.py</li>
+            </ul>
+          </div>
 
           <h4>Folder Structure</h4>
           <p>Your Omnimon installation should look like this:</p>
           <div class="folder-structure">Omnimon/
-├── main.py                 # Main game launcher
-├── Omnimon.exe            # Standalone executable (if using pre-built)
-├── omnimon.pygame         # Batocera launcher
+├── main.py                        # Main game launcher
+├── Omnimon.exe                    # Standalone executable (if using pre-built)
 ├── config/
-│   ├── config.json        # Game configuration
-│   └── input_config.json  # Input mappings
-├── game/                  # Game engine
-├── modules/               # Game modules (pets, rulesets)
-│   ├── DMC/              # Digital Monster Color module
-│   ├── DMX/              # Digital Monster X module
-│   └── PENC/             # Pendulum Color module
-├── resources/             # Game assets
-├── save/                  # Save files
-├── logs/                  # Game logs
-└── Documentation/         # Game documentation</div>
+│   ├── config_windows.json        # Game configuration
+│   └── input_config_windows.json  # Input mappings
+├── game/                          # Game engine
+├── modules/                       # Game modules (pets, rulesets)
+│   ├── D-3/                       # Digital Monster D-3 -25th COLOR EVOLUTION- module
+│   ├── DMC/                       # Digital Monster Color module
+│   ├── DMH/                       # Digital Monster Color Monster Hunter 20th Edition module
+│   ├── DMX/                       # Digital Monster X module
+│   └── PENC/                      # Digital Monster Pendulum Color module
+├── assets/                        # Game assets
+├── save/                          # Save files
+├── logs/                          # Game logs
+└── Documentation/                 # Game documentation</div>
+
+
+
         </div>
       </div>
 
@@ -219,40 +244,62 @@ python main.py</div>
           <div class="requirements-box">
             <strong>📋 System Requirements:</strong>
             <ul>
-              <li>Linux distribution with Python 3.8+</li>
+              <li>Linux distribution with Python 3.9+</li>
               <li>X11 or Wayland display server</li>
               <li>Audio system (ALSA/PulseAudio)</li>
-              <li>At least 100MB free disk space</li>
+              <li>At least 400MB free disk space</li>
             </ul>
           </div>
 
           <h4>Ubuntu/Debian Installation</h4>
           <p><span class="step-number">1</span>Update your package list and install dependencies:</p>
-          <div class="code-block">sudo apt update
-sudo apt install python3 python3-pip python3-pygame git</div>
+          <div class="code-block">
+            <ul style="list-style: none;">
+              <li>sudo apt update</li>
+              <li>sudo apt install python3 python3-pip python3-pygame git</li>
+            </ul>
+          </div>
+
+          <p><span class="step-number">2</span>OPTIONAL: Install python3-psutil for power status in-game:</p>
+          <div class="code-block">sudo apt install python3-psutil</div>
           
-          <p><span class="step-number">2</span>Clone or download Omnimon:</p>
-          <div class="code-block">git clone https://github.com/username/omnimon.git
-cd omnimon</div>
-          
-          <p><span class="step-number">3</span>Install Python dependencies:</p>
-          <div class="code-block">pip3 install pygame</div>
+          <p><span class="step-number">3</span>Clone or download Omnimon:</p>
+          <div class="code-block">
+            <ul style="list-style: none;">
+              <li>git clone https://github.com/sundeth/omnimon.git</li>
+              <li>cd omnimon</li>
+            </ul>
+          </div>
           
           <p><span class="step-number">4</span>Make the main script executable and run:</p>
-          <div class="code-block">chmod +x main.py
-python3 main.py</div>
+          <div class="code-block">
+            <ul style="list-style: none;">
+              <li>chmod +x main.py</li>
+              <li>python3 main.py</li>
+            </ul>
+          </div>
 
           <h4>Arch Linux Installation</h4>
           <p><span class="step-number">1</span>Install dependencies:</p>
           <div class="code-block">sudo pacman -S python python-pygame git</div>
+
+          <p><span class="step-number">2</span>OPTIONAL: Install python-psutil for power status in-game:</p>
+          <div class="code-block">sudo pacman -S python-psutil</div>
           
-          <p><span class="step-number">2</span>Follow steps 2-4 from Ubuntu instructions above</p>
+          <p><span class="step-number">3</span>Follow steps 3-4 from Ubuntu instructions above</p>
+
+          <br>
 
           <h4>Fedora/CentOS Installation</h4>
           <p><span class="step-number">1</span>Install dependencies:</p>
           <div class="code-block">sudo dnf install python3 python3-pygame git</div>
+
+          <p><span class="step-number">2</span>OPTIONAL: Install python3-psutil for power status in-game:</p>
+          <div class="code-block">sudo dnf install python3-psutil</div>
           
-          <p><span class="step-number">2</span>Follow steps 2-4 from Ubuntu instructions above</p>
+          <p><span class="step-number">3</span>Follow steps 3-4 from Ubuntu instructions above</p>
+
+          <br>
 
           <h4>Running in Fullscreen</h4>
           <p>For dedicated gaming setups, you can launch Omnimon in fullscreen mode:</p>
@@ -264,6 +311,28 @@ python3 main.py</div>
           <div class="success-box">
             <strong>💡 Pro Tip:</strong> Create a desktop shortcut by making a <code>.desktop</code> file in <code>~/.local/share/applications/</code>
           </div>
+
+          <h4>Folder Structure</h4>
+          <p>Your Omnimon installation should look like this:</p>
+          <div class="folder-structure">Omnimon/
+├── main.py                               # Main game launcher
+├── config/
+│   ├── config_python_desktop.json        # Game configuration
+│   ├── input_config_python_desktop.json  # Input mappings
+│   ├── config_raspberry.json             # Game configuration for Raspberry Pi OS
+│   └── input_config_raspberry.json       # Input mappings for Raspberry Pi OS
+├── game/                                 # Game engine
+├── modules/                              # Game modules (pets, rulesets)
+│   ├── D-3/                              # Digital Monster D-3 -25th COLOR EVOLUTION- module
+│   ├── DMC/                              # Digital Monster Color module
+│   ├── DMH/                              # Digital Monster Color Monster Hunter 20th Edition module
+│   ├── DMX/                              # Digital Monster X module
+│   └── PENC/                             # Digital Monster Pendulum Color module
+├── assets/                               # Game assets
+├── save/                                 # Save files
+├── logs/                                 # Game logs
+└── Documentation/                        # Game documentation</div>
+
         </div>
       </div>
 
@@ -277,7 +346,7 @@ python3 main.py</div>
             <strong>📋 Batocera Requirements:</strong>
             <ul>
               <li>Batocera v35 or higher</li>
-              <li>At least 200MB free space on userdata</li>
+              <li>At least 400MB free space on userdata</li>
               <li>Network access for initial setup (optional)</li>
             </ul>
           </div>
@@ -295,14 +364,22 @@ python3 main.py</div>
           
           <p><span class="step-number">3</span>Create the Omnimon directory and copy files:</p>
           <div class="folder-structure">/userdata/roms/pygame/omnimon/
-├── omnimon.pygame         # Batocera launcher (REQUIRED)
-├── main.py                # Main game file
+├── omnimon.pygame                  # Batocera launcher (REQUIRED)
+├── main.py                         # Main game file
 ├── config/               
+│   ├── config_batocera.json        # Game configuration
+│   └── input_config_batocera.json  # Input mappings
 ├── game/                 
 ├── modules/              
-├── resources/            
-├── save/                 
-└── Documentation/        </div>
+├── modules/                        # Game modules (pets, rulesets)
+│   ├── D-3/                        # Digital Monster D-3 -25th COLOR EVOLUTION- module
+│   ├── DMC/                        # Digital Monster Color module
+│   ├── DMH/                        # Digital Monster Color Monster Hunter 20th Edition module
+│   ├── DMX/                        # Digital Monster X module
+│   └── PENC/                       # Digital Monster Pendulum Color module
+├── assets/                         # Game assets
+├── logs/                           # Game logs
+└── Documentation/                  # Game documentation</div>
           
           <p><span class="step-number">4</span>Ensure the launcher is properly configured:</p>
           <p>The <code>omnimon.pygame</code> file should contain:</p>
@@ -377,25 +454,116 @@ if __name__ == "__main__":
       </div>
     </div>
 
+        <!-- macOS Installation -->
+      <div id="macos-content" class="platform-content">
+        <div class="platform-section">
+          <h3>🍎 macOS Installation</h3>
+          
+          <div class="requirements-box">
+            <strong>📋 System Requirements:</strong>
+            <ul>
+              <li>Recent macOS with Python 3.9+</li>
+              <li>Pygame 2.0+ library</li>
+              <li>At least 400 MB free disk space</li>
+            </ul>
+          </div>
+
+          <h4>macOS Installation</h4>
+          
+          <p><span class="step-number">1</span>Install Python from <a href="https://python.org/downloads/">python.org</a></p>
+          <div class="warning-box">
+            <strong>Important:</strong> If customizing the installation, make sure "Shell profile updater" is checked!
+          </div>
+          
+          <p><span class="step-number">2</span>Open Terminal and install Pygame:</p>
+          <div class="code-block">pip3 install pygame</div>
+
+          <p><span class="step-number">3</span>OPTIONAL: Install psutil to enable power status in-game:</p>
+          <div class="code-block">pip3 install psutil</div>
+          
+          <p><span class="step-number">4</span>Download Omnimon from <a href="https://github.com/sundeth/omnimon">github.com</a></p>
+
+          <br>
+          
+          <p><span class="step-number">5</span>Navigate to the game folder and run:</p>
+          <div class="code-block">
+            <ul style="list-style: none;">
+              <li>cd path/to/omnimon</li>
+              <li>chmod +x launch.sh</li>
+              <li>./launch.sh</li>
+            </ul>
+          </div>
+
+          <h4>Running in Fullscreen</h4>
+          <p>For dedicated gaming setups, you can launch Omnimon in fullscreen mode:</p>
+          <div class="code-block">./launch.sh --fullscreen</div>
+          
+          <p>Or set environment variables:</p>
+          <div class="code-block">OMNIMON_FULLSCREEN=1 python3 main.py</div>
+
+          <h4>Folder Structure</h4>
+          <p>Your Omnimon installation should look like this:</p>
+          <div class="folder-structure">
+Omnimon/
+├── main.py                               # Main game launcher
+├── config/
+│   ├── config_python_desktop.json        # Game configuration
+│   ├── input_config_python_desktop.json  # Input mappings
+├── game/                                 # Game engine
+├── modules/                              # Game modules (pets, rulesets)
+│   ├── D-3/                              # Digital Monster D-3 -25th COLOR EVOLUTION- module
+│   ├── DMC/                              # Digital Monster Color module
+│   ├── DMH/                              # Digital Monster Color Monster Hunter 20th Edition module
+│   ├── DMX/                              # Digital Monster X module
+│   └── PENC/                             # Digital Monster Pendulum Color module
+├── assets/                               # Game assets
+├── save/                                 # Save files
+├── logs/                                 # Game logs
+└── Documentation/                        # Game documentation
+          </div>
+
+        </div>
+      </div>
+
+
+
     <div class="content-section">
       <h2 class="section-title">Post-Installation Setup</h2>
       
       <h3>First Launch</h3>
       <p>When you first start Omnimon:</p>
       <ol>
-        <li>Make sure you have a save directory</li>
         <li>Make sure you have a config directory with the config files in it</li>
         <li>To access the module documentation from within the game main documentation files, run the game at least once</li>
+        <li>You'll see the egg selection screen, with eggs available from all installed modules</li>
         <li>You'll see the main game screen with an egg ready to hatch</li>
       </ol>
+
+      <br>
 
       <h3>Configuration</h3>
       <p>Key configuration files:</p>
       <ul>
-        <li><strong>config.json:</strong> Display settings, sound levels, game options</li>
-        <li><strong>input_config.json:</strong> Customize button mappings</li>
-        <li><strong>Module configs:</strong> Each module has its own configuration options</li>
+        <li><strong>config.json:</strong> Default/Fallback display settings, sound levels, and game options</li>
+        <li><strong>input_config.json:</strong> Default/Fallback button mappings</li>
+        <br>
+        <li><strong>config_batocera.json:</strong> Display settings, sound levels, and game options for Batocera</li>
+        <li><strong>input_config_batocera.json:</strong> Customize button mappings for Batocera</li>
+        <br>
+        <li><strong>config_python_desktop.json:</strong> Display settings, sound levels, and game options for Linux or macOS</li>
+        <li><strong>input_config_python_desktop.json:</strong> Customize button mappings for Linux or macOS</li>
+        <br>
+        <li><strong>config_raspberry.json:</strong> Display settings, sound levels, and game options for Raspberry Pi OS</li>
+        <li><strong>input_config_raspberry.json:</strong> Customize button mappings for Raspberry Pi OS</li>
+        <br>
+        <li><strong>config_windows.json:</strong> Display settings, sound levels, and game options for Windows</li>
+        <li><strong>input_config_windows.json:</strong> Customize button mappings for Windows</li>
+        <br>
+        <li><strong>Module configs:</strong> Each module has its own configuration options, 
+          configured by editing the .json files in the module folder, or using Module Editor on Windows</li>
       </ul>
+
+      <br>
 
       <h3>Adding Modules</h3>
       <p>To add new modules:</p>

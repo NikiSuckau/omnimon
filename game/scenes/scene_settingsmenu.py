@@ -29,23 +29,27 @@ class SceneSettingsMenu:
         ]
         
         # Settings submenu
+        # Screen timeout choices in seconds (0 = off). Cycle: 0,10,20,30,60,120
+        self._SCREEN_TIMEOUT_CHOICES = [0, 10, 20, 30, 60, 120]
+
         self.settings_options = [
             "Background",
             "Show Clock",
             "Sound",
             "Global Wake",
-            "Global Sleep"
+            "Global Sleep",
+            "Screen Timeout"
         ]
 
         # Load sprites for visual indicators using the new method and scale
         self.settings_sprites = {
             "Show Clock": {
-                "On": sprite_load_percent("resources/IconOn.png", percent=(constants.MENU_ICON_SIZE / constants.SCREEN_HEIGHT) * 100, keep_proportion=True, base_on="height"),
-                "Off": sprite_load_percent("resources/IconOff.png", percent=(constants.MENU_ICON_SIZE / constants.SCREEN_HEIGHT) * 100, keep_proportion=True, base_on="height")
+                "On": sprite_load_percent(constants.ICON_ON_PATH, percent=(constants.MENU_ICON_SIZE / constants.SCREEN_HEIGHT) * 100, keep_proportion=True, base_on="height"),
+                "Off": sprite_load_percent(constants.ICON_OFF_PATH, percent=(constants.MENU_ICON_SIZE / constants.SCREEN_HEIGHT) * 100, keep_proportion=True, base_on="height")
             },
             "Debug": {
-                "On": sprite_load_percent("resources/IconOn.png", percent=(constants.MENU_ICON_SIZE / constants.SCREEN_HEIGHT) * 100, keep_proportion=True, base_on="height"),
-                "Off": sprite_load_percent("resources/IconOff.png", percent=(constants.MENU_ICON_SIZE / constants.SCREEN_HEIGHT) * 100, keep_proportion=True, base_on="height")
+                "On": sprite_load_percent(constants.ICON_ON_PATH, percent=(constants.MENU_ICON_SIZE / constants.SCREEN_HEIGHT) * 100, keep_proportion=True, base_on="height"),
+                "Off": sprite_load_percent(constants.ICON_OFF_PATH, percent=(constants.MENU_ICON_SIZE / constants.SCREEN_HEIGHT) * 100, keep_proportion=True, base_on="height")
             }
         }
 
@@ -119,7 +123,7 @@ class SceneSettingsMenu:
 
             if self.mode == "unlockables":
                 blit_with_shadow(cached_surface, overlay, (0, 0))
-                title_surface = title_font.render("Unlockables", True, (255, 200, 50))
+                title_surface = title_font.render("Unlockables", True, constants.FONT_COLOR_ORANGE)
                 blit_with_shadow(cached_surface, title_surface, (constants.SCREEN_WIDTH // 2 - title_surface.get_width() // 2, int(10 * constants.UI_SCALE)))
 
                 module_count = len(self.unlockables_data)
@@ -151,7 +155,7 @@ class SceneSettingsMenu:
                         blit_with_shadow(cached_surface, text_surface, (int(40 * constants.UI_SCALE), start_y + i * int(40 * constants.UI_SCALE)))
                         if actual_index == item_idx:
                             pygame.draw.rect(
-                                cached_surface, (255, 200, 50),
+                                cached_surface, constants.FONT_COLOR_ORANGE,
                                 (int(30 * constants.UI_SCALE), start_y + i * int(40 * constants.UI_SCALE), constants.SCREEN_WIDTH - int(60 * constants.UI_SCALE), int(36 * constants.UI_SCALE)), 2
                             )
 
@@ -162,14 +166,14 @@ class SceneSettingsMenu:
 
             elif self.mode == "menu":
                 blit_with_shadow(cached_surface, overlay, (0, 0))
-                title_surface = title_font.render("Settings Menu", True, (255, 200, 50))
+                title_surface = title_font.render("Settings Menu", True, constants.FONT_COLOR_ORANGE)
                 options_list = self.options
             elif self.mode == "settings":
                 blit_with_shadow(cached_surface, overlay, (0, 0))
-                title_surface = title_font.render("Settings", True, (255, 200, 50))
+                title_surface = title_font.render("Settings", True, constants.FONT_COLOR_ORANGE)
                 options_list = self.settings_options
             elif self.mode == "background":
-                title_surface = title_font.render("Select Background", True, (255, 200, 50))
+                title_surface = title_font.render("Select Background", True, constants.FONT_COLOR_ORANGE)
                 options_list = []  # No list needed for background selection
 
                 # Draw the current background label
@@ -245,6 +249,24 @@ class SceneSettingsMenu:
                                 int(60 * constants.UI_SCALE) + i * int(40 * constants.UI_SCALE)
                             )
                         )
+                    elif label == "Screen Timeout":
+                        timeout = game_globals.screen_timeout if hasattr(game_globals, 'screen_timeout') else 0
+                        # display seconds as 0 or minutes when >=60
+                        if timeout == 0:
+                            screen_timeout_str = "Off"
+                        elif timeout < 60:
+                            screen_timeout_str = f"{timeout}s"
+                        else:
+                            screen_timeout_str = f"{timeout // 60}m"
+                        value_surface = option_font.render(screen_timeout_str, True, color)
+                        blit_with_shadow(
+                            cached_surface,
+                            value_surface,
+                            (
+                                constants.SCREEN_WIDTH - value_surface.get_width() - int(30 * constants.UI_SCALE),
+                                int(60 * constants.UI_SCALE) + i * int(40 * constants.UI_SCALE)
+                            )
+                        )
                     else:
                         sprite = self.get_setting_sprite(label)
                         if sprite:
@@ -253,7 +275,7 @@ class SceneSettingsMenu:
                     if option_idx == self.selected_index:
                         pygame.draw.rect(
                             cached_surface,
-                            (255, 200, 50),
+                            constants.FONT_COLOR_ORANGE,
                             (int(15 * constants.UI_SCALE), int(54 * constants.UI_SCALE) + i * int(40 * constants.UI_SCALE), constants.SCREEN_WIDTH - int(30 * constants.UI_SCALE), int(36 * constants.UI_SCALE)),
                             2
                         )
@@ -276,7 +298,7 @@ class SceneSettingsMenu:
         if label == "Show Clock":
             return self.settings_sprites["Show Clock"]["On"] if game_globals.showClock else self.settings_sprites["Show Clock"]["Off"]
         elif label == "Debug":
-            return self.settings_sprites["Debug"]["On"] if constants.DEBUG else self.settings_sprites["Debug"]["Off"]
+            return self.settings_sprites["Debug"]["On"] if constants.DEBUG_MODE else self.settings_sprites["Debug"]["Off"]
         return None
     
     def handle_event(self, input_action) -> None:
@@ -410,6 +432,11 @@ class SceneSettingsMenu:
                 game_globals.sleep_time, increase, 12, 24
             )
             runtime_globals.game_console.log(f"[SceneSettingsMenu] Global Sleep set to {self._format_time(game_globals.sleep_time)}")
+        elif option == "Screen Timeout":
+            current = getattr(game_globals, 'screen_timeout', 0)
+            new_val = self._cycle_screen_timeout(current, increase)
+            game_globals.screen_timeout = new_val
+            runtime_globals.game_console.log(f"[SceneSettingsMenu] Screen Timeout set to {new_val} seconds")
 
     def change_background(self, increase: bool) -> None:
         """Changes background index while keeping it cyclic."""
@@ -431,10 +458,23 @@ class SceneSettingsMenu:
             return "Off"
         return t.strftime("%H:%M")
 
+    def _cycle_screen_timeout(self, current, increase: bool):
+        # Find index in choices and move forward/back with wrap
+        try:
+            idx = self._SCREEN_TIMEOUT_CHOICES.index(current)
+        except ValueError:
+            idx = 0
+        idx = (idx + (1 if increase else -1)) % len(self._SCREEN_TIMEOUT_CHOICES)
+        # Ensure minimum of 10 for non-zero values is already enforced by choices
+        return self._SCREEN_TIMEOUT_CHOICES[idx]
+
     def _change_time(self, current, increase, start_hour, end_hour):
         # If None, set to start
         if current is None:
-            return datetime.time(hour=start_hour, minute=30)
+            if increase:
+                return datetime.time(hour=start_hour, minute=30)
+            else:
+                return datetime.time(hour=end_hour if end_hour != 24 else 23, minute=0 if end_hour != 24 else 30)
         # Convert to minutes
         minutes = current.hour * 60 + current.minute
         step = 30 if increase else -30

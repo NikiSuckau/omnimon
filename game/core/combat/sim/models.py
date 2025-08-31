@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, asdict
 from enum import Enum, auto
 from typing import List
 
@@ -29,6 +29,9 @@ class DigimonStatus:
     hp: int
     alive: bool
 
+    def to_dict(self):
+        return asdict(self)
+
 @dataclass
 class AttackLog:
     turn: int
@@ -38,12 +41,23 @@ class AttackLog:
     hit: bool
     damage: int
 
+    def to_dict(self):
+        return asdict(self)
+
 @dataclass
 class TurnLog:
     turn: int
     device1_status: List[DigimonStatus]
     device2_status: List[DigimonStatus]
     attacks: List[AttackLog]
+
+    def to_dict(self):
+        return {
+            "turn": self.turn,
+            "device1_status": [ds.to_dict() for ds in self.device1_status],
+            "device2_status": [ds.to_dict() for ds in self.device2_status],
+            "attacks": [atk.to_dict() for atk in self.attacks],
+        }
 
 @dataclass
 class BattleResult:
@@ -53,6 +67,99 @@ class BattleResult:
     battle_log: List[TurnLog]
     device1_packets: List[List[bytes]]
     device2_packets: List[List[bytes]]
+
+    def to_dict(self):
+        # Note: packets are bytes, which are not JSON serializable.
+        # We'll convert them to lists of ints or hex strings.
+        def serialize_packets(packets):
+            return [
+                [pkt.hex() if isinstance(pkt, bytes) else pkt for pkt in packet_list]
+                for packet_list in packets
+            ]
+        return {
+            "winner": self.winner,
+            "device1_final": [ds.to_dict() for ds in self.device1_final],
+            "device2_final": [ds.to_dict() for ds in self.device2_final],
+            "battle_log": [tl.to_dict() for tl in self.battle_log],
+            "device1_packets": serialize_packets(self.device1_packets),
+            "device2_packets": serialize_packets(self.device2_packets),
+        }
+
+
+def _restore_packets(packet_lists):
+    restored = []
+    for pkt_list in packet_lists or []:
+        new_list = []
+        for pkt in pkt_list:
+            if isinstance(pkt, str):
+                try:
+                    new_list.append(bytes.fromhex(pkt))
+                except Exception:
+                    new_list.append(pkt)
+            else:
+                new_list.append(pkt)
+        restored.append(new_list)
+    return restored
+
+
+def battle_result_from_serialized(serialized):
+    """Reconstruct a BattleResult from a serialized dict or a list of turn dicts.
+
+    Accepts either the dict produced by BattleResult.to_dict() or a plain list
+    of turn dicts. Returns a BattleResult instance.
+    """
+    # Helper restorers
+    def _make_status(d):
+        return DigimonStatus(name=d.get('name', ''), hp=int(d.get('hp', 0)), alive=bool(d.get('alive', False)))
+
+    def _make_attack(d):
+        return AttackLog(
+            turn=int(d.get('turn', 0)),
+            device=d.get('device', ''),
+            attacker=int(d.get('attacker', -1)),
+            defender=int(d.get('defender', -1)),
+            hit=bool(d.get('hit', False)),
+            damage=int(d.get('damage', 0))
+        )
+
+    def _make_turn(t):
+        device1 = [_make_status(s) for s in t.get('device1_status', [])]
+        device2 = [_make_status(s) for s in t.get('device2_status', [])]
+        attacks = [_make_attack(a) for a in t.get('attacks', [])]
+        return TurnLog(turn=int(t.get('turn', 0)), device1_status=device1, device2_status=device2, attacks=attacks)
+
+    # If it's a dict shaped like BattleResult.to_dict()
+    if isinstance(serialized, dict) and 'battle_log' in serialized:
+        winner = serialized.get('winner', 'draw')
+        device1_final = [_make_status(s) for s in serialized.get('device1_final', [])]
+        device2_final = [_make_status(s) for s in serialized.get('device2_final', [])]
+        battle_log = [_make_turn(t) for t in serialized.get('battle_log', [])]
+        device1_packets = _restore_packets(serialized.get('device1_packets', []))
+        device2_packets = _restore_packets(serialized.get('device2_packets', []))
+
+        return BattleResult(
+            winner=winner,
+            device1_final=device1_final,
+            device2_final=device2_final,
+            battle_log=battle_log,
+            device1_packets=device1_packets,
+            device2_packets=device2_packets
+        )
+
+    # If it's a list of turn dicts, wrap into a BattleResult with minimal metadata
+    if isinstance(serialized, list):
+        battle_log = [_make_turn(t) for t in serialized]
+        return BattleResult(
+            winner='draw',
+            device1_final=[],
+            device2_final=[],
+            battle_log=battle_log,
+            device1_packets=[],
+            device2_packets=[]
+        )
+
+    # Unknown shape: raise ValueError so callers can fallback
+    raise ValueError('Unsupported serialized battle result shape')
 
 class AttributeEnum(Enum):
     FREE = 0

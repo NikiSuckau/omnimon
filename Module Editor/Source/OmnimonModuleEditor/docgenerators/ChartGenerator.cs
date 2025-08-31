@@ -1,6 +1,9 @@
 ﻿using OmnimonModuleEditor.Models;
+using OmnimonModuleEditor.Utils;
 using System;
 using System.Collections.Generic;
+using System.Drawing;
+using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -13,6 +16,11 @@ namespace OmnimonModuleEditor.docgenerators
         {
             string template = GeneratorUtils.GetTemplateContent("charts.html");
             var sb = new StringBuilder();
+
+            // Create assets folder in documentation and copy sprites
+            var assetsPath = Path.Combine(docPath, "assets");
+            Directory.CreateDirectory(assetsPath);
+            CopyPetSprites(pets, modulePath, assetsPath, module);
 
             var petsByVersion = pets.GroupBy(p => p.Version).OrderBy(g => g.Key);
             var versionColors = new[] { "chartYellow", "chartBlue", "chartViolet", "chartRed", "chartGreen" };
@@ -31,13 +39,12 @@ namespace OmnimonModuleEditor.docgenerators
                 var eggPet = versionGroup.FirstOrDefault(p => p.Stage == 0);
                 if (eggPet != null)
                 {
-                    string eggSprite = GeneratorUtils.GetPetSprite(eggPet.Name, module);
-                    sb.AppendLine($"      <img src=\"{eggSprite}\" title=\"Ver.{versionGroup.Key} {eggPet.Name}\" onerror=\"this.src='../missing.png'\">");
+                    string spriteFileName = GetSafeFileName(eggPet.Name) + ".png";
+                    sb.AppendLine($"      <img src=\"assets/{spriteFileName}\" title=\"Ver.{versionGroup.Key} {eggPet.Name}\" onerror=\"this.src='../missing.png'\">");
                 }
                 else
                 {
-                    string eggFolderName = GeneratorUtils.GetPetFolderName($"digitama_c{versionGroup.Key}", module);
-                    sb.AppendLine($"      <img src=\"../monsters/{eggFolderName}/0.png\" title=\"Ver.{versionGroup.Key} Digitama\" onerror=\"this.src='../missing.png'\">");
+                    sb.AppendLine($"      <img src=\"../missing.png\" title=\"Ver.{versionGroup.Key} Egg\" onerror=\"this.src='../missing.png'\">");
                 }
                 sb.AppendLine("      <div>");
                 sb.AppendLine($"        <h4 class=\"rdisplay\">Ver.{versionGroup.Key}</h4>");
@@ -54,6 +61,97 @@ namespace OmnimonModuleEditor.docgenerators
 
             string content = template.Replace("#EVOLUTIONCHARTS", sb.ToString());
             File.WriteAllText(Path.Combine(docPath, "charts.html"), content);
+        }
+
+        /// <summary>
+        /// Copies pet sprites to the documentation assets folder.
+        /// </summary>
+        private static void CopyPetSprites(List<Pet> pets, string modulePath, string assetsPath, Module module)
+        {
+            // Create a missing.png placeholder
+            CreateMissingSpritePlaceholder(assetsPath);
+
+            var uniquePetNames = pets.Select(p => p.Name).Distinct();
+            var nameFormat = module?.NameFormat ?? SpriteUtils.DefaultNameFormat;
+
+            foreach (var petName in uniquePetNames)
+            {
+                try
+                {
+                    var sprite = SpriteUtils.LoadSingleSprite(petName, modulePath, nameFormat);
+                    if (sprite != null)
+                    {
+                        string safeFileName = GetSafeFileName(petName) + ".png";
+                        string outputPath = Path.Combine(assetsPath, safeFileName);
+                        
+                        // Save the sprite to the assets folder
+                        sprite.Save(outputPath, ImageFormat.Png);
+                        System.Diagnostics.Debug.WriteLine($"[ChartGenerator] Copied sprite for {petName} to {outputPath}");
+                    }
+                    else
+                    {
+                        System.Diagnostics.Debug.WriteLine($"[ChartGenerator] No sprite found for pet {petName}");
+                    }
+                }
+                catch (System.Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"[ChartGenerator] Error copying sprite for {petName}: {ex.Message}");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Creates a simple missing sprite placeholder.
+        /// </summary>
+        private static void CreateMissingSpritePlaceholder(string assetsPath)
+        {
+            try
+            {
+                string missingPath = Path.Combine(assetsPath, "missing.png");
+                if (!File.Exists(missingPath))
+                {
+                    // Create a simple 48x48 gray square with "?" text
+                    using (var bitmap = new Bitmap(48, 48))
+                    using (var graphics = Graphics.FromImage(bitmap))
+                    {
+                        graphics.FillRectangle(Brushes.LightGray, 0, 0, 48, 48);
+                        graphics.DrawRectangle(Pens.Gray, 0, 0, 47, 47);
+                        
+                        using (var font = new Font("Arial", 20, FontStyle.Bold))
+                        {
+                            var textSize = graphics.MeasureString("?", font);
+                            var x = (48 - textSize.Width) / 2;
+                            var y = (48 - textSize.Height) / 2;
+                            graphics.DrawString("?", font, Brushes.DarkGray, x, y);
+                        }
+                        
+                        bitmap.Save(missingPath, ImageFormat.Png);
+                    }
+                }
+            }
+            catch (System.Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[ChartGenerator] Error creating missing.png: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Converts a pet name to a safe filename.
+        /// </summary>
+        private static string GetSafeFileName(string petName)
+        {
+            return petName.Replace(" ", "_")
+                         .Replace("(", "")
+                         .Replace(")", "")
+                         .Replace(":", "_")
+                         .Replace("/", "_")
+                         .Replace("\\", "_")
+                         .Replace("?", "_")
+                         .Replace("*", "_")
+                         .Replace("\"", "_")
+                         .Replace("<", "_")
+                         .Replace(">", "_")
+                         .Replace("|", "_");
         }
 
         public static void GenerateEvolutionTree(StringBuilder sb, List<Pet> pets, Module module, int version)
@@ -104,7 +202,7 @@ namespace OmnimonModuleEditor.docgenerators
             }
 
             // Add module name format as a data attribute to the SVG for JavaScript access
-            string nameFormat = module?.NameFormat ?? "$";
+            string nameFormat = PetUtils.FixedNameFormat; // Use fixed format instead of module?.NameFormat ?? "$"
             sb.AppendLine($"  <metadata>");
             sb.AppendLine($"    <moduleNameFormat>{nameFormat}</moduleNameFormat>");
             sb.AppendLine($"  </metadata>");
@@ -195,7 +293,7 @@ namespace OmnimonModuleEditor.docgenerators
         {
             string petId = GeneratorUtils.CleanPetId(pet.Name);
             string attributeColor = GeneratorUtils.GetAttributeColor(pet.Attribute ?? "");
-            string spriteUrl = GeneratorUtils.GetPetSprite(pet.Name, module);
+            string spriteFileName = GetSafeFileName(pet.Name) + ".png";
 
             // Serialize pet data for modal - handle missing properties safely
             var petData = new
@@ -209,6 +307,7 @@ namespace OmnimonModuleEditor.docgenerators
                 time = pet.Time,
                 energy = pet.Energy,
                 minWeight = pet.MinWeight,
+                evolWeight = pet.EvolWeight,
                 stomach = pet.Stomach,
                 hungerLoss = pet.HungerLoss,
                 poopTimer = pet.PoopTimer,
@@ -233,7 +332,7 @@ namespace OmnimonModuleEditor.docgenerators
             int imageX = x + 12;
             int imageY = y + 8;
             sb.AppendLine($"    <foreignObject x=\"{imageX}\" y=\"{imageY}\" width=\"{imageSize}\" height=\"{imageSize}\">");
-            sb.AppendLine($"      <img src=\"{spriteUrl}\" width=\"{imageSize}\" height=\"{imageSize}\" style=\"image-rendering: pixelated; object-fit: contain;\" onerror=\"this.src='../missing.png'\"/>");
+            sb.AppendLine($"      <img src=\"assets/{spriteFileName}\" width=\"{imageSize}\" height=\"{imageSize}\" style=\"image-rendering: pixelated; object-fit: contain;\" onerror=\"this.src='../missing.png'\"/>");
             sb.AppendLine("    </foreignObject>");
             int textX = x + size / 2;
             int textY = y + size - 8;
@@ -517,6 +616,10 @@ namespace OmnimonModuleEditor.docgenerators
                 requirements.Add("VitalValues"); // New field
             if (evolution.Weigth != null && evolution.Weigth.Length > 0)
                 requirements.Add("Weight"); // New field
+            if (evolution.QuestsCompleted != null && evolution.QuestsCompleted.Length > 0)
+                requirements.Add("QuestsCompleted"); // New field
+            if (evolution.Pvp != null && evolution.Pvp.Length > 0)
+                requirements.Add("PVP"); // New field
             return string.Join(", ", requirements.Take(2));
         }
 
@@ -666,6 +769,16 @@ namespace OmnimonModuleEditor.docgenerators
                 {
                     var formatRange = string.Join(",", evo.Weigth.Select(v => v == 999999 ? "+" : v.ToString()));
                     lines.Add($"Weight: {formatRange}");
+                }
+                if (evo.QuestsCompleted != null)
+                {
+                    var formatRange = string.Join(",", evo.QuestsCompleted.Select(v => v == 999999 ? "+" : v.ToString()));
+                    lines.Add($"Quests Completed: {formatRange}");
+                }
+                if (evo.Pvp != null)
+                {
+                    var formatRange = string.Join(",", evo.Pvp.Select(v => v == 999999 ? "+" : v.ToString()));
+                    lines.Add($"PVP: {formatRange}");
                 }
             }
             if (lines.Count == 0)

@@ -40,7 +40,7 @@ class WindowClock:
         icons = {}
         for name in names:
             try:
-                path = os.path.join("resources", f"{name}.png")
+                path = os.path.join("assets", f"{name}.png")
                 # Use the new sprite loading method, scale to UI bar height, keep proportions
                 icons[name] = sprite_load_percent(path, percent=(self.height / constants.SCREEN_HEIGHT) * 100, keep_proportion=True, base_on="height")
             except Exception:
@@ -53,9 +53,9 @@ class WindowClock:
             return "battery_charging"
         elif percent <= 5.0:
             return "battery_empty"
-        elif percent <= 20.0:
+        elif percent <= 33.3:
             return "battery_low"
-        elif percent <= 50.0:
+        elif percent <= 66.7:
             return "battery_half"
         else:
             return "battery_full"
@@ -65,8 +65,7 @@ class WindowClock:
         if now - self.last_battery_update < 5:
             return
 
-        percent = self.battery.get_battery_percentage()
-        charging = self.battery.is_charging()
+        percent, charging = self.battery.get_battery_info()
         icon_key = self.select_icon_key(percent, charging)
 
         icon = self.battery_icons.get(icon_key)

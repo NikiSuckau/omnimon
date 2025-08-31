@@ -3,58 +3,38 @@ using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
+using System.Linq;
 using System.Text.Json;
 using System.Windows.Forms;
 
 namespace OmnimonModuleEditor.Utils
 {
+    /// <summary>
+    /// Utility methods for Pet operations and data loading.
+    /// </summary>
     public static class PetUtils
     {
-        public static string AttributeEnumToJson(AttributeEnum attr)
-        {
-            switch (attr)
-            {
-                case AttributeEnum.DATA: return "Da";
-                case AttributeEnum.VIRUS: return "Vi";
-                case AttributeEnum.VACCINE: return "Va";
-                case AttributeEnum.FREE:
-                default: return "";
-            }
-        }
+        /// <summary>
+        /// Fixed name format for all modules - no longer configurable
+        /// </summary>
+        public const string FixedNameFormat = "$_dmc";
 
-        public static AttributeEnum JsonToAttributeEnum(string value)
-        {
-            switch (value)
-            {
-                case "Da": return AttributeEnum.DATA;
-                case "Vi": return AttributeEnum.VIRUS;
-                case "Va": return AttributeEnum.VACCINE;
-                case "": default: return AttributeEnum.FREE;
-            }
-        }
-
-        public static Color GetAttributeColor(string attr)
-        {
-            switch (attr)
-            {
-                case "Da": return Color.FromArgb(66, 165, 245);      // Data
-                case "Va": return Color.FromArgb(102, 187, 106);     // Vaccine
-                case "Vi": return Color.FromArgb(237, 83, 80);       // Virus
-                case "": return Color.FromArgb(171, 71, 188);        // Free
-                default: return Color.FromArgb(171, 71, 188);        // Free (fallback)
-            }
-        }
-
+        /// <summary>
+        /// Loads pets from the monster.json file.
+        /// </summary>
         public static List<Pet> LoadPetsFromJson(string modulePath)
         {
             var pets = new List<Pet>();
+            if (string.IsNullOrEmpty(modulePath))
+                return pets;
+
             string monsterPath = Path.Combine(modulePath, "monster.json");
             if (File.Exists(monsterPath))
             {
                 try
                 {
                     string json = File.ReadAllText(monsterPath);
-                    using (JsonDocument doc = JsonDocument.Parse(json))
+                    using (var doc = JsonDocument.Parse(json))
                     {
                         var root = doc.RootElement;
                         if (root.TryGetProperty("monster", out var monstersElement))
@@ -81,7 +61,9 @@ namespace OmnimonModuleEditor.Utils
             pets.Sort((a, b) =>
             {
                 int cmp = a.Version.CompareTo(b.Version);
-                if (cmp != 0) return cmp;
+                if (cmp != 0)
+                    if (b.Version == 0) return (cmp * (-1));
+                    else return cmp;
                 cmp = a.Stage.CompareTo(b.Stage);
                 if (cmp != 0) return cmp;
                 return string.Compare(a.Name, b.Name, StringComparison.OrdinalIgnoreCase);
@@ -106,6 +88,7 @@ namespace OmnimonModuleEditor.Utils
                 PoopTimer = pet.PoopTimer,
                 Energy = pet.Energy,
                 MinWeight = pet.MinWeight,
+                EvolWeight = pet.EvolWeight,
                 Stomach = pet.Stomach,
                 HungerLoss = pet.HungerLoss,
                 StrengthLoss = pet.StrengthLoss,
@@ -120,41 +103,26 @@ namespace OmnimonModuleEditor.Utils
         }
 
         /// <summary>
-        /// Loads all pet sprites for a given pet.
+        /// Loads all pet sprites for a given pet using the new sprite loading system.
         /// </summary>
         public static List<Image> LoadPetSprites(string modulePath, Module module, Pet pet, int spriteCount = 15)
         {
-            var sprites = new List<Image>();
-            if (pet == null || module == null) return sprites;
+            if (pet == null || string.IsNullOrEmpty(modulePath))
+                return new List<Image>();
 
-            string nameFormat = module?.NameFormat ?? "_";
-            string safePetName = pet.Name.Replace(':', '_');
-            string folderName = nameFormat.Replace("$", safePetName);
+            var spritesDict = SpriteUtils.LoadPetSprites(pet.Name, modulePath, FixedNameFormat, spriteCount);
+            return SpriteUtils.ConvertSpritesToList(spritesDict, spriteCount);
+        }
 
-            for (int i = 0; i < spriteCount; i++)
-            {
-                string spritePath = Path.Combine(modulePath, "monsters", folderName, $"{i}.png");
-                if (File.Exists(spritePath))
-                {
-                    try
-                    {
-                        using (var fs = new FileStream(spritePath, FileMode.Open, FileAccess.Read, FileShare.Read))
-                        {
-                            var img = Image.FromStream(fs);
-                            sprites.Add(new Bitmap(img));
-                        }
-                    }
-                    catch
-                    {
-                        sprites.Add(null);
-                    }
-                }
-                else
-                {
-                    sprites.Add(null);
-                }
-            }
-            return sprites;
+        /// <summary>
+        /// Loads a single pet sprite (frame 0) for display purposes.
+        /// </summary>
+        public static Image LoadSinglePetSprite(string petName, string modulePath)
+        {
+            if (string.IsNullOrEmpty(petName) || string.IsNullOrEmpty(modulePath))
+                return null;
+
+            return SpriteUtils.LoadSingleSprite(petName, modulePath, FixedNameFormat);
         }
 
         public static Dictionary<int, Image> LoadAtkSprites(string modulePath)
@@ -163,9 +131,9 @@ namespace OmnimonModuleEditor.Utils
             // Caminho do fallback: ...\resources\atk
             string modulesDir = Path.GetDirectoryName(modulePath.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
             string rootDir = Path.GetDirectoryName(modulesDir); //go to the root directory
-            string resourcesAtk = Path.Combine(rootDir, "resources", "atk");
+            string resourcesAtk = Path.Combine(rootDir, "assets", "atk");
 
-            // Novo: caminho do módulo
+            // Novo: caminho do mÃ³dulo
             string moduleAtk = Path.Combine(modulePath, "atk");
             bool moduleAtkExists = Directory.Exists(moduleAtk);
 
@@ -199,6 +167,52 @@ namespace OmnimonModuleEditor.Utils
                 }
             }
             return atkSprites;
+        }
+
+        /// <summary>
+        /// Gets the color for a given attribute.
+        /// </summary>
+        public static Color GetAttributeColor(string attr)
+        {
+            switch (attr)
+            {
+                case "Da": return Color.FromArgb(66, 165, 245);      // Data
+                case "Va": return Color.FromArgb(102, 187, 106);     // Vaccine
+                case "Vi": return Color.FromArgb(237, 83, 80);       // Virus
+                case "": return Color.FromArgb(171, 71, 188);        // Free
+                default: return Color.FromArgb(171, 71, 188);        // Free (fallback)
+            }
+        }
+
+        /// <summary>
+        /// Converts attribute enum to JSON string.
+        /// </summary>
+        public static string AttributeEnumToJson(AttributeEnum attr)
+        {
+            switch (attr)
+            {
+                case AttributeEnum.DATA: return "Da";
+                case AttributeEnum.VACCINE: return "Va";
+                case AttributeEnum.VIRUS: return "Vi";
+                case AttributeEnum.FREE:
+                default: return "";
+            }
+        }
+
+        /// <summary>
+        /// Converts JSON string to attribute enum.
+        /// </summary>
+        public static AttributeEnum JsonToAttributeEnum(string attr)
+        {
+            switch (attr)
+            {
+                case "Da": return AttributeEnum.DATA;
+                case "Va": return AttributeEnum.VACCINE;
+                case "Vi": return AttributeEnum.VIRUS;
+                case "":
+
+                default: return AttributeEnum.FREE;
+            }
         }
     }
 }

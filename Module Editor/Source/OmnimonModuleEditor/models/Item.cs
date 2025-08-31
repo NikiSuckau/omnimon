@@ -30,6 +30,9 @@ namespace OmnimonModuleEditor.Models
 
         [JsonPropertyName("component_item")]
         public string ComponentItem { get; set; }
+
+        [JsonPropertyName("weight_gain")]
+        public int WeightGain { get; set; }
     }
 
     public enum EffectEnum

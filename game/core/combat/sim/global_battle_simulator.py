@@ -11,10 +11,11 @@ except ImportError:
 
 
 class GlobalBattleSimulator:
-    def __init__(self, attribute_advantage=5, damage_limit=3, force_winner=True):
+    def __init__(self, attribute_advantage=5, damage_limit=3, force_winner=True, pvp_mode=False):
         self.attribute_advantage = attribute_advantage
         self.damage_limit = damage_limit
         self.force_winner = force_winner
+        self.pvp_mode = pvp_mode
 
     def _attribute_advantage(self, att_attr, def_attr):
         # Vaccine > Virus > Data > Vaccine
@@ -101,7 +102,7 @@ class GlobalBattleSimulator:
                     continue
 
                 # If this is a boss (team2 has only one member), attack all alive members of team1
-                if len(device2) == 1:
+                if len(device2) == 1 and not self.pvp_mode:
                     for target in [t for t in device1 if t.alive]:  # Filter only alive pets
                         pattern = pet.attack_pattern
                         dmg = min(pattern[turn % len(pattern)] + 1, self.damage_limit)

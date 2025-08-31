@@ -9,6 +9,7 @@ import game.core.constants as constants
 from core.utils.pygame_utils import blit_with_shadow
 from core.utils.scene_utils import change_scene
 from core import runtime_globals
+from core.utils.utils_unlocks import unlock_item
 
 
 class BattleEncounterVersus(BattleEncounter):
@@ -157,6 +158,24 @@ class BattleEncounterVersus(BattleEncounter):
             winner.finish_versus(True)
             loser.finish_versus(False)
 
+            # Versus unlock logic: modules may declare unlocks of type 'versus'
+            # with conditions such as making two pets of the same module battle
+            # where one has version >= specified version.
+            try:
+                module_unlocks = getattr(self.module, 'unlocks', []) or []
+                for unlock in module_unlocks:
+                    if unlock.get('type') == 'versus':
+                        # Requirement: two participants of same module and
+                        # one of them meets the version requirement.
+                        ver_req = unlock.get('version', None)
+                        # If ver_req is specified and one of the two pets has
+                        # at least that version, award to both participants
+                        if ver_req is not None:
+                            if (getattr(self.pet1, 'module', None) == getattr(self.pet2, 'module', None)):
+                                if getattr(self.pet1, 'version', 0) >= ver_req or getattr(self.pet2, 'version', 0) >= ver_req:
+                                    unlock_item(self.module.name, 'versus', unlock.get('name'))
+            except Exception as e:
+                runtime_globals.game_console.log(f"[Versus] Error processing versus unlocks: {e}")
             # Return to the main scene
             change_scene("game")
 

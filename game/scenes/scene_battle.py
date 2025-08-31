@@ -19,7 +19,7 @@ from core.utils.module_utils import get_module
 from core.utils.pet_utils import get_battle_targets
 from core.utils.pygame_utils import blit_with_shadow, get_font, sprite_load_percent
 from core.utils.scene_utils import change_scene
-from core.utils.inventory_utils import remove_from_inventory
+from core.utils.inventory_utils import get_inventory_value, remove_from_inventory
 
 #=====================================================================
 # SceneTraining (Training Menu)
@@ -62,6 +62,11 @@ class SceneBattle:
                 game_globals.battle_round[module.name] = 1
                 game_globals.battle_area[module.name] = 1
 
+            if not module.is_valid_area_round(game_globals.battle_area[module.name], game_globals.battle_round[module.name]):
+                runtime_globals.game_console.log(f"[SceneBattle] Invalid saved area/round for {module.name}: {game_globals.battle_area[module.name]}/{game_globals.battle_round[module.name]} -> reset to 1/1")
+                game_globals.battle_round[module.name] = 1
+                game_globals.battle_area[module.name] = 1
+                
             # Initialize selection to max unlocked
             self.selected_area[module.name] = game_globals.battle_area[module.name]
             self.selected_round[module.name] = game_globals.battle_round[module.name]
@@ -118,9 +123,34 @@ class SceneBattle:
         self._cache_surface = None
         self._cache_key = None
 
+        if runtime_globals.special_encounter is not None and len(runtime_globals.special_encounter) == 3:
+            self.phase = "battle"
+            self.selected_module = runtime_globals.special_encounter[0]
+            self.area = runtime_globals.special_encounter[1]
+            self.round = runtime_globals.special_encounter[2]
+            runtime_globals.special_encounter = None
+            self.mode = BattleEncounter(
+                self.selected_module,
+                self.area,
+                self.round,
+                1
+            )
+            self.mode.boss = True
+            runtime_globals.game_console.log(f"[SceneTraining] Special encounter mode: {self.selected_module} Area {self.area}-{self.round}")
+
     def update(self):
         if self.mode:
             self.mode.update()
+        
+        # Update menu windows for mouse hover if in menu phases
+        if not self.mode and runtime_globals.game_input.mouse_enabled:
+            if self.phase in ["menu", "module", "battle_select"] and hasattr(self, 'menu'):
+                self.menu.update()
+            elif self.phase == "armor":
+                if hasattr(self, 'menu_window1'):
+                    self.menu_window1.update()
+                if hasattr(self, 'menu_window2'):
+                    self.menu_window2.update()
 
     def draw(self, surface: pygame.Surface):
         # Compose a cache key that reflects the dynamic state of the menu
@@ -331,6 +361,13 @@ class SceneBattle:
             self.mode.handle_event(input_action)
 
     def handle_menu_input(self, input_action):
+        # Handle mouse clicks on navigation arrows for multi-option menus
+        if input_action == "A" and runtime_globals.game_input.mouse_enabled:
+            mouse_pos = runtime_globals.game_input.get_mouse_position()
+            if hasattr(self, 'menu') and self.menu.handle_mouse_click(mouse_pos):
+                # Mouse click was handled by the menu (navigation arrow click)
+                return
+        
         if input_action == "B":
             runtime_globals.game_sound.play("cancel")
             change_scene("game")
@@ -403,6 +440,12 @@ class SceneBattle:
             runtime_globals.game_sound.play("cancel")
             self.phase = "menu"
             self.menu = self.menu_window1
+        elif input_action == "A" and runtime_globals.game_input.mouse_enabled:
+            # Handle mouse clicks on navigation arrows for multi-option menus
+            mouse_pos = runtime_globals.game_input.get_mouse_position()
+            if hasattr(self, 'menu') and self.menu.handle_mouse_click(mouse_pos):
+                # Mouse click was handled by the menu (navigation arrow click)
+                return
         elif input_action in ("LEFT", "RIGHT"):
             runtime_globals.game_sound.play("menu")
             delta = -1 if input_action == "LEFT" else 1
@@ -450,6 +493,13 @@ class SceneBattle:
             runtime_globals.game_console.log("Starting Battle.")
 
     def handle_battle_select_input(self, input_action):
+        # Handle mouse clicks on navigation arrows for multi-option menus
+        if input_action == "A" and runtime_globals.game_input.mouse_enabled:
+            mouse_pos = runtime_globals.game_input.get_mouse_position()
+            if hasattr(self, 'menu') and self.menu.handle_mouse_click(mouse_pos):
+                # Mouse click was handled by the menu (navigation arrow click)
+                return
+        
         if input_action == "B":
             runtime_globals.game_sound.play("cancel")
             self.phase = "module"
@@ -578,6 +628,11 @@ class SceneBattle:
                         runtime_globals.game_sound.play("evolution")
                         runtime_globals.game_console.log(f"[Armor Evolution] {pet.name} evolved to {evo['to']} using {digimental_item.name}!")
                         runtime_globals.game_message.add_slide(f"{pet.name} evolved to {evo['to']}!", constants.FONT_COLOR_GREEN, 56 * constants.UI_SCALE, constants.FONT_SIZE_SMALL)
+                        
+                        # Update quest progress for armor evolution
+                        from core.utils.quest_event_utils import update_evolution_quest_progress
+                        update_evolution_quest_progress("armor", pet.module)
+                        
                         break
                 # Return to game scene
                 change_scene("game")
@@ -658,6 +713,11 @@ class SceneBattle:
                     game_globals.pet_list.remove(pet2)
                     runtime_globals.game_sound.play("evolution")
                     runtime_globals.game_console.log(f"[Jogress] {pet1.name} jogressed to {evo['to']}!")
+                    
+                    # Update quest progress for jogress
+                    from core.utils.quest_event_utils import update_evolution_quest_progress
+                    update_evolution_quest_progress("jogress", pet1.module)
+                    
                     change_scene("game")
                     return
 
@@ -710,7 +770,7 @@ class SceneBattle:
             if hasattr(module, "items"):
                 for item in module.items:
                     if getattr(item, "effect", "") == "digimental":
-                        amount = game_globals.inventory.get(item.id, 0)
+                        amount = get_inventory_value(item.id)
                         if amount > 0:
                             sprite_name = item.sprite_name
                             if not sprite_name.lower().endswith(".png"):

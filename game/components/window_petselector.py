@@ -26,7 +26,7 @@ class WindowPetSelector:
                 if flag_path:
                     flag = pygame.image.load(flag_path).convert_alpha()
                     self.module_flags[pet.module] = pygame.transform.scale(
-                        flag, (constants.FOPTION_ICON_SIZE, constants.OPTION_ICON_SIZE)
+                        flag, (constants.OPTION_ICON_SIZE, constants.OPTION_ICON_SIZE)
                     )
                 else:
                     self.module_flags[pet.module] = pygame.transform.scale(
@@ -48,6 +48,14 @@ class WindowPetSelector:
                 runtime_globals.game_sound.play("menu")
                 self.selected_index = (self.selected_index + 1) % len(self.pets)
                 self.adjust_scroll()
+            elif input_action == "LEFT":
+                runtime_globals.game_sound.play("menu")
+                self.selected_index = (self.selected_index - 4) % len(self.pets)
+                self.adjust_scroll()
+            elif input_action == "RIGHT":
+                runtime_globals.game_sound.play("menu")
+                self.selected_index = (self.selected_index + 4) % len(self.pets)
+                self.adjust_scroll()
             elif input_action == "UP":
                 runtime_globals.game_sound.play("menu")
                 self.selected_index = (self.selected_index - 1) % len(self.pets)
@@ -59,6 +67,33 @@ class WindowPetSelector:
                 runtime_globals.game_sound.play("cancel")
                 change_scene("game")
         return False
+
+    def update(self):
+        """Update method called every frame to handle mouse hover."""
+        if runtime_globals.game_input.mouse_enabled:
+            mouse_pos = runtime_globals.game_input.get_mouse_position()
+            self.check_mouse_hover(mouse_pos)
+
+    def check_mouse_hover(self, mouse_pos):
+        """Check if mouse is hovering over any pet item and update selection accordingly."""
+        mouse_x, mouse_y = mouse_pos
+        y_start = PAGE_MARGIN
+        
+        for idx in range(self.scroll_offset, min(self.scroll_offset + self.max_visible_items, len(self.pets))):
+            y_pos = y_start + (idx - self.scroll_offset) * self.ITEM_HEIGHT
+            
+            # Check if mouse is within this item's bounds
+            item_rect = pygame.Rect(
+                PAGE_MARGIN, 
+                y_pos, 
+                constants.SCREEN_WIDTH - PAGE_MARGIN * 2, 
+                self.ITEM_HEIGHT
+            )
+            
+            if item_rect.collidepoint(mouse_x, mouse_y):
+                if self.selected_index != idx:
+                    self.selected_index = idx
+                break
 
     def adjust_scroll(self) -> None:
         if self.selected_index < self.scroll_offset:

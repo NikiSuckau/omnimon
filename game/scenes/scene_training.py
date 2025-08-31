@@ -70,6 +70,10 @@ class SceneTraining:
     def update(self):
         if self.mode:
             self.mode.update()
+        
+        # Update menu window for mouse hover if in menu phase
+        if self.phase == "menu" and runtime_globals.game_input.mouse_enabled:
+            self.menu_window.update()
 
     def draw(self, surface: pygame.Surface):
         if self.phase == "menu":
@@ -121,6 +125,14 @@ class SceneTraining:
                 self.mode.handle_event(input_action)
 
     def handle_menu_input(self, input_action):
+        # Handle mouse clicks on navigation arrows for multi-option menus
+        if input_action == "A" and runtime_globals.game_input.mouse_enabled:
+            mouse_pos = runtime_globals.game_input.get_mouse_position()
+            if self.menu_window.handle_mouse_click(mouse_pos):
+                # Mouse click was handled by the menu (navigation arrow click)
+                self._cache_surface = None  # Invalidate cache on selection change
+                return
+        
         if input_action == "B":
             runtime_globals.game_sound.play("cancel")
             change_scene("game")

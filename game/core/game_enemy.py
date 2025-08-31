@@ -1,10 +1,10 @@
 # game_enemy.py
 import os
-import pygame
 from dataclasses import dataclass
 
 from core.animation import PetFrame
 import game.core.constants as constants
+from game.core.utils.sprite_utils import convert_sprites_to_list, load_enemy_sprites
 
 
 @dataclass
@@ -26,39 +26,46 @@ class GameEnemy:
 
     def load_sprite(self, module_path: str, boss: bool = False):
         """
-        Loads specific animation frames for the enemy: IDLE1, IDLE2, ANGRY, ATK1, ATK2.
+        Loads specific animation frames for the enemy using the new sprite loading utility.
 
         Args:
             module_path (str): Path to the module directory.
+            boss (bool): Whether this enemy is a boss (applies scaling).
         """
-        self.frames = []
-        folder = os.path.join(module_path, "monsters", f"{self.name}_dmc")
-
+        # Determine module name from path to get module object for name_format
+        module_name = module_path
+        module_path = os.path.join("modules", module_name)
+        
+        # Try to get module object to access name_format
+        try:
+            from core.utils.module_utils import get_module
+            module_obj = get_module(module_name)
+            name_format = getattr(module_obj, 'name_format', '$_dmc') if module_obj else '$_dmc'
+        except:
+            name_format = '$_dmc'  # Default fallback
+        
+        # Calculate size based on boss status
+        if boss:
+            size = (constants.PET_WIDTH * constants.BOSS_MULTIPLIER, constants.PET_HEIGHT * constants.BOSS_MULTIPLIER)
+        else:
+            size = (constants.PET_WIDTH, constants.PET_HEIGHT)
+        
+        # Load sprites using the new utility function
+        sprites_dict = load_enemy_sprites(self.name, module_path, name_format, size=size)
+        
+        # Convert to the expected format
+        sprite_list = convert_sprites_to_list(sprites_dict)
+        
+        # Initialize frames array
         max_index = max(frame.value for frame in PetFrame)
         self.frames = [None] * (max_index + 1)
-
-        for frame in PetFrame:
-            i = frame.value
-            frame_file = os.path.join(folder, f"{i}.png")
-            if os.path.exists(frame_file):
-                self.frames[i] = sprite_load(frame_file, size=(constants.PET_WIDTH, constants.PET_HEIGHT))
-                if boss:
-                    self.frames[i] = pygame.transform.scale(self.frames[i], (constants.PET_WIDTH * constants.BOSS_MULTIPLIER, constants.PET_HEIGHT * constants.BOSS_MULTIPLIER))
+        
+        # Populate frames array with loaded sprites
+        for i, sprite in enumerate(sprite_list):
+            if i < len(self.frames):
+                self.frames[i] = sprite
 
     def get_sprite(self, index: int):
         if hasattr(self, "frames") and 0 <= index < len(self.frames):
             return self.frames[index]
         return None
-    
-def sprite_load(path, size=None, scale=1):
-    """Loads a sprite and optionally scales it to a fixed size or by a scale factor."""
-    img = pygame.image.load(path).convert_alpha()
-    
-    if size:
-        return pygame.transform.scale(img, size)  # 🔹 Scale to a fixed size
-    elif scale != 1:
-        base_size = img.get_size()
-        new_size = (int(base_size[0] * scale), int(base_size[1] * scale))
-        return pygame.transform.scale(img, new_size)  # 🔹 Scale by a multiplier
-    
-    return img  # 🔹 Return original image if no scaling is applied

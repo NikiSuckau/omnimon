@@ -8,12 +8,27 @@ def get_grid_dimensions(max_pets):
     if max_pets == 1:
         return (1, 1)
     elif max_pets == 2:
-        return (1, 2)
+        if constants.SCREEN_WIDTH >= constants.SCREEN_HEIGHT:
+            return (1, 2)
+        else:
+            return (2, 1)
     else:
-        cols = math.ceil(math.sqrt(max_pets))
-        rows = math.ceil(max_pets / cols)
-        if (rows - 1) * cols >= max_pets:
-            rows -= 1
+        if constants.SCREEN_WIDTH >= constants.SCREEN_HEIGHT:
+            aspect_ratio = constants.SCREEN_WIDTH / constants.SCREEN_HEIGHT
+            cols = math.ceil(math.sqrt(max_pets))
+            if aspect_ratio * cols > (cols + 1):
+                cols = int(min((aspect_ratio * cols), max_pets))
+            rows = math.ceil(max_pets / cols)
+            if (rows - 1) * cols >= max_pets:
+                rows -= 1
+        else:
+            aspect_ratio = constants.SCREEN_HEIGHT / constants.SCREEN_WIDTH
+            rows = math.ceil(math.sqrt(max_pets))
+            if aspect_ratio * rows > (rows + 1):
+                rows = int(min((aspect_ratio * rows), max_pets))
+            cols = math.ceil(max_pets / rows)
+            if (cols - 1) * rows >= max_pets:
+                cols -= 1
         return (rows, cols)
 
 class WindowParty:
@@ -35,9 +50,9 @@ class WindowParty:
             margin = int(20 * (win_w / 240))
             top_margin = int(40 * (win_h / 240))
             grid_area_w = win_w - 2 * margin
-            grid_area_h = win_h - top_margin - margin
+            grid_area_h = win_h - top_margin - min(margin, top_margin)
 
-            max_pets = constants.MAX_PETS
+            max_pets = max(constants.MAX_PETS, len(game_globals.pet_list))
             rows, cols = get_grid_dimensions(max_pets)
 
             slot_w = grid_area_w // cols
@@ -45,7 +60,7 @@ class WindowParty:
 
             # Scale sprite and font sizes
             sprite_size = int(min(slot_w, slot_h) * 0.6)
-            font_size = max(10, int(slot_h * 0.18))
+            font_size = max(10, int(min(slot_h,slot_w) * 0.18))
             font = get_font(font_size)
 
             for i in range(max_pets):
@@ -100,7 +115,7 @@ class WindowParty:
         blit_with_cache(surface, self._cache_surface, (0, 0))
 
     def handle_event(self, input_action):
-        max_pets = constants.MAX_PETS
+        max_pets = max(constants.MAX_PETS, len(game_globals.pet_list))
         rows, cols = get_grid_dimensions(max_pets)
         if input_action == "LEFT":
             runtime_globals.game_sound.play("menu")
@@ -114,3 +129,42 @@ class WindowParty:
         elif input_action == "DOWN":
             runtime_globals.game_sound.play("menu")
             self.selected_index = (self.selected_index + cols) % max_pets
+
+    def update(self):
+        """Update method called every frame to handle mouse hover."""
+        if runtime_globals.game_input.mouse_enabled:
+            mouse_pos = runtime_globals.game_input.get_mouse_position()
+            self.check_mouse_hover(mouse_pos)
+
+    def check_mouse_hover(self, mouse_pos):
+        """Check if mouse is hovering over any party slot and update selection accordingly."""
+        mouse_x, mouse_y = mouse_pos
+        
+        # Calculate grid layout (same logic as in draw method)
+        max_pets = max(constants.MAX_PETS, len(game_globals.pet_list))
+        rows, cols = get_grid_dimensions(max_pets)
+        
+        # Use a reference surface size for calculations
+        win_w, win_h = constants.SCREEN_WIDTH, constants.SCREEN_HEIGHT
+        margin = int(20 * (win_w / 240))
+        top_margin = int(40 * (win_h / 240))
+        grid_area_w = win_w - 2 * margin
+        grid_area_h = win_h - top_margin - min(margin, top_margin)
+        
+        slot_w = grid_area_w // cols
+        slot_h = grid_area_h // rows
+        
+        for i in range(max_pets):
+            row = i // cols
+            col = i % cols
+            x = margin + col * slot_w
+            y = top_margin + row * slot_h
+            
+            # Check if mouse is within this slot's bounds
+            slot_rect = pygame.Rect(x, y, slot_w, slot_h)
+            
+            if slot_rect.collidepoint(mouse_x, mouse_y):
+                if self.selected_index != i:
+                    self.selected_index = i
+                    self._cache_key = None  # Invalidate cache to redraw
+                break

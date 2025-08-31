@@ -82,7 +82,74 @@ class GameBattle:
         """
         Resets the cooldowns for each pet in the player's team.
         """
-        self.cooldowns = [random.randint(40 * (constants.FRAME_RATE / 30), 60 * (constants.FRAME_RATE / 30)) for _ in range(len(self.team1))]
+        self.cooldowns = [self.calculate_deterministic_cooldown(i) for i in range(len(self.team1))]
+
+    def reset_cooldowns_staggered(self, stagger_amount=10):
+        """
+        Resets the cooldowns with staggering to prevent simultaneous attacks.
+        Used for PvP synchronization.
+        """
+        base_cooldowns = [self.calculate_deterministic_cooldown(i) for i in range(len(self.team1))]
+        # Add staggering based on pet index to prevent simultaneous attacks
+        for i in range(len(base_cooldowns)):
+            self.cooldowns[i] = base_cooldowns[i] + (i * stagger_amount)
+
+    def calculate_deterministic_cooldown(self, pet_index):
+        """
+        Calculates a deterministic cooldown value based on pet name, turn, phase, and team size.
+        Returns a value between 30-70 * (FRAME_RATE / 30), scaled by team size.
+        """
+        # Get pet name for consistency
+        pet_name = ""
+        if hasattr(self.team1[pet_index], 'name'):
+            pet_name = self.team1[pet_index].name
+        elif hasattr(self.team1[pet_index], 'species'):
+            pet_name = self.team1[pet_index].species
+        else:
+            pet_name = f"pet_{pet_index}"
+        
+        # Get current phase for this pet
+        current_phase = self.phase[pet_index] if pet_index < len(self.phase) else "pet_charge"
+        current_turn = self.turns[pet_index] if pet_index < len(self.turns) else 1
+        team_size = len(self.team1)
+        
+        # Create a deterministic seed from all variables
+        seed_string = f"{pet_name}_{current_turn}_{current_phase}_{team_size}"
+        
+        # Simple hash function to convert string to number
+        hash_value = 0
+        for char in seed_string:
+            hash_value = (hash_value * 31 + ord(char)) % 1000000
+        
+        # Base range is 30-70
+        base_min = 30
+        base_max = 70
+        base_range = base_max - base_min
+        
+        # Team size scaling: smaller teams tend toward smaller numbers
+        # Team size 1: bias toward lower end (30-50)
+        # Team size 2-3: normal range (30-70)  
+        # Team size 4+: bias toward higher end (50-70)
+        if team_size == 1:
+            # Scale to 30-50 range
+            adjusted_min = base_min
+            adjusted_max = base_min + (base_range * 0.5)
+        elif team_size <= 3:
+            # Normal range 30-70
+            adjusted_min = base_min
+            adjusted_max = base_max
+        else:
+            # Scale to 50-70 range for larger teams
+            adjusted_min = base_min + (base_range * 0.5)
+            adjusted_max = base_max
+        
+        # Map hash to the adjusted range
+        cooldown_base = adjusted_min + (hash_value % int(adjusted_max - adjusted_min + 1))
+        
+        # Apply frame rate scaling
+        cooldown_scaled = int(cooldown_base * (constants.FRAME_RATE / 30))
+        
+        return cooldown_scaled
 
     def decrement_cooldowns(self):
         """
@@ -138,7 +205,7 @@ class GameBattle:
                     self.team2_shot[i] = True if self.team2_hp[i] > 0 else False
 
                 if not self.shot_wait[i]:
-                    self.cooldowns[i] = random.randint(int(40 * (constants.FRAME_RATE / 30)), int(80 * (constants.FRAME_RATE / 30)))
+                    self.cooldowns[i] = self.calculate_deterministic_cooldown(i)
                     self.frame_counters[i] = 0
 
     def update_charge(self, index):

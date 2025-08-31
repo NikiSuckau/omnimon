@@ -10,6 +10,8 @@ import game.core.constants as constants
 from core.utils.pet_utils import distribute_pets_evenly, get_training_targets
 from core.utils.pygame_utils import blit_with_shadow, load_attack_sprites, module_attack_sprites, sprite_load_percent
 from core.utils.scene_utils import change_scene
+from game.core.game_quest import QuestType
+from game.core.utils.quest_event_utils import update_quest_progress
 
 class Training:
     """
@@ -158,6 +160,9 @@ class Training:
         won = self.check_victory()
         if won:
             runtime_globals.game_sound.play("attack_fail")
+            
+            # Update TRAINING quest progress when training is won
+            update_quest_progress(QuestType.TRAINING, 1)
         else:
             runtime_globals.game_sound.play("fail")
 
@@ -165,7 +170,7 @@ class Training:
         self.check_and_award_trophies()
 
         for pet in self.pets:
-            pet.finish_training(won)
+            pet.finish_training(won, grade=self.get_attack_count())
 
         distribute_pets_evenly()
         change_scene("game")

@@ -21,7 +21,7 @@ from game.vpet import VirtualPetGame
 from game.core.constants import *
 
 # Game Version
-VERSION = "0.9.6b"
+VERSION = "0.9.8"
 
 # Check Pygame version for compatibility
 PYGAME_VERSION = tuple(map(int, pygame.version.ver.split('.')))
@@ -41,8 +41,22 @@ native_height = 0
 
 def load_display_config():
     """Load display configuration with auto-detection for embedded systems"""
+    if platform.system() == "Linux":
+        if os.path.exists("/usr/bin/batocera-info"):
+            display_config = "config/config.json"
+        elif os.path.exists("/boot/config.txt"):
+            display_config = "config/config.json"
+        else:
+            display_config = "config/config.json"
+    elif platform.system() == "Windows":
+        display_config = "config/config.json"
+    elif platform.system() == "Darwin":
+        display_config = "config/config.json"
+    else:
+        display_config = "config/config.json"
+
     try:
-        with open("config/config.json", "r", encoding="utf-8") as f:
+        with open(display_config, "r", encoding="utf-8") as f:
             config = json.load(f)
     except Exception:
         config = {
@@ -75,6 +89,8 @@ def try_set_video_driver():
             drivers = ["x11", "wayland", "fbcon"]
     elif platform.system() == "Windows":
         drivers = ["windows"]
+    elif platform.system() == "Darwin":
+        drivers = ["cocoa"]
     else:
         drivers = ["x11", "wayland", "fbcon"]
 
@@ -137,7 +153,16 @@ def setup_display():
         scale_to_screen = False
     else:
         screen_width = config.get("SCREEN_WIDTH", 240)
+        # Same sanity checks as in constants.py and main_nuitka.py
+        if not screen_width:
+            screen_width = 240
+        if screen_width < 100:
+            screen_width = 100
         screen_height = config.get("SCREEN_HEIGHT", 240)
+        if not screen_height:
+            screen_height = 240
+        if screen_height < 100:
+            screen_height = 100
         print(f"[Display] Using config resolution: {screen_width}x{screen_height}")
 
         if fullscreen_requested:

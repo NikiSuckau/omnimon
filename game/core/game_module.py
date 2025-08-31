@@ -10,6 +10,7 @@ from core.game_enemy import GameEnemy
 import copy
 
 from core.game_item import GameItem
+from core.quest_event_data import QuestData, EventData
 
 
 #=====================================================================
@@ -48,28 +49,35 @@ class GameModule:
                     self.adventure_mode = data.get("adventure_mode", False)
 
                     self.meat_weight_gain = int(data.get("care_meat_weight_gain"))
-                    self.meat_hunger_gain = int(data.get("care_meat_hunger_gain"))
+                    self.meat_hunger_gain = float(data.get("care_meat_hunger_gain"))
                     self.meat_care_mistake_time = int(data.get("care_meat_care_mistake_time"))
                     self.overfeed_timer = int(data.get("care_overfeed_timer"))
                     self.use_condition_hearts = bool(data.get("care_condition_heart", False))
                     self.can_eat_sleeping = bool(data.get("care_can_eat_sleeping", True))
-                    self.back_to_sleep_time = bool(data.get("care_back_to_sleep_time", True))
+                    
+                    self.back_to_sleep_time = int(data.get("care_back_to_sleep_time", 10))
                     self.enable_shaken_egg = bool(data.get("care_enable_shaken_egg", False))
 
                     self.protein_weight_gain = int(data.get("care_protein_weight_gain"))
-                    self.protein_strengh_gain = int(data.get("care_protein_strengh_gain"))
+                    self.protein_strengh_gain = float(data.get("care_protein_strengh_gain"))
                     self.protein_dp_gain = int(data.get("care_protein_dp_gain"))
                     self.protein_care_mistake_time = int(data.get("care_protein_care_mistake_time"))
-                    self.protein_overdose_max = int(data.get("care_protein_care_mistake_time", 0))
+                    self.protein_overdose_max = int(data.get("care_protein_overdose_max", 0))
+                    self.protein_penalty = int(data.get("care_protein_penalty", 10))
                     self.disturbance_penalty_max = int(data.get("care_disturbance_penalty_max", 0))
+
+                    self.care_flush_disturbance_sleep = bool(data.get("care_flush_disturbance_sleep", True))
 
                     self.sleep_care_mistake_timer = int(data.get("care_sleep_care_mistake_timer"))
 
-                    self.training_effort_gain = int(data.get("training_effort_gain"))
-                    self.training_strengh_gain = int(data.get("training_strengh_gain"))
+                    self.training_effort_gain = int(data.get("training_effort_gain", 0))
 
-                    self.training_weight_win = int(data.get("training_weight_win"))
-                    self.training_weight_lose = int(data.get("training_weight_lose"))
+                    self.training_strengh_gain_win = int(data.get("training_strengh_gain_win", 1))
+                    self.training_strengh_gain_lose = int(data.get("training_strengh_gain_lose", 0))
+                    self.training_strengh_multiplier = float(data.get("training_strengh_multiplier", 1.0))
+
+                    self.training_weight_win = int(data.get("training_weight_win", 1))
+                    self.training_weight_lose = int(data.get("training_weight_lose", 1))
 
                     self.traited_egg_starting_level = int(data.get("traited_egg_starting_level"))
 
@@ -79,7 +87,8 @@ class GameModule:
                     self.battle_base_sick_chance_lose = int(data.get("battle_base_sick_chance_lose"))
                     self.battle_atribute_advantage = int(data.get("battle_atribute_advantage", 5))
                     self.battle_global_hit_points = int(data.get("battle_global_hit_points", 0))
-                    self.battle_sequential_rounds = int(data.get("battle_sequential_rounds", False))
+                    # sequential rounds is a boolean flag in newer module.json files
+                    self.battle_sequential_rounds = bool(data.get("battle_sequential_rounds", False))
 
                     self.death_max_injuries = int(data.get("death_max_injuries"))
                     self.death_sick_timer = int(data.get("death_sick_timer"))
@@ -91,6 +100,7 @@ class GameModule:
                     self.death_care_mistake = int(data.get("death_care_mistake",999999))
                     self.death_save_by_b_press = int(data.get("death_save_by_b_press",0))
                     self.death_save_by_shake = int(data.get("death_save_by_shake",0))
+                    self.death_old_age = int(data.get("death_old_age",0))
 
                     self.vital_value_base = int(data.get("vital_value_base", 50))
                     self.vital_value_loss = int(data.get("vital_value_loss", 50))
@@ -125,6 +135,115 @@ class GameModule:
                     runtime_globals.game_console.log(f"Error: Failed to parse {json_path}")
         else:
             self.items = {}
+
+    def load_quests_json(self) -> List[QuestData]:
+        """Loads quest data from quests.json if it exists in the module folder."""
+        json_path = os.path.join(self.folder_path, "quests.json")
+        if not os.path.exists(json_path):
+            return []
+            
+        try:
+            with open(json_path, "r", encoding="utf-8") as file:
+                data = json.load(file)
+                return self.parse_quests_from_json(data)
+        except json.JSONDecodeError:
+            runtime_globals.game_console.log(f"Error: Failed to parse {json_path}")
+            return []
+
+    def load_events_json(self) -> List[EventData]:
+        """Loads event data from events.json if it exists in the module folder."""
+        json_path = os.path.join(self.folder_path, "events.json")
+        if not os.path.exists(json_path):
+            return []
+            
+        try:
+            with open(json_path, "r", encoding="utf-8") as file:
+                data = json.load(file)
+                return self.parse_events_from_json(data)
+        except json.JSONDecodeError:
+            runtime_globals.game_console.log(f"Error: Failed to parse {json_path}")
+            return []
+
+    def parse_quests_from_json(self, data) -> List[QuestData]:
+        """
+        Parse quest data from JSON into QuestData objects.
+        """
+        # If data is a string, parse it as JSON
+        if isinstance(data, str):
+            data = json.loads(data)
+        # If data is a dict, extract the first list value (e.g., "quest" or "quests")
+        if isinstance(data, dict):
+            # Try common keys, fallback to first list found
+            for key in ("quests", "quest"):
+                if key in data and isinstance(data[key], list):
+                    data = data[key]
+                    break
+            else:
+                # Fallback: find the first list value in the dict
+                for v in data.values():
+                    if isinstance(v, list):
+                        data = v
+                        break
+                        
+        quests = []
+        for entry in data:
+            if not isinstance(entry, dict):
+                continue  # skip invalid entries
+                
+            quest_data = QuestData(
+                id=entry["id"],
+                name=entry["name"],
+                type=entry.get("type", 0),
+                target_amount_range=entry.get("target_amount_range"),
+                target_amount=entry.get("target_amount"),
+                reward_type=entry.get("reward_type", 0),
+                reward_value=entry.get("reward_value"),
+                reward_item=entry.get("reward_item"),
+                reward_quantity=entry.get("reward_quantity", 1),
+                reward_amount=entry.get("reward_amount", 1)
+            )
+            quests.append(quest_data)
+        return quests
+
+    def parse_events_from_json(self, data) -> List[EventData]:
+        """
+        Parse event data from JSON into EventData objects.
+        """
+        # If data is a string, parse it as JSON
+        if isinstance(data, str):
+            data = json.loads(data)
+        # If data is a dict, extract the first list value (e.g., "event" or "events")
+        if isinstance(data, dict):
+            # Try common keys, fallback to first list found
+            for key in ("events", "event"):
+                if key in data and isinstance(data[key], list):
+                    data = data[key]
+                    break
+            else:
+                # Fallback: find the first list value in the dict
+                for v in data.values():
+                    if isinstance(v, list):
+                        data = v
+                        break
+                        
+        events = []
+        for entry in data:
+            if not isinstance(entry, dict):
+                continue  # skip invalid entries
+                
+            event_data = EventData(
+                id=entry["id"],
+                name=entry["name"],
+                global_event=entry.get("global", False),
+                type=entry.get("type", 0),
+                chance_percent=entry.get("chance_percent", 1),
+                area=entry.get("area", 1),
+                round=entry.get("round", 1),
+                item=entry.get("item", ""),
+                item_quantity=entry.get("item_quantity", 1)
+            )
+            events.append(event_data)
+        return events
 
     def load_items_from_json(self, data, module_name):
         """
@@ -327,6 +446,46 @@ class GameModule:
         except json.JSONDecodeError:
             runtime_globals.game_console.log(f"⚠️ Failed to parse {json_path}")
             return []
+        
+    def is_valid_area_round(self, area: int, round_: int) -> bool:
+        """
+        Return True if this module has any battle entry for the given area and round.
+        """
+        battle_path = os.path.join(self.folder_path, "battle.json")
+        all_enemies = self._parse_battle_json(battle_path)
+        if not all_enemies:
+            return False
+        for entry in all_enemies:
+            try:
+                a = int(entry.get("area", -1))
+                r = int(entry.get("round", -1))
+            except Exception:
+                continue
+            if a == int(area) and r == int(round_):
+                return True
+        return False
+
+    def get_available_area_rounds(self) -> dict:
+        """
+        Return a dict mapping available area -> sorted list of rounds defined
+        in this module's battle.json. Example: {1: [1,2,3], 2: [1,2]}
+        """
+        battle_path = os.path.join(self.folder_path, "battle.json")
+        all_enemies = self._parse_battle_json(battle_path)
+        if not all_enemies:
+            return {}
+        area_rounds = {}
+        for entry in all_enemies:
+            try:
+                a = int(entry.get("area", -1))
+                r = int(entry.get("round", -1))
+            except Exception:
+                continue
+            if a == -1 or r == -1:
+                continue
+            area_rounds.setdefault(a, set()).add(r)
+        # convert sets to sorted lists
+        return {a: sorted(list(rounds)) for a, rounds in area_rounds.items()}
         
 def sprite_load(path, size=None, scale=1):
     """Loads a sprite and optionally scales it to a fixed size or by a scale factor."""

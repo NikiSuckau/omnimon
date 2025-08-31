@@ -21,7 +21,7 @@ class GameConsole:
     @staticmethod
     def _init_log_file():
         """Initialize a new log file for this session if debug is enabled."""
-        if GameConsole.log_file is None and constants.DEBUG:
+        if GameConsole.log_file is None and constants.DEBUG_FILE_LOGGING:
             logs_dir = os.path.join(os.getcwd(), "logs")
             os.makedirs(logs_dir, exist_ok=True)
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -37,11 +37,11 @@ class GameConsole:
         Args:
             message (str): Message to be logged.
         """
-        if constants.DEBUG:
+        if constants.DEBUG_MODE:
             timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             log_line = f"[{timestamp}] {message}"
             print(log_line)
-            if constants.LOGGING:
+            if constants.DEBUG_FILE_LOGGING:
                 GameConsole._init_log_file()
                 if GameConsole.log_file:
                     GameConsole.log_file.write(log_line + "\n")

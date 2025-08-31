@@ -32,6 +32,8 @@ public class EvolutionCriteriaForm : Form
     private NumericUpDown[] numTrophies = new NumericUpDown[2]; // New field
     private NumericUpDown[] numVitalValues = new NumericUpDown[2]; // New field
     private NumericUpDown[] numWeigth = new NumericUpDown[2]; // New field
+    private NumericUpDown[] numQuestsCompleted = new NumericUpDown[2]; // New field
+    private NumericUpDown[] numPvp = new NumericUpDown[2]; // New field
 
     private NumericUpDown numArea;
     private NumericUpDown numStage;
@@ -141,15 +143,15 @@ public class EvolutionCriteriaForm : Form
             AddControl(rangePanel);
         }
 
-        AddRange(Resources.EvolutionCriteriaForm_LabelConditionHearts, numConditionHearts, 0, 999999);
-        AddRange(Resources.EvolutionCriteriaForm_LabelTraining, numTraining, 0, 999999);
-        AddRange(Resources.EvolutionCriteriaForm_LabelBattles, numBattles, 0, 999999);
-        AddRange(Resources.EvolutionCriteriaForm_LabelWinRatio, numWinRatio, 0, 100);
-        AddRange("Win Count:", numWinCount, 0, 999999); // New field
-        AddRange(Resources.EvolutionCriteriaForm_LabelMistakes, numMistakes, 0, 999999);
-        AddRange(Resources.EvolutionCriteriaForm_LabelLevel, numLevel, 0, 10);
-        AddRange(Resources.EvolutionCriteriaForm_LabelOverfeed, numOverfeed, 0, 999999);
-        AddRange(Resources.EvolutionCriteriaForm_LabelSleepDisturbances, numSleepDisturbances, 0, 999999);
+        AddRange(Resources.EvolutionCriteriaForm_LabelConditionHearts, numConditionHearts, -1, 999999);
+        AddRange(Resources.EvolutionCriteriaForm_LabelTraining, numTraining, -1, 999999);
+        AddRange(Resources.EvolutionCriteriaForm_LabelBattles, numBattles, -1, 999999);
+        AddRange(Resources.EvolutionCriteriaForm_LabelWinRatio, numWinRatio, -1, 100);
+        AddRange("Win Count:", numWinCount, -1, 999999); // New field
+        AddRange(Resources.EvolutionCriteriaForm_LabelMistakes, numMistakes, -1, 999999);
+        AddRange(Resources.EvolutionCriteriaForm_LabelLevel, numLevel, -1, 10);
+        AddRange(Resources.EvolutionCriteriaForm_LabelOverfeed, numOverfeed, -1, 999999);
+        AddRange(Resources.EvolutionCriteriaForm_LabelSleepDisturbances, numSleepDisturbances, -1, 999999);
 
         AddLabel(Resources.EvolutionCriteriaForm_LabelArea);
         numArea = new NumericUpDown { Minimum = 0, Maximum = 999999, Width = 60 };
@@ -187,13 +189,15 @@ public class EvolutionCriteriaForm : Form
         chkSpecialEncounter = new CheckBox();
         AddControl(chkSpecialEncounter);
 
-        AddRange(Resources.EvolutionCriteriaForm_LabelStage5, numStage5, 0, 999999);
-        AddRange("Stage-6:", numStage6, 0, 999999); // New field
-        AddRange("Stage-7:", numStage7, 0, 999999); // New field
-        AddRange("Stage-8:", numStage8, 0, 999999); // New field
-        AddRange("Trophies:", numTrophies, 0, 999999); // New field
-        AddRange("Vital Values:", numVitalValues, 0, 999999); // New field
-        AddRange("Weight:", numWeigth, 0, 100); // New field
+        AddRange(Resources.EvolutionCriteriaForm_LabelStage5, numStage5, -1, 999999);
+        AddRange("Stage-6:", numStage6, -1, 999999); // New field
+        AddRange("Stage-7:", numStage7, -1, 999999); // New field
+        AddRange("Stage-8:", numStage8, -1, 999999); // New field
+        AddRange("Trophies:", numTrophies, -1, 999999); // New field
+        AddRange("Vital Values:", numVitalValues, -1, 999999); // New field
+        AddRange("Weight:", numWeigth, -1, 100); // New field
+        AddRange("Quests Completed:", numQuestsCompleted, -1, 100); // New field
+        AddRange("PVP:", numPvp, -1, 999999); // New field
 
         AddLabel(Resources.EvolutionCriteriaForm_LabelItem);
         cmbItem = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, Width = 150 };
@@ -322,6 +326,8 @@ public class EvolutionCriteriaForm : Form
         dest.Trophies = src.Trophies != null ? (int[])src.Trophies.Clone() : null; // New field
         dest.VitalValues = src.VitalValues != null ? (int[])src.VitalValues.Clone() : null; // New field
         dest.Weigth = src.Weigth != null ? (int[])src.Weigth.Clone() : null; // New field
+        dest.QuestsCompleted = src.QuestsCompleted != null ? (int[])src.QuestsCompleted.Clone() : null; // New field
+        dest.Pvp = src.Pvp != null ? (int[])src.Pvp.Clone() : null; // New field
     }
 
     /// <summary>
@@ -331,8 +337,8 @@ public class EvolutionCriteriaForm : Form
     {
         void SetRange(NumericUpDown[] ctrls, int[] val)
         {
-            ctrls[0].Value = val != null && val.Length > 0 ? val[0] : 0;
-            ctrls[1].Value = val != null && val.Length > 1 ? val[1] : 0;
+            ctrls[0].Value = val != null && val.Length > 0 ? val[0] : -1;
+            ctrls[1].Value = val != null && val.Length > 1 ? val[1] : -1;
         }
         SetRange(numConditionHearts, evolution.ConditionHearts);
         SetRange(numTraining, evolution.Training);
@@ -350,6 +356,8 @@ public class EvolutionCriteriaForm : Form
         SetRange(numTrophies, evolution.Trophies); // New field
         SetRange(numVitalValues, evolution.VitalValues); // New field
         SetRange(numWeigth, evolution.Weigth); // New field
+        SetRange(numQuestsCompleted, evolution.QuestsCompleted); // New field
+        SetRange(numPvp, evolution.Pvp); // New field
 
         numArea.Value = evolution.Area ?? 0;
         numStage.Value = evolution.Stage ?? 0;
@@ -380,8 +388,11 @@ public class EvolutionCriteriaForm : Form
         {
             int v0 = (int)ctrls[0].Value;
             int v1 = (int)ctrls[1].Value;
-            if (v0 == 0 && v1 == 0) return null;
-            if (v0 == 0 && v1 == max) return new int[] { 0, 999999 };
+            if (v1 == -1) return null;
+            if (v0 > max) v0 = max;
+            if (v1 > max) v1 = max;
+            if (v0 > v1) v0 = v1;
+            if (v0 < 0) return new int[] { 0, v1 };
             return new int[] { v0, v1 };
         }
 
@@ -401,6 +412,8 @@ public class EvolutionCriteriaForm : Form
         evolution.Trophies = GetRange(numTrophies, 999999); // New field
         evolution.VitalValues = GetRange(numVitalValues, 999999); // New field
         evolution.Weigth = GetRange(numWeigth, 100); // New field
+        evolution.QuestsCompleted = GetRange(numQuestsCompleted, 100); // New field
+        evolution.Pvp = GetRange(numPvp, 999999); // New field
 
         evolution.Area = numArea.Value == 0 ? (int?)null : (int)numArea.Value;
         evolution.Stage = numStage.Value == 0 ? (int?)null : (int)numStage.Value;

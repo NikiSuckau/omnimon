@@ -28,6 +28,7 @@ namespace OmnimonModuleEditor.Tabs
         private ComboBox cmbStatus;
         private NumericUpDown numAmount;
         private NumericUpDown numBoostTime;
+        private NumericUpDown numWeightGain;
         private PictureBox pbSprite;
 
         private ComboBox cmbComponentItem;
@@ -123,7 +124,7 @@ namespace OmnimonModuleEditor.Tabs
             {
                 Dock = DockStyle.Fill,
                 ColumnCount = 2,
-                RowCount = 9,
+                RowCount = 10, // Increased from 9 to 10 for WeightGain field
                 Padding = new Padding(16, 8, 8, 8),
                 AutoSize = true
             };
@@ -165,6 +166,10 @@ namespace OmnimonModuleEditor.Tabs
             rightPanel.Controls.Add(new Label { Text = "Boost Time:", TextAlign = ContentAlignment.MiddleRight, Dock = DockStyle.Fill }, 0, row);
             numBoostTime = new NumericUpDown { Dock = DockStyle.Left, Minimum = 0, Maximum = 9999, Width = 80, Value = 0 };
             rightPanel.Controls.Add(numBoostTime, 1, row++);
+
+            rightPanel.Controls.Add(new Label { Text = "Weight Gain:", TextAlign = ContentAlignment.MiddleRight, Dock = DockStyle.Fill }, 0, row);
+            numWeightGain = new NumericUpDown { Dock = DockStyle.Left, Minimum = 0, Maximum = 99, Width = 80, Value = 0 };
+            rightPanel.Controls.Add(numWeightGain, 1, row++);
 
             // Sprite box
             pbSprite = new PictureBox
@@ -331,6 +336,7 @@ namespace OmnimonModuleEditor.Tabs
             cmbStatus.SelectedItem = string.IsNullOrEmpty(item.Status) ? "" : item.Status;
             numAmount.Value = Math.Max(numAmount.Minimum, Math.Min(numAmount.Maximum, item.Amount));
             numBoostTime.Value = Math.Max(numBoostTime.Minimum, Math.Min(numBoostTime.Maximum, item.BoostTime));
+            numWeightGain.Value = Math.Max(numWeightGain.Minimum, Math.Min(numWeightGain.Maximum, item.WeightGain));
             UpdateComponentItemCombo();
             cmbComponentItem.SelectedItem = string.IsNullOrEmpty(item.ComponentItem) ? "" : item.ComponentItem;
             LoadSprite();
@@ -348,6 +354,7 @@ namespace OmnimonModuleEditor.Tabs
             cmbStatus.SelectedIndex = 0;
             numAmount.Value = 1;
             numBoostTime.Value = 0;
+            numWeightGain.Value = 0;
             pbSprite.Image = null;
             cmbComponentItem.SelectedIndex = 0;
         }
@@ -399,6 +406,7 @@ namespace OmnimonModuleEditor.Tabs
                 Status = "",
                 Amount = 1,
                 BoostTime = 0,
+                WeightGain = 0,
                 Id = ""
             };
             items.Add(newItem);
@@ -442,6 +450,7 @@ namespace OmnimonModuleEditor.Tabs
             selectedItem.Status = cmbStatus.SelectedItem?.ToString() ?? "";
             selectedItem.Amount = (int)numAmount.Value;
             selectedItem.BoostTime = (int)numBoostTime.Value;
+            selectedItem.WeightGain = (int)numWeightGain.Value;
             selectedItem.ComponentItem = cmbComponentItem.SelectedItem?.ToString() ?? "";
 
             lstItems.Items[lstItems.SelectedIndex] = selectedItem.Name;
@@ -478,6 +487,7 @@ namespace OmnimonModuleEditor.Tabs
                 selectedItem.Status = cmbStatus.SelectedItem?.ToString() ?? "";
                 selectedItem.Amount = (int)numAmount.Value;
                 selectedItem.BoostTime = (int)numBoostTime.Value;
+                selectedItem.WeightGain = (int)numWeightGain.Value;
                 selectedItem.ComponentItem = cmbComponentItem.SelectedItem?.ToString() ?? "";
             }
 

@@ -1,6 +1,7 @@
 ﻿using OmnimonModuleEditor.Controls;
 using OmnimonModuleEditor.Models;
-using OmnimonModuleEditor.Properties; // For Resources
+using OmnimonModuleEditor.Properties;
+using OmnimonModuleEditor.Utils;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -14,7 +15,7 @@ namespace OmnimonModuleEditor
 {
     /// <summary>
     /// Editor window for managing pet evolutions visually.
-    /// </summary>
+    /// /// </summary>
     public partial class EvolutionsEditorForm : Form
     {
         // Fields
@@ -281,12 +282,17 @@ namespace OmnimonModuleEditor
 
             if (cmbVersions.SelectedIndex < 0) return;
             int selectedVersion = int.Parse(cmbVersions.SelectedItem.ToString().Replace(Resources.Label_Version + " ", ""));
-            var rootPet = pets.FirstOrDefault(p => p.Version == selectedVersion && p.Stage == 0);
-            if (rootPet == null) return;
+            var rootPets = pets.Where(p => p.Version == selectedVersion && p.Stage == 0).ToList();
+            if (rootPets.Count == 0) return;
 
             var petToPanel = new Dictionary<Pet, Panel>();
             int startX = 60, startY = 60;
-            AddPetAndEvolutionsRecursive(rootPet, startX, startY, 0, petToPanel);
+            int spacingX = 320;
+            for (int i = 0; i < rootPets.Count; i++)
+            {
+                int x = startX + i * spacingX;
+                AddPetAndEvolutionsRecursive(rootPets[i], x, startY, 0, petToPanel);
+            }
             UpdateCanvasScroll();
             panelChart.Invalidate();
         }
@@ -359,21 +365,10 @@ namespace OmnimonModuleEditor
                 BorderStyle = BorderStyle.FixedSingle
             };
 
-            string nameFormat = this.module.NameFormat;
-            string folderName = nameFormat.Replace("$", pet.Name).Replace(':', '_');
-            string spritePath = Path.Combine(this.modulePath, "monsters", folderName, "0.png");
-            if (File.Exists(spritePath))
-            {
-                try
-                {
-                    using (var fs = new FileStream(spritePath, FileMode.Open, FileAccess.Read, FileShare.Read))
-                    {
-                        var img = Image.FromStream(fs);
-                        pb.Image = new Bitmap(img);
-                    }
-                }
-                catch { pb.Image = null; }
-            }
+            // Use new sprite loading system
+            var sprite = SpriteUtils.LoadSingleSprite(pet.Name, modulePath, PetUtils.FixedNameFormat);
+            pb.Image = sprite;
+
             itemPanel.Controls.Add(pb);
 
             Label lblName = new Label
@@ -763,6 +758,8 @@ namespace OmnimonModuleEditor
                 if (evo.Trophies != null) lines.Add($"Trophies: {formatRange(evo.Trophies)}"); // New field
                 if (evo.VitalValues != null) lines.Add($"Vital Values: {formatRange(evo.VitalValues)}"); // New field
                 if (evo.Weigth != null) lines.Add($"Weight: {formatRange(evo.Weigth)}"); // New field
+                if (evo.QuestsCompleted != null) lines.Add($"Quests Completed: {formatRange(evo.QuestsCompleted)}"); // New field
+                if (evo.Pvp != null) lines.Add($"PVP: {formatRange(evo.Pvp)}"); // New field
             }
 
             // Define the click event handler that opens the EvolutionCriteriaForm
@@ -1030,7 +1027,9 @@ namespace OmnimonModuleEditor
                 TimeRange = evo.TimeRange != null ? (string[])evo.TimeRange.Clone() : null, // <-- Adicionado
                 Trophies = evo.Trophies != null ? (int[])evo.Trophies.Clone() : null, // New field
                 VitalValues = evo.VitalValues != null ? (int[])evo.VitalValues.Clone() : null, // New field
-                Weigth = evo.Weigth != null ? (int[])evo.Weigth.Clone() : null // New field
+                Weigth = evo.Weigth != null ? (int[])evo.Weigth.Clone() : null, // New field
+                QuestsCompleted = evo.QuestsCompleted != null ? (int[])evo.QuestsCompleted.Clone() : null, // New field
+                Pvp = evo.Pvp != null ? (int[])evo.Pvp.Clone() : null // New field
             };
         }
 

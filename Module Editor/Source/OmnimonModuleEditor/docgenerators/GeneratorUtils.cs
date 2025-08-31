@@ -1,5 +1,6 @@
 ﻿using System.IO;
 using System.Reflection;
+using OmnimonModuleEditor.Utils;
 
 namespace OmnimonModuleEditor.docgenerators
 {
@@ -374,6 +375,7 @@ namespace OmnimonModuleEditor.docgenerators
                     addRow('Time', pet.time + ' hours', 'Evolution timer in hours. Pet evolves when this time expires (if evolution requirements are met).');
                     addRow('Energy', pet.energy, 'Maximum DP (energy) capacity. DP is consumed during battles and training.');
                     addRow('Min Weight', pet.minWeight, 'Minimum weight threshold. Weight affects evolution paths and battle performance.');
+                    if (pet.evolWeight > pet.minWeight) addRow('Evol Weight', pet.evolWeight, 'Evolution weight. Determines the starting weight of a pet after evolution.');
                     addRow('Stomach', pet.stomach, 'Hunger capacity. Determines how much food the pet can eat before becoming full.');
                     addRow('Hunger Loss', pet.hungerLoss, 'Rate of hunger depletion over time. Lower values mean hunger decreases slower.');
                     addRow('Poop Timer', pet.poopTimer + ' minutes', 'Time between pooping cycles. Neglecting poop cleanup causes care mistakes.');
@@ -836,6 +838,53 @@ namespace OmnimonModuleEditor.docgenerators
 </body>
 </html>";
 
+                case "items.html":
+                    return @"<!DOCTYPE html>
+<html lang='en'>
+<head>
+    <meta charset='UTF-8'>
+    <title>Items</title>
+    <link rel='stylesheet' href='module.css'>
+</head>
+<body>
+    <div class='page-content'>
+        <h1>Module Items</h1>
+        <table>
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Description</th>
+                    <th>Effect</th>
+                    <th>Status</th>
+                    <th>Amount</th>
+                    <th>Weight Gain</th>
+                </tr>
+            </thead>
+            <tbody>
+                #ITEMSDATA
+            </tbody>
+        </table>
+        <div id='empty-items' class='empty-state' style='display: none;'>
+            <i>📦</i>
+            <p>No items configured for this module.</p>
+        </div>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var tbody = document.querySelector('table tbody');
+            var emptyState = document.getElementById('empty-items');
+            var table = document.querySelector('table');
+            
+            if (!tbody || tbody.children.length === 0) {
+                table.style.display = 'none';
+                emptyState.style.display = 'block';
+            }
+        });
+    </script>
+</body>
+</html>";
+
                 default:
                     return $"<html><body><h1>{fileName} Template Not Found</h1></body></html>";
             }
@@ -860,17 +909,15 @@ namespace OmnimonModuleEditor.docgenerators
 
         public static string GetPetSprite(string petName, OmnimonModuleEditor.Models.Module module)
         {
-            if (string.IsNullOrEmpty(petName)) return "../missing.png";
-            string petFolderName = GetPetFolderName(petName, module);
-            return $"../monsters/{petFolderName}/0.png";
+            // Use fixed name format instead of module.NameFormat
+            string spriteName = GetPetFolderName(petName, null);
+            return $"../monsters/{spriteName}/0.png";
         }
 
         public static string GetPetFolderName(string petName, OmnimonModuleEditor.Models.Module module)
         {
-            if (string.IsNullOrEmpty(petName)) return "unknown";
-            string nameFormat = module?.NameFormat ?? "$";
-            string safePetName = petName.Replace(':', '_');
-            return nameFormat.Replace("$", safePetName);
+            // Use fixed name format regardless of module
+            return PetUtils.FixedNameFormat.Replace("$", CleanPetId(petName));
         }
 
         public static string CleanPetId(string petName)

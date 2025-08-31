@@ -8,16 +8,14 @@ namespace OmnimonModuleEditor.docgenerators
         public static void GenerateHomePage(string docPath, Module module, string modulePath)
         {
             string template = GeneratorUtils.GetTemplateContent("home.html");
-
-            template = template.Replace("#MODULENAMEFORMAT", module.NameFormat.Replace("$", "&#36;"));
-            
             string content = template
+                // Always replace longer tokens first to avoid conflicts
                 .Replace("#MODULEADVENTUREMODECLASS", module?.AdventureMode == true ? "boolean-true" : "boolean-false")
                 .Replace("#MODULEADVENTUREMODE", module?.AdventureMode == true ? "Yes" : "No")
                 .Replace("#MODULECAREMEATWEIGHTGAINCLASS", GetIntegerCssClass(module?.CareMeatWeightGain))
                 .Replace("#MODULECAREMEATWEIGHTGAIN", GetIntegerDisplayValue(module?.CareMeatWeightGain))
-                .Replace("#MODULECAREMEATHUNGERGAINCLASS", GetIntegerCssClass(module?.CareMeatHungerGain))
-                .Replace("#MODULECAREMEATHUNGERGAIN", GetIntegerDisplayValue(module?.CareMeatHungerGain))
+                .Replace("#MODULECAREMEATHUNGERGAINCLASS", GetFloatCssClass(module?.CareMeatHungerGain))
+                .Replace("#MODULECAREMEATHUNGERGAIN", GetFloatDisplayValue(module?.CareMeatHungerGain))
                 .Replace("#MODULECAREMEATCAREMISTAKETIMECLASS", GetIntegerCssClass(module?.CareMeatCareMistakeTime))
                 .Replace("#MODULECAREMEATCAREMISTAKETIME", GetIntegerDisplayValue(module?.CareMeatCareMistakeTime))
                 .Replace("#MODULECAREOVERFEEDTIMERCLASS", GetIntegerCssClass(module?.CareOverfeedTimer))
@@ -30,28 +28,44 @@ namespace OmnimonModuleEditor.docgenerators
                 .Replace("#MODULECAREBACKTOSLEEPTIME", GetIntegerDisplayValue(module?.CareBackToSleepTime))
                 .Replace("#MODULECARESHAKENEEGGCLASS", module?.CareEnableShakenEgg == true ? "boolean-true" : "boolean-false")
                 .Replace("#MODULECARESHAKENEGG", module?.CareEnableShakenEgg == true ? "Yes" : "No")
+                .Replace("#MODULECAREFLUSHDETURBANCESLEEPCLASS", module?.CareFlushDisturbanceSleep == true ? "boolean-true" : "boolean-false")
+                .Replace("#MODULECAREFLUSHDETURBANCESLEEP", module?.CareFlushDisturbanceSleep == true ? "Yes" : "No")
 
                 // Care Protein
                 .Replace("#MODULECAREPROTEINWEIGHTGAINCLASS", GetIntegerCssClass(module?.CareProteinWeightGain))
                 .Replace("#MODULECAREPROTEINWEIGHTGAIN", GetIntegerDisplayValue(module?.CareProteinWeightGain))
-                .Replace("#MODULECAREPROTEINSTRENGTHGAINCLASS", GetIntegerCssClass(module?.CareProteinStrenghGain))
-                .Replace("#MODULECAREPROTEINSTRENGTHGAIN", GetIntegerDisplayValue(module?.CareProteinStrenghGain))
+                .Replace("#MODULECAREPROTEINSTRENGTHGAINCLASS", GetFloatCssClass(module?.CareProteinStrenghGain))
+                .Replace("#MODULECAREPROTEINSTRENGTHGAIN", GetFloatDisplayValue(module?.CareProteinStrenghGain))
                 .Replace("#MODULECAREPROTEINDPGAINCLASS", GetIntegerCssClass(module?.CareProteinDpGain))
                 .Replace("#MODULECAREPROTEINDPGAIN", GetIntegerDisplayValue(module?.CareProteinDpGain))
                 .Replace("#MODULECAREPROTEINCAREMISTAKETIMECLASS", GetIntegerCssClass(module?.CareProteinCareMistakeTime))
                 .Replace("#MODULECAREPROTEINCAREMISTAKETIME", GetIntegerDisplayValue(module?.CareProteinCareMistakeTime))
                 .Replace("#MODULECAREPROTEINOVERDOSEMAXCLASS", GetIntegerCssClass(module?.CareProteinOverdoseMax))
                 .Replace("#MODULECAREPROTEINOVERDOSEMAX", GetIntegerDisplayValue(module?.CareProteinOverdoseMax))
+                .Replace("#MODULECAREPROTEINPENALTYCLASS", GetIntegerCssClass(module?.CareProteinPenalty ?? 10))
+                .Replace("#MODULECAREPROTEINPENALTY", GetIntegerDisplayValue(module?.CareProteinPenalty ?? 10))
                 .Replace("#MODULECARESDISTURBANCEPENALTYCLASS", GetIntegerCssClass(module?.CareDisturbancePenaltyMax))
                 .Replace("#MODULECARESDISTURBANCEPENALTY", GetIntegerDisplayValue(module?.CareDisturbancePenaltyMax))
+
+                // Care Sleep
                 .Replace("#MODULECARESLEEPCAREMISTAKECLASS", GetIntegerCssClass(module?.CareSleepCareMistakeTimer))
                 .Replace("#MODULECARESLEEPCAREMISTAKE", GetIntegerDisplayValue(module?.CareSleepCareMistakeTimer))
 
-                // Care - Vital Values
-                .Replace("#MODULEVITALVALUEBASECLASS", GetIntegerCssClass(module?.VitalValueBase))
-                .Replace("#MODULEVITALVALUEBASE", GetIntegerDisplayValue(module?.VitalValueBase))
-                .Replace("#MODULEVITALVALUELOSSCLASS", GetIntegerCssClass(module?.VitalValueLoss))
-                .Replace("#MODULEVITALVALUELOSS", GetIntegerDisplayValue(module?.VitalValueLoss))
+                // Training
+                .Replace("#MODULETRAININGSTRENGTHGAINWINCLASS", GetIntegerCssClass(module?.TrainingStrenghGainWin))
+                .Replace("#MODULETRAININGSTRENGTHGAINWIN", GetIntegerDisplayValue(module?.TrainingStrenghGainWin))
+                .Replace("#MODULETRAININGSTRENGTHGAINLOSECLASS", GetIntegerCssClass(module?.TrainingStrenghGainLose))
+                .Replace("#MODULETRAININGSTRENGTHGAINLOSE", GetIntegerDisplayValue(module?.TrainingStrenghGainLose))
+                .Replace("#MODULETRAININGSTRENGMULTIPLIERCLASS", GetFloatCssClass(module?.TrainingStrenghMultiplier))
+                .Replace("#MODULETRAININGSTRENGMULTIPLIER", GetFloatDisplayValue(module?.TrainingStrenghMultiplier))
+                .Replace("#MODULETRAININGWEIGHTWINCLASS", GetIntegerCssClass(module?.TrainingWeightWin))
+                .Replace("#MODULETRAININGWEIGHTWIN", GetIntegerDisplayValue(module?.TrainingWeightWin))
+                .Replace("#MODULETRAININGWEIGHTLOSECLASS", GetIntegerCssClass(module?.TrainingWeightLose))
+                .Replace("#MODULETRAININGWEIGHTLOSE", GetIntegerDisplayValue(module?.TrainingWeightLose))
+                .Replace("#MODULETRAITEDEGGLEVELCLASS", GetIntegerCssClass(module?.TraitedEggStartingLevel))
+                .Replace("#MODULETRAITEDEGGLEVEL", GetIntegerDisplayValue(module?.TraitedEggStartingLevel))
+                .Replace("#MODULEREVERSEATKFRAMESCLASS", module?.ReverseAtkFrames == true ? "boolean-true" : "boolean-false")
+                .Replace("#MODULEREVERSEATKFRAMES", module?.ReverseAtkFrames == true ? "Yes" : "No")
 
                 // Battle
                 .Replace("#MODULEBATTLEBASESICKCHANCEWINCLASS", GetIntegerCssClass(module?.BattleBaseSickChanceWin))
@@ -64,20 +78,6 @@ namespace OmnimonModuleEditor.docgenerators
                 .Replace("#MODULEBATTLEGLOBALHITPOINTS", GetIntegerDisplayValue(module?.BattleGlobalHitPoints))
                 .Replace("#MODULEBATTLESEQUENTIALROUNDSCLASS", module?.BattleSequentialRounds == true ? "boolean-true" : "boolean-false")
                 .Replace("#MODULEBATTLESEQUENTIALROUNDS", module?.BattleSequentialRounds == true ? "Yes" : "No")
-                .Replace("#MODULETRAITEDEGGLEVELCLASS", GetIntegerCssClass(module?.TraitedEggStartingLevel))
-                .Replace("#MODULETRAITEDEGGLEVEL", GetIntegerDisplayValue(module?.TraitedEggStartingLevel))
-
-                // Training
-                .Replace("#MODULETRAININGEFFORTGAINCLASS", GetIntegerCssClass(module?.TrainingEffortGain))
-                .Replace("#MODULETRAININGEFFORTGAIN", GetIntegerDisplayValue(module?.TrainingEffortGain))
-                .Replace("#MODULETRAININGSTRENGTHGAINCLASS", GetIntegerCssClass(module?.TrainingStrenghGain))
-                .Replace("#MODULETRAININGSTRENGTHGAIN", GetIntegerDisplayValue(module?.TrainingStrenghGain))
-                .Replace("#MODULETRAININGWEIGHTWINCLASS", GetIntegerCssClass(module?.TrainingWeightWin))
-                .Replace("#MODULETRAININGWEIGHTWIN", GetIntegerDisplayValue(module?.TrainingWeightWin))
-                .Replace("#MODULETRAININGWEIGHTLOSECLASS", GetIntegerCssClass(module?.TrainingWeightLose))
-                .Replace("#MODULETRAININGWEIGHTLOSE", GetIntegerDisplayValue(module?.TrainingWeightLose))
-                .Replace("#MODULEREVERSEATKFRAMESCLASS", module?.ReverseAtkFrames == true ? "boolean-true" : "boolean-false")
-                .Replace("#MODULEREVERSEATKFRAMES", module?.ReverseAtkFrames == true ? "Yes" : "No")
 
                 // Death
                 .Replace("#MODULEDEATHMAXINJURIESCLASS", GetIntegerCssClass(module?.DeathMaxInjuries))
@@ -100,13 +100,21 @@ namespace OmnimonModuleEditor.docgenerators
                 .Replace("#MODULEDEATHSAVEBYBPRESS", GetBooleanOrIntegerDisplay(module?.DeathSaveByBPress))
                 .Replace("#MODULEDEATHSAVEBYSHAKECLASS", GetBooleanOrIntegerClass(module?.DeathSaveByShake))
                 .Replace("#MODULEDEATHSAVEBYSHAKE", GetBooleanOrIntegerDisplay(module?.DeathSaveByShake))
+                .Replace("#MODULEDEATHOLDAGECLASS", GetIntegerCssClass(module?.DeathOldAge))
+                .Replace("#MODULEDEATHOLDAGE", GetIntegerDisplayValue(module?.DeathOldAge))
 
-                // General (always last)
+                // Vital Values - NEW
+                .Replace("#MODULEVITALVALUEBASECLASS", GetIntegerCssClass(module?.VitalValueBase))
+                .Replace("#MODULEVITALVALUEBASE", GetIntegerDisplayValue(module?.VitalValueBase))
+                .Replace("#MODULEVITALVALUELOSSCLASS", GetIntegerCssClass(module?.VitalValueLoss))
+                .Replace("#MODULEVITALVALUELOSS", GetIntegerDisplayValue(module?.VitalValueLoss))
+
+                // General fields (always last to avoid conflicts)
                 .Replace("#MODULENAME", module?.Name ?? "Unknown Module")
                 .Replace("#MODULEVERSION", module?.Version ?? "1.0")
                 .Replace("#MODULEDESCRIPTION", module?.Description ?? "No description available")
                 .Replace("#MODULEAUTHOR", module?.Author ?? "Unknown Author")
-                .Replace("#MODULENAMEFORMAT", module.NameFormat.Replace("$", "&#36;"))
+                .Replace("#MODULEFILEFORMAT", module?.NameFormat ?? "Unknown")
                 .Replace("#MODULERULESET", module?.Ruleset ?? "Unknown");
 
             string logoPath = Path.Combine(modulePath, "logo.png");
@@ -151,6 +159,17 @@ namespace OmnimonModuleEditor.docgenerators
         {
             if (!value.HasValue) return "boolean-false";
             return value.Value == 0 ? "boolean-false" : "boolean-true";
+        }
+
+        private static string GetFloatDisplayValue(float? value)
+        {
+            return (value ?? 0).ToString("0.##");
+        }
+
+        private static string GetFloatCssClass(float? value)
+        {
+            float actualValue = value ?? 0;
+            return actualValue == 0 ? "boolean-false" : "";
         }
     }
 }

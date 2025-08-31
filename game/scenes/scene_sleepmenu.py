@@ -20,8 +20,8 @@ class SceneSleepMenu:
     def __init__(self) -> None:
         self.background = WindowBackground()
         self.options = [
-            ("Sleep", sprite_load_percent("resources/SleepIcon.png", percent=(OPTION_ICON_SIZE / constants.SCREEN_HEIGHT) * 100, keep_proportion=True, base_on="height")),
-            ("Wake", sprite_load_percent("resources/WakeIcon.png", percent=(OPTION_ICON_SIZE / constants.SCREEN_HEIGHT) * 100, keep_proportion=True, base_on="height"))
+            ("Sleep", sprite_load_percent(constants.SLEEP_ICON_PATH, percent=(OPTION_ICON_SIZE / constants.SCREEN_HEIGHT) * 100, keep_proportion=True, base_on="height")),
+            ("Wake", sprite_load_percent(constants.WAKE_ICON_PATH, percent=(OPTION_ICON_SIZE / constants.SCREEN_HEIGHT) * 100, keep_proportion=True, base_on="height"))
         ]
 
         self.selected_index = 0
@@ -39,7 +39,9 @@ class SceneSleepMenu:
         runtime_globals.game_console.log("[SceneSleepMenu] Sleep menu initialized.")
 
     def update(self) -> None:
-        pass
+        # Update menu window for mouse hover
+        if runtime_globals.game_input.mouse_enabled:
+            self.menu_window.update()
 
     def pets_can(self):
         if self.selected_index == 0:
@@ -48,7 +50,7 @@ class SceneSleepMenu:
             return self.pets_can_wake()
 
     def pets_can_sleep(self):
-        return [pet for pet in get_selected_pets() if pet.stage > 1 and pet.state != "nap" and pet.state != "dead"]
+        return [pet for pet in get_selected_pets() if pet.stage > 0 and pet.state != "nap" and pet.state != "dead" and pet.sleeps and pet.wakes]
 
     def pets_can_wake(self):
         return [pet for pet in get_selected_pets() if pet.state == "nap"]
@@ -73,6 +75,14 @@ class SceneSleepMenu:
 
     def handle_event(self, input_action) -> None:
         if input_action:
+            # Handle mouse clicks on navigation arrows for multi-option menus
+            if input_action == "A" and runtime_globals.game_input.mouse_enabled:
+                mouse_pos = runtime_globals.game_input.get_mouse_position()
+                if self.menu_window.handle_mouse_click(mouse_pos):
+                    # Mouse click was handled by the menu (navigation arrow click)
+                    self._cache_surface = None  # Invalidate cache to redraw
+                    return
+            
             if input_action == "B":  # ESC or START
                 runtime_globals.game_sound.play("cancel")
                 change_scene("game")

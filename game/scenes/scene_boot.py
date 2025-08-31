@@ -7,6 +7,7 @@ Transitions automatically to either Egg Selection or Main Game based on pet list
 import platform
 import pygame
 import os
+import pickle
 
 from components.window_background import WindowBackground
 from core import game_globals, runtime_globals
@@ -15,6 +16,28 @@ from core.utils.module_utils import get_module
 from core.utils.pet_utils import distribute_pets_evenly
 from core.utils.pygame_utils import blit_with_cache, sprite_load_percent
 from core.utils.scene_utils import change_scene
+
+
+def has_freezer_pets() -> bool:
+    """
+    Check if there are any pets stored in the freezer save file.
+    Returns True if freezer.pkl exists and contains at least one pet.
+    """
+    freezer_path = "save/freezer.pkl"
+    if not os.path.exists(freezer_path):
+        return False
+    
+    try:
+        with open(freezer_path, "rb") as f:
+            freezer_data = pickle.load(f)
+            # Check if any of the freezer pages have pets
+            for page in freezer_data:
+                if hasattr(page, 'pets') and page.pets and any(pet is not None for pet in page.pets):
+                    return True
+            return False
+    except Exception:
+        # If there's any error reading the file, assume no pets
+        return False
 
 
 #=====================================================================
@@ -31,7 +54,11 @@ class SceneBoot:
         Initializes the boot scene with a temporary timer.
         """
         self.background = WindowBackground(True)
-        self.logo = sprite_load_percent("resources/OmnimonLogo.png", percent=100, keep_proportion=True, base_on="height")
+        # Use "Fit" method for logo image for both landscape and portrait devices
+        if constants.SCREEN_WIDTH >= constants.SCREEN_HEIGHT:
+            self.logo = sprite_load_percent(constants.OMNIMON_LOGO_PATH, percent=100, keep_proportion=True, base_on="height")
+        else:
+            self.logo = sprite_load_percent(constants.OMNIMON_LOGO_PATH, percent=100, keep_proportion=True, base_on="width")
 
         # --- Platform detection ---
         is_batocera = os.path.exists("/usr/share/batocera") or os.path.exists("/etc/batocera-release")
@@ -43,15 +70,19 @@ class SceneBoot:
             pass
 
         if platform.system() == "Windows":
-            image_path = "resources/ControllersPC.png"
+            image_path = constants.CONTROLLERS_PC_PATH
         elif is_batocera:
-            image_path = "resources/ControllersBato.png"  # Or a Batocera-specific image if you have one
+            image_path = constants.CONTROLLERS_BATO_PATH  # Or a Batocera-specific image if you have one
         elif is_rpi:
-            image_path = "resources/ControllersPi.png"
+            image_path = constants.CONTROLLERS_PI_PATH
         else:
-            image_path = "resources/ControllersJoy.png"  # Fallback for other Linux
+            image_path = constants.CONTROLLERS_JOY_PATH  # Fallback for other Linux
 
-        self.controller_sprite = sprite_load_percent(image_path, percent=100, keep_proportion=True, base_on="height")
+        # Use "Fit" method for controller images for both landscape and portrait devices
+        if constants.SCREEN_WIDTH >= constants.SCREEN_HEIGHT:
+            self.controller_sprite = sprite_load_percent(image_path, percent=100, keep_proportion=True, base_on="height")
+        else:
+            self.controller_sprite = sprite_load_percent(image_path, percent=100, keep_proportion=True, base_on="width")
         self.boot_timer = int(150 * (constants.FRAME_RATE / 30)) 
         runtime_globals.game_console.log("[SceneBoot] Initialized")
 
@@ -74,7 +105,10 @@ class SceneBoot:
             sprite_rect = self.controller_sprite.get_rect(center=(constants.SCREEN_WIDTH // 2, constants.SCREEN_HEIGHT // 2))
             blit_with_cache(surface, self.controller_sprite, sprite_rect)
         else:
-            blit_with_cache(surface, self.logo, ((constants.SCREEN_WIDTH - self.logo.get_width()) // 2, 0))
+            # Old way: blit_with_cache(surface, self.logo, ((constants.SCREEN_WIDTH - self.logo.get_width()) // 2, 0))
+            # Center the logo image as well
+            sprite_rect = self.logo.get_rect(center=(constants.SCREEN_WIDTH // 2, constants.SCREEN_HEIGHT // 2))
+            blit_with_cache(surface, self.logo, sprite_rect)
 
     def handle_event(self, input_action) -> None:
         """
@@ -104,5 +138,10 @@ class SceneBoot:
                 pet.patch()
             distribute_pets_evenly()
         else:
-            change_scene("egg")
-            runtime_globals.game_console.log("[SceneBoot] Transitioning to EggSelection (no pets)")
+            # No active pets, check if there are pets in the freezer
+            if has_freezer_pets():
+                change_scene("freezer")
+                runtime_globals.game_console.log("[SceneBoot] Transitioning to Freezer (pets found in freezer)")
+            else:
+                change_scene("egg")
+                runtime_globals.game_console.log("[SceneBoot] Transitioning to EggSelection (no pets)")

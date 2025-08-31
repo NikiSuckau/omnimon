@@ -80,7 +80,7 @@
                 </div>
                 <div class="module-info">
                     <h1>DMX</h1>
-                    <p class="version">Version: 1.0.1</p>
+                    <p class="version">Version: 1.0.2</p>
                     <p class="author">Author: Sundeth, Reviewed by: justintechnerd and Pepperoni Secret</p>
                     <p class="description">A reimplementation of the Digital Monster X devices, you can find more at https://humulos.com/digimon/dmx/manual/.</p>
                 </div>
@@ -104,7 +104,7 @@
                             <span class="attribute-label tooltip">Name Format:
                                 <span class="tooltiptext">Template string for pet folder names. '$' is replaced with the pet's name. Example: "$_dmc" creates folders like "Agumon_dmc". Used for sprite loading paths.</span>
                             </span>
-                            <span class="attribute-value">&#36;_dmc</span>
+                            <span class="attribute-value">$_dmc</span>
                         </li>
                         <li class="attribute-item">
                             <span class="attribute-label tooltip">Ruleset:
@@ -129,6 +129,12 @@
                                 <span class="tooltiptext">Allows eggs to be "shaken" (shake_counter >= 99) for evolution bonuses. It can provide a power bonus.</span>
                             </span>
                             <span class="attribute-value boolean-false">No</span>
+                        </li>
+                        <li class="attribute-item">
+                            <span class="attribute-label tooltip">Flush Disturbance Sleep:
+                                <span class="tooltiptext">When enabled, using the flush/toilet function while the pet is sleeping will count as a sleep disturbance. When disabled, flushing won't disturb sleep.</span>
+                            </span>
+                            <span class="attribute-value boolean-true">Yes</span>
                         </li>
                         <li class="attribute-item">
                             <span class="attribute-label tooltip">Back to Sleep Time:
@@ -159,7 +165,7 @@
                             <span class="attribute-label tooltip">Hunger Gain:
                                 <span class="tooltiptext">Amount of hunger restored per meat feeding. Pets can't eat when hunger equals stomach capacity or during overfeed timer. Higher values fill hunger faster per feeding.</span>
                             </span>
-                            <span class="attribute-value ">1</span>
+                            <span class="attribute-value ">0,5</span>
                         </li>
                         <li class="attribute-item">
                             <span class="attribute-label tooltip">Care Mistake Time:
@@ -190,13 +196,13 @@
                             <span class="attribute-label tooltip">Weight Gain:
                                 <span class="tooltiptext">Weight increase when feeding protein/strength food. Applied only to pets above stage 1 and below 99 weight. Works similarly to meat weight gain.</span>
                             </span>
-                            <span class="attribute-value ">1</span>
+                            <span class="attribute-value ">2</span>
                         </li>
                         <li class="attribute-item">
                             <span class="attribute-label tooltip">Strength Gain:
                                 <span class="tooltiptext">Amount of strength restored per protein feeding. Also added when training. Strength depletes over time and empty strength triggers care mistakes.</span>
                             </span>
-                            <span class="attribute-value ">1</span>
+                            <span class="attribute-value ">0,5</span>
                         </li>
                         <li class="attribute-item">
                             <span class="attribute-label tooltip">DP Gain:
@@ -216,6 +222,12 @@
                             </span>
                             <span class="attribute-value boolean-false">0</span>
                         </li>
+                            <li class="attribute-item">
+                            <span class="attribute-label tooltip">Protein Penalty:
+                                <span class="tooltiptext">Protein Penalty affects battle sick chance. Determines the amount of each penalty for Protein Overdose in percent.</span>
+                            </span>
+                            <span class="attribute-value ">10</span>
+                        </li>
                         <li class="attribute-item">
                             <span class="attribute-label tooltip">Sleep Care Mistake Timer:
                                 <span class="tooltiptext">Minutes before triggering a care mistake for sleep neglect. Timer resets when pet gets proper sleep. Important for maintaining good care quality.</span>
@@ -233,13 +245,13 @@
                             <span class="attribute-label tooltip">Vital Value Base:
                                 <span class="tooltiptext">Minimum value of Vital Values that a pet will gain per hour if well fed and not sick. This represents the natural recovery rate when the pet is in good health.</span>
                             </span>
-                            <span class="attribute-value ">50</span>
+                            <span class="attribute-value boolean-false">0</span>
                         </li>
                         <li class="attribute-item">
                             <span class="attribute-label tooltip">Vital Value Loss:
                                 <span class="tooltiptext">Amount of Vital Values lost per minute if hungry or sick. Higher values make pets deteriorate faster when not properly cared for.</span>
                             </span>
-                            <span class="attribute-value ">50</span>
+                            <span class="attribute-value boolean-false">0</span>
                         </li>
                     </ul>
                 </div>
@@ -292,14 +304,20 @@
                     <h2>Training Settings</h2>
                     <ul class="attribute-list">
                         <li class="attribute-item">
-                            <span class="attribute-label tooltip">Effort Gain:
+                            <span class="attribute-label tooltip">Strength Win:
                                 <span class="tooltiptext">Effort points gained when winning training sessions. At 16+ effort, pets gain significant power bonuses. Critical for unlocking evolution paths and combat effectiveness.</span>
                             </span>
                             <span class="attribute-value ">1</span>
                         </li>
                         <li class="attribute-item">
-                            <span class="attribute-label tooltip">Strength Gain:
-                                <span class="tooltiptext">Strength increase from training sessions (both win and lose). Helps maintain strength levels and prevent care mistakes. Supplements protein feeding.</span>
+                            <span class="attribute-label tooltip">Strength Lose:
+                                <span class="tooltiptext">Strength increase from training sessions when losing. Usually less than winning gain. Helps maintain strength levels even when training performance is poor.</span>
+                            </span>
+                            <span class="attribute-value boolean-false">0</span>
+                        </li>
+                        <li class="attribute-item">
+                            <span class="attribute-label tooltip">Strength Multiplier:
+                                <span class="tooltiptext">Multiplier applied to strength gains from training based on performance. Higher performance in training yields extra strength points.</span>
                             </span>
                             <span class="attribute-value ">1</span>
                         </li>
@@ -387,6 +405,12 @@
                                 <span class="tooltiptext">Enables death prevention by device shaking. When enabled, gives 1 minute frame window to save pet through physical interaction. Alternative to button-based saving.</span>
                             </span>
                             <span class="attribute-value boolean-false">No</span>
+                        </li>
+                        <li class="attribute-item">
+                            <span class="attribute-label tooltip">Death by Old Age:
+                                <span class="tooltiptext">Days of pet's life before death from old age. When set to 0, old age death is disabled. Higher values allow pets to live longer before dying of natural causes.</span>
+                            </span>
+                            <span class="attribute-value boolean-false">0</span>
                         </li>
                     </ul>
                 </div>

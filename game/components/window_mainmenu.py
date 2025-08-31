@@ -45,9 +45,9 @@ class WindowMenu:
         try:
             menu_sheet = pygame.transform.scale(
                 pygame.image.load(constants.MAIN_MENU_PATH).convert_alpha(),
-                (constants.MENU_ICON_SIZE * 2, constants.MENU_ICON_SIZE * 8)
+                (constants.MENU_ICON_SIZE * 2, constants.MENU_ICON_SIZE * 10)
             )
-            for i in range(8):  # 8 menu items
+            for i in range(10):  # 10 menu items
                 normal = menu_sheet.subsurface((0, i * constants.MENU_ICON_SIZE, constants.MENU_ICON_SIZE, constants.MENU_ICON_SIZE))
                 selected = menu_sheet.subsurface((constants.MENU_ICON_SIZE, i * constants.MENU_ICON_SIZE, constants.MENU_ICON_SIZE, constants.MENU_ICON_SIZE))
                 normal = pygame.transform.scale(normal, (constants.MENU_ICON_SIZE * 2, constants.MENU_ICON_SIZE * 2))
@@ -59,14 +59,15 @@ class WindowMenu:
 
     def calculate_spacing(self):
         """Precomputes icon positions to avoid unnecessary calculations."""
-        self.spacing_x = (constants.SCREEN_WIDTH - (4 * constants.MENU_ICON_SIZE * 2)) // 5
-        self.top_y = 20 * constants.UI_SCALE if game_globals.showClock else 4
+        # Divide by 6 to evenly space the icons on the screen. Dividing by 5 shifts the icons to the right on wide screens.
+        self.spacing_x = (constants.SCREEN_WIDTH - (5 * constants.MENU_ICON_SIZE * 2)) // 6
+        self.top_y = 20 * constants.UI_SCALE if game_globals.showClock else 5 * constants.UI_SCALE
 
         self.top_positions = [
-            (self.spacing_x + i * (constants.MENU_ICON_SIZE * 2 + self.spacing_x), 0) for i in range(4)
+            (self.spacing_x + i * (constants.MENU_ICON_SIZE * 2 + self.spacing_x), 0) for i in range(5)
         ]
         self.bottom_positions = [
-            (self.spacing_x + (i - 4) * (constants.MENU_ICON_SIZE * 2 + self.spacing_x), 0) for i in range(4, 8)
+            (self.spacing_x + (i - 5) * (constants.MENU_ICON_SIZE * 2 + self.spacing_x), 0) for i in range(5, 10)
         ]
 
 
@@ -88,9 +89,9 @@ class WindowMenu:
         # Update bottom cache if selection or alert changed
         if self.prev_menu_index != menu_index or self.prev_alert_state != alert or force:
             self.bottom_cache = pygame.Surface((constants.SCREEN_WIDTH, constants.MENU_ICON_SIZE * 2), pygame.SRCALPHA)
-            for i, (x, y) in enumerate(self.bottom_positions, start=4):
+            for i, (x, y) in enumerate(self.bottom_positions, start=5):
                 selected = (i == menu_index)
-                if i == 7 and alert:
+                if i == 9 and alert:
                     icon = self.icons[i][1]
                 else:
                     icon = self.icons[i][1] if selected else self.icons[i][0]

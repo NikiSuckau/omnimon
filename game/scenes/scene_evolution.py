@@ -6,6 +6,13 @@ import game.core.constants as constants
 from core.utils.pygame_utils import get_font, get_font_alt, sprite_load_percent
 from core.utils.scene_utils import change_scene
 
+# Import additional constants needed
+UI_SCALE = constants.UI_SCALE
+SCREEN_WIDTH = constants.SCREEN_WIDTH
+SCREEN_HEIGHT = constants.SCREEN_HEIGHT
+FONT_SIZE_MEDIUM = constants.FONT_SIZE_MEDIUM
+FONT_COLOR_DEFAULT = constants.FONT_COLOR_DEFAULT
+
 PARTICLE_SPEED = 2
 PARTICLE_LIFE = 30
 REVEAL_TIME = 90
@@ -21,7 +28,7 @@ class SceneEvolution:
         if self.evolutions[0].stage == 5:
             self.phase = "mega_intro"
             # 🔹 Draw the background sprite using the new method, scaled to screen width
-            self.evo_background = sprite_load_percent("resources/Evo5.png", percent=100, keep_proportion=True, base_on="width")
+            self.evo_background = sprite_load_percent(constants.EVO5_PATH, percent=100, keep_proportion=True, base_on="width")
             self.from_sprite_scaled = pygame.transform.scale(self.evolutions[0].from_sprite, (int(100 * UI_SCALE), int(100 * UI_SCALE)))
             self.to_sprite_scaled = pygame.transform.scale(self.evolutions[0].to_sprite, (int(100 * UI_SCALE), int(100 * UI_SCALE)))
             self.sectors = self.get_non_transparent_sectors(self.from_sprite_scaled)
@@ -39,7 +46,7 @@ class SceneEvolution:
         self.fonts = [get_font(20), get_font(26), get_font_alt(20), get_font_alt(26)]
 
         # Use new method for fog image, scale to screen width
-        self.fog_image = sprite_load_percent("resources/Fog.png", percent=100, keep_proportion=True, base_on="width")
+        self.fog_image = sprite_load_percent(constants.FOG_PATH, percent=100, keep_proportion=True, base_on="width")
         self.fog_x, self.fog_y = 0, 0  # Starting position
 
 
@@ -48,30 +55,30 @@ class SceneEvolution:
         self.prepare_scrolling_texts(self.evolutions[0].from_name)
 
         # Background & beams
-        self.bg_base = sprite_load_percent("resources/Evo2.png", percent=100, keep_proportion=True, base_on="width")
+        self.bg_base = sprite_load_percent(constants.EVO2_PATH, percent=100, keep_proportion=True, base_on="width")
         self.bg_angle = 0
 
         if runtime_globals.evolution_pet.stage == 3:
-            self.beam_sprite = sprite_load_percent("resources/Evo3.png", percent=100, keep_proportion=True, base_on="width")
+            self.beam_sprite = sprite_load_percent(constants.EVO3_PATH, percent=100, keep_proportion=True, base_on="width")
             self.beams = []
             self.prepare_beams()
 
         self.rain_drops = []
 
-        self.orb_sprite = sprite_load_percent("resources/Orb.png", percent=100, keep_proportion=True, base_on="width")
+        self.orb_sprite = sprite_load_percent(constants.ORB_PATH, percent=100, keep_proportion=True, base_on="width")
 
-        self.evo_text_image = sprite_load_percent("resources/Evo1.png", percent=100, keep_proportion=True, base_on="width")
+        self.evo_text_image = sprite_load_percent(constants.EVO1_PATH, percent=100, keep_proportion=True, base_on="width")
         self.evo_text_size = int(480 * UI_SCALE)  # Initial size
         self.evo_text_angle = 0
 
         self.explosion_flash = None
         self.light_particles = []
-        self.light_source = sprite_load_percent("resources/LightSource.png", percent=100, keep_proportion=True, base_on="width")
+        self.light_source = sprite_load_percent(constants.LIGHT_SOURCE_PATH, percent=100, keep_proportion=True, base_on="width")
         self.light_particle1 = pygame.transform.scale(self.light_source, (int(8 * UI_SCALE), int(8 * UI_SCALE)))
-        self.light_particle2 = pygame.transform.scale(sprite_load_percent("resources/LightParticle.png", percent=100, keep_proportion=True, base_on="width"), (int(8 * UI_SCALE), int(8 * UI_SCALE)))
+        self.light_particle2 = pygame.transform.scale(sprite_load_percent(constants.LIGHT_PARTICLE_PATH, percent=100, keep_proportion=True, base_on="width"), (int(8 * UI_SCALE), int(8 * UI_SCALE)))
 
         self.dna_particles = []  # List of falling DNA sprites
-        self.dna_sprite = sprite_load_percent("resources/Dna.png", percent=100, keep_proportion=True, base_on="width")
+        self.dna_sprite = sprite_load_percent(constants.DNA_PATH, percent=100, keep_proportion=True, base_on="width")
 
         self.color_list = self.extract_sprite_colors(self.evolutions[0].to_sprite)
 

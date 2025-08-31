@@ -241,30 +241,9 @@ namespace OmnimonModuleEditor.Tabs
                 BorderStyle = BorderStyle.FixedSingle
             };
 
-            string nameFormat = module?.NameFormat ?? "_";
-            string safeEnemyName = enemy.Name.Replace(':', '_');
-            string folderName = nameFormat.Replace("$", safeEnemyName);
-            string spritePath = Path.Combine(modulePath, "monsters", folderName, "0.png");
-
-            if (File.Exists(spritePath))
-            {
-                try
-                {
-                    using (var fs = new FileStream(spritePath, FileMode.Open, FileAccess.Read, FileShare.Read))
-                    {
-                        var img = Image.FromStream(fs);
-                        pb.Image = new Bitmap(img);
-                    }
-                }
-                catch
-                {
-                    pb.Image = null;
-                }
-            }
-            else
-            {
-                pb.Image = null;
-            }
+            // Use new SpriteUtils system for loading enemy sprites
+            var sprite = SpriteUtils.LoadSingleSprite(enemy.Name, modulePath, module?.NameFormat ?? SpriteUtils.DefaultNameFormat);
+            pb.Image = sprite;
 
             itemPanel.Controls.Add(pb);
 
@@ -611,7 +590,7 @@ namespace OmnimonModuleEditor.Tabs
                     Padding = new Padding(8)
                 };
 
-                // Campos de edição (com limite de largura)
+                // Campos de ediï¿½ï¿½o (com limite de largura)
                 var fieldsPanel = new TableLayoutPanel
                 {
                     Dock = DockStyle.Fill,
@@ -647,15 +626,15 @@ namespace OmnimonModuleEditor.Tabs
                 }
 
                 TxtName = new TextBox();
-                NumPower = new NumericUpDown { Minimum = 10, Maximum = 999999, Value = 10 };
+                NumPower = new NumericUpDown { Minimum = 1, Maximum = 999999, Value = 10 };
                 CmbStage = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList };
                 CmbStage.Items.AddRange(Enum.GetNames(typeof(OmnimonModuleEditor.Models.StageEnum)));
                 CmbAttribute = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList };
                 CmbAttribute.Items.AddRange(new object[] { "Free", "Data", "Virus", "Vaccine" });
-                NumHp = new NumericUpDown { Minimum = 1, Maximum = 999999, Value = 1 };
+                NumHp = new NumericUpDown { Minimum = 0, Maximum = 999999, Value = 1 };
                 NumArea = new NumericUpDown { Minimum = 1, Maximum = 999999, Value = 1 };
                 NumRound = new NumericUpDown { Minimum = 1, Maximum = 999999, Value = 1 };
-                NumVersion = new NumericUpDown { Minimum = 1, Maximum = 999999, Value = 1 };
+                NumVersion = new NumericUpDown { Minimum = 0, Maximum = 999999, Value = 1 };
                 NumHandicap = new NumericUpDown { Minimum = 0, Maximum = 999999, Value = 0 };
                 CmbPrize = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList };
                 TxtUnlock = new TextBox();
@@ -689,7 +668,7 @@ namespace OmnimonModuleEditor.Tabs
                 fieldsPanel.Controls.Add(buttonPanel, 0, row++);
                 fieldsPanel.SetColumnSpan(buttonPanel, 2);
 
-                // Eventos dos botões
+                // Eventos dos botï¿½es
                 btnSave.Click += (s, e) =>
                 {
                     var battleTab = GetBattleTab();
@@ -723,7 +702,7 @@ namespace OmnimonModuleEditor.Tabs
                 rightLayout.Controls.Add(fieldsPanel, 0, 0);
                 this.Controls.Add(rightLayout);
 
-                // Aqui você pode adicionar eventos aos botões, se desejar.
+                // Aqui vocï¿½ pode adicionar eventos aos botï¿½es, se desejar.
             }
 
             private BattleTab GetBattleTab()
@@ -794,7 +773,7 @@ namespace OmnimonModuleEditor.Tabs
             public void LoadItems(string modulePath)
             {
                 CmbPrize.Items.Clear();
-                CmbPrize.Items.Add(""); // Adiciona opção vazia primeiro
+                CmbPrize.Items.Add(""); // Adiciona opï¿½ï¿½o vazia primeiro
                 string itemPath = Path.Combine(modulePath, "item.json");
                 if (File.Exists(itemPath))
                 {
@@ -822,7 +801,7 @@ namespace OmnimonModuleEditor.Tabs
                 }
             }
 
-            // Classe auxiliar para mostrar número + sprite
+            // Classe auxiliar para mostrar nï¿½mero + sprite
             private class AtkComboItem
             {
                 public int Number { get; }

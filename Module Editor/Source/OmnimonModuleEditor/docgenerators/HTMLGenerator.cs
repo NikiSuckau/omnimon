@@ -31,6 +31,7 @@ namespace OmnimonModuleEditor.controls
                 ItemGenerator.GenerateItemsPage(docPath, items);
                 UnlockGenerator.GenerateUnlocksPage(docPath, module);
                 BackgroundGenerator.GenerateBackgroundsPage(docPath, module); // Add this line
+                QuestEventGenerator.GenerateQuestEventPage(docPath, modulePath); // Add this line
             }
             catch (Exception ex)
             {

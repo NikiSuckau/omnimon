@@ -1,4 +1,5 @@
 ﻿using OmnimonModuleEditor.Models;
+using OmnimonModuleEditor.Utils;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -322,11 +323,10 @@ namespace OmnimonModuleEditor
         private void LoadSpriteIntoPictureBox(PictureBox pb, string petName)
         {
             if (string.IsNullOrEmpty(modulePath)) return;
-            string fmt = module?.NameFormat ?? "$";
-            string folder = fmt.Replace("$", petName.Replace(':', '_'));
-            string path = Path.Combine(modulePath, "monsters", folder, "0.png");
-            if (!File.Exists(path)) return;
-            try { pb.Image = Image.FromFile(path); } catch { /* ignore */ }
+            
+            // Use new sprite loading system with fixed format
+            var sprite = SpriteUtils.LoadSingleSprite(petName, modulePath, PetUtils.FixedNameFormat);
+            pb.Image = sprite;
         }
 
         /// <summary>
@@ -576,10 +576,10 @@ namespace OmnimonModuleEditor
             private void LoadSprite(PictureBox pb, string name)
             {
                 if (string.IsNullOrEmpty(modulePath)) return;
-                string folder = (module?.NameFormat ?? "$").Replace("$", name.Replace(':', '_'));
-                string f = Path.Combine(modulePath, "monsters", folder, "0.png");
-                if (File.Exists(f))
-                    try { pb.Image = Image.FromFile(f); } catch { }
+                
+                // Use new sprite loading system with fixed format
+                var sprite = SpriteUtils.LoadSingleSprite(name, modulePath, PetUtils.FixedNameFormat);
+                pb.Image = sprite;
             }
 
             private BattleEnemy CreateBattleEnemyFromPet(Pet p, int area, int round) => new BattleEnemy

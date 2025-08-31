@@ -2,9 +2,9 @@ import json
 import os
 import pickle
 import pygame
-from components.window_freezer import get_cell_size, get_margin, WindowFreezer
+from components.window_freezer import GRID_DIM, WindowFreezer
 from components.window_menu import WindowMenu
-from components.window_party import WindowParty
+from components.window_party import WindowParty, get_grid_dimensions
 from components.window_status import WindowStatus
 from core import game_globals, runtime_globals
 import game.core.constants as constants
@@ -73,6 +73,14 @@ class SceneFreezerBox:
             self.bg_frame = (self.bg_frame + 1) % 6
 
     def draw(self, surface):
+        # Update window components for mouse hover
+        if self.mode == "party":
+            self.party_view.update()
+        else:
+            self.freezer_view.update()
+        if self.menu.active:
+            self.menu.update()
+        
         # Draw animated background, scaled and positioned
         width_scale = constants.SCREEN_WIDTH / 240
         height_scale = constants.SCREEN_HEIGHT / 240
@@ -106,7 +114,7 @@ class SceneFreezerBox:
 
     def handle_event(self, input_action):
         # Mode switching with SELECT
-        if input_action == "SELECT":
+        if not self.menu.active and input_action == "SELECT":
             runtime_globals.game_sound.play("menu")
             self.mode = "party" if self.mode == "freezer" else "freezer"
             runtime_globals.game_console.log(f"[SceneFreezerBox] Switched to {self.mode}")
@@ -203,13 +211,21 @@ class SceneFreezerBox:
         self.party_view.handle_event(input_action)
         if input_action == "A" and self.party_view.selected_index < len(game_globals.pet_list):
             runtime_globals.game_sound.play("menu")
-            # Dynamically calculate pet position in a 2-column grid
+            # Dynamically calculate pet grid position
             col = self.party_view.selected_index % 2
-            row = self.party_view.selected_index // 2
-            x = (20 + col * 110) * constants.UI_SCALE
-            y = (40 + row * 100) * constants.UI_SCALE
-            menu_x = 20 if x > constants.SCREEN_WIDTH // 2 else constants.SCREEN_WIDTH - 120
-            menu_y = constants.SCREEN_HEIGHT - 100
+            # Menu sizing (scaled)
+            menu_width = int(120 * constants.UI_SCALE)
+            menu_height = int(70 * constants.UI_SCALE)
+            # Determine grid columns to support variable MAX_PETS
+            _, cols = get_grid_dimensions(constants.MAX_PETS)
+            # Position menu at bottom of screen
+            menu_y = constants.SCREEN_HEIGHT - menu_height
+            # Decide side: rightmost column opens left, all others open right (including center)
+            if col == cols - 1:  # rightmost column
+                menu_x = 0
+            else:  # left and center columns
+                menu_x = constants.SCREEN_WIDTH - menu_width
+
             pet = game_globals.pet_list[self.party_view.selected_index]
             if getattr(pet, "state", None) == "dead":
                 self.menu.open((menu_x, menu_y), ["Clear", "Stats"])
@@ -265,15 +281,22 @@ class SceneFreezerBox:
             if row < len(self.freezer_view.pet_grid) and col < len(self.freezer_view.pet_grid[row]):
                 pet = self.freezer_view.pet_grid[row][col]
                 if pet:
-                    runtime_globals.game_sound.play("menu")
-                    pet_x = col * (get_cell_size() + get_margin()) + (20 * constants.UI_SCALE)
-                    menu_x = (20 * constants.UI_SCALE) if pet_x > constants.SCREEN_WIDTH // 2 else constants.SCREEN_WIDTH - (120 * constants.UI_SCALE)
-                    menu_y = constants.SCREEN_HEIGHT - (100 * constants.UI_SCALE)
+                    # Use same bottom/corner placement logic as party menu
+                    menu_width = int(120 * constants.UI_SCALE)
+                    menu_height = int(70 * constants.UI_SCALE)
+                    cols = GRID_DIM  # freezer grid columns
+                    # Anchor menu to bottom of screen
+                    menu_y = constants.SCREEN_HEIGHT - menu_height
+                    # Opposite side: rightmost column -> open left, others -> open right
+                    if col == cols - 1:
+                        menu_x = 0
+                    else:
+                        menu_x = constants.SCREEN_WIDTH - menu_width
+
                     if getattr(pet, "state", None) == "dead":
                         self.menu.open((menu_x, menu_y), ["Clear", "Stats"])
                     else:
                         self.menu.open((menu_x, menu_y), ["Add", "Stats"])
-   
             return
         elif input_action == "B":
             runtime_globals.game_sound.play("cancel")

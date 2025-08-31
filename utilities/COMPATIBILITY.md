@@ -9,16 +9,16 @@
 - Arch Linux
 - Batocera (embedded gaming OS)
 - RetroPie
-- Any modern Linux with Python 3.6+
+- Any modern Linux with Python 3.9+
 
 ✅ **Windows:**
 - Windows 10/11
 - Windows 8.1
-- Windows 7 (with Python 3.6+)
+- Windows 7 (with Python 3.9+)
 
 ## Requirements
 
-- Python 3.6 or newer
+- Python 3.9 or newer
 - pygame 1.9+ or pygame 2.x
 - Optional: psutil (for system stats)
 - Optional: gpiozero (for Raspberry Pi GPIO support)

@@ -15,6 +15,8 @@ from core.utils.inventory_utils import add_to_inventory, get_inventory_value, re
 from core.utils.pet_utils import distribute_pets_evenly, get_selected_pets
 from core.utils.pygame_utils import sprite_load_percent
 from core.utils.scene_utils import change_scene
+from game.core.game_quest import QuestType
+from game.core.utils.quest_event_utils import update_quest_progress
 
 #=====================================================================
 # SceneFeedingMenu
@@ -32,7 +34,7 @@ class SceneFeedingMenu:
 
         # Add default items (Protein and Vitamin) as the first options, without amount
         self.options = []
-        default_sprite_folder = os.path.join("resources", "items")
+        default_sprite_folder = os.path.join("assets", "items")
         for default_item in runtime_globals.default_items.values():
             sprite_path = os.path.join(default_sprite_folder, default_item.sprite_name)
             anim_path = os.path.join(default_sprite_folder, f"{default_item.sprite_name.split('.')[0]}_anim.png")
@@ -49,7 +51,7 @@ class SceneFeedingMenu:
                 for item in module.items:
                     if getattr(item, "effect", "") == "digimental":
                         continue
-                    amount = game_globals.inventory.get(item.id, 0)
+                    amount = get_inventory_value(item.id)
                     if amount > 0:
                         sprite_name = item.sprite_name
                         if not sprite_name.lower().endswith(".png"):
@@ -100,7 +102,7 @@ class SceneFeedingMenu:
             # Reload options dynamically
             self.options = []
             # Add default items (Protein and Vitamin) as the first options, without amount
-            default_sprite_folder = os.path.join("resources", "items")
+            default_sprite_folder = os.path.join("assets", "items")
             for default_item in runtime_globals.default_items.values():
                 sprite_path = os.path.join(default_sprite_folder, default_item.sprite_name)
                 anim_path = os.path.join(default_sprite_folder, f"{default_item.sprite_name.split('.')[0]}_anim.png")
@@ -117,7 +119,7 @@ class SceneFeedingMenu:
                     for item in module.items:
                         if getattr(item, "effect", "") == "digimental":
                             continue
-                        amount = game_globals.inventory.get(item.id, 0)
+                        amount = get_inventory_value(item.id)
                         if amount > 0:
                             sprite_name = item.sprite_name
                             if not sprite_name.lower().endswith(".png"):
@@ -187,9 +189,12 @@ class SceneFeedingMenu:
         else:
             # Auto selection
             if food_status == "hunger":
-                return [pet for pet in game_globals.pet_list if pet.hunger < 4 and pet.state != "dead" and pet.stage > 0]
+                return [pet for pet in game_globals.pet_list if pet.hunger < pet.stomach and pet.hunger < 4 and pet.state != "dead" and pet.stage > 0]
             elif food_status == "strength":
-                return [pet for pet in game_globals.pet_list if pet.strength < 4 and pet.state != "dead" and pet.stage > 0]
+                return [pet for pet in game_globals.pet_list if (pet.strength < 4 and pet.state != "dead" and pet.stage > 0 and
+                                                                 runtime_globals.game_modules.get(pet.module).protein_strengh_gain > 0
+                                                                 )
+                       ]
             elif effect == "status_boost":
                 return [pet for pet in game_globals.pet_list if pet.can_battle() and pet.state != "dead" and pet.stage > 0]
             else:
@@ -202,6 +207,9 @@ class SceneFeedingMenu:
         """
         self._update_options_cache()
 
+        if runtime_globals.game_input.mouse_enabled:
+            self.menu_window.update()
+
         # Update pet list targets only if strategy or food index changes
         if self._last_food_index != runtime_globals.food_index or self._last_strategy_index != runtime_globals.strategy_index:
             self.pet_list_window.targets = self.get_targets()
@@ -213,6 +221,9 @@ class SceneFeedingMenu:
         """
         Draws the feeding menu and pet list.
         """
+        # Update window components for mouse hover
+        self.pet_list_window.update()
+        
         # Compose a cache key that reflects the dynamic state of the menu
         cache_key = (
             runtime_globals.food_index,
@@ -244,6 +255,15 @@ class SceneFeedingMenu:
         """
         Handles keyboard and GPIO button inputs for food and strategy selection.
         """
+        # Handle mouse clicks on navigation arrows for multi-option menus
+        if input_action == "A" and runtime_globals.game_input.mouse_enabled:
+            mouse_pos = runtime_globals.game_input.get_mouse_position()
+            if self.menu_window.handle_mouse_click(mouse_pos):
+                # Mouse click was handled by the menu (navigation arrow click)
+                self.pet_list_window.targets = self.get_targets()
+                self.pet_list_window._last_cache_key = None  # Invalidate cache to redraw
+                return
+        
         if input_action == "B":  # Escape (Cancel/Menu)
             runtime_globals.game_sound.play("cancel")
             change_scene("game")
@@ -352,10 +372,25 @@ class SceneFeedingMenu:
 
                     # Remove 1 from inventory for non-default items
                     if item_obj and item_obj.id not in [ditem.id for ditem in runtime_globals.default_items.values()]:
-                        if item_obj.id in game_globals.inventory:
-                            game_globals.inventory[item_obj.id] -= 1
-                            if game_globals.inventory[item_obj.id] <= 0:
-                                del game_globals.inventory[item_obj.id]
+                        remove_from_inventory(item_obj.id)
+
+            # Update FEEDING quest progress if items were consumed (excluding component and default items)
+            if (item_obj and item_obj.effect != "component" and 
+                item_obj.id not in [ditem.id for ditem in runtime_globals.default_items.values()] and
+                len(runtime_globals.game_pet_eating) > 0):
+                # Find the module for this item
+                item_module = None
+                for module in runtime_globals.game_modules.values():
+                    if hasattr(module, "items"):
+                        for it in module.items:
+                            if it.id == item_obj.id:
+                                item_module = module.name
+                                break
+                        if item_module:
+                            break
+                
+                if item_module:
+                    update_quest_progress(QuestType.FEEDING, len(runtime_globals.game_pet_eating), item_module)
 
             runtime_globals.game_console.log(f"[SceneFeedingMenu] Fed {len(runtime_globals.game_pet_eating)} pets with {food_name}")
             change_scene("game")

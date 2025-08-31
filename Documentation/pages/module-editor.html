@@ -135,6 +135,18 @@
             <code>$_dmc</code> creates folders like <code>Agumon_dmc</code>.
           </li>
           <li style="margin-bottom: 15px; padding-left: 20px;">
+            <strong>Sprite Storage Format:</strong><br>
+            Defines how pet sprites are stored. Options include individual directories or ZIP files for better organization and compression.
+          </li>
+          <li style="margin-bottom: 15px; padding-left: 20px;">
+            <strong>Evolution Requirements:</strong><br>
+            Sets the complexity and types of evolution criteria available in this module. Affects which evolution conditions can be used.
+          </li>
+          <li style="margin-bottom: 15px; padding-left: 20px;">
+            <strong>Battle System Version:</strong><br>
+            Defines which battle mechanics and features are available. Newer versions support PvP battles and advanced combat features.
+          </li>
+          <li style="margin-bottom: 15px; padding-left: 20px;">
             <strong>Ruleset:</strong><br>
             Defines the type of mini-game used in the module's Adventure Mode and the way traited eggs are obtained.
             Also defines the bonuses for power.
@@ -200,6 +212,10 @@
           <li style="margin-bottom: 15px; padding-left: 20px;">
             <strong>Care Protein Overdose Max:</strong><br>
             Maximum protein overdose counter that affects battle sick chance. Each protein feeding increases overdose.
+          </li>
+          <li style="margin-bottom: 15px; padding-left: 20px;">
+            <strong>Care Protein Penalty:</strong><br>
+            Protein Penalty affects battle sick chance. Determines the amount of each penalty for Protein Overdose in percent.
           </li>
           <li style="margin-bottom: 15px; padding-left: 20px;">
             <strong>Care Disturbance Penalty Max:</strong><br>
@@ -330,6 +346,9 @@
                 stage. Ignores Version, Area and Amount.</li>
               <li style="margin-bottom: 5px;"><strong>Digidex</strong> - Obtained by discovering a certain number of
                 unique pets. Ignores Version, Area and To.</li>
+              <li style="margin-bottom: 5px;"><strong>Versus</strong> - Obtained by participating in or winning versus battles. Unlocks content related to competitive battle modes.</li>
+              <li style="margin-bottom: 5px;"><strong>PvP</strong> - Obtained by winning Player vs Player battles. Requires specific numbers of PvP victories.</li>
+              <li style="margin-bottom: 5px;"><strong>Group</strong> - Obtained through group activities or multi-pet requirements. Unlocks content requiring multiple pets.</li>
           </li>
           <li style="margin-bottom: 15px; padding-left: 20px; position: relative;">
             <span style="position: absolute; left: 0; color: #667eea;">•</span>
@@ -438,6 +457,17 @@
             <strong>Name:</strong> The name of the pet. Used for sprite folder lookup. Must be unique and not contain
             special characters.
           </li>
+          
+          <div class="feature-card" style="margin: 20px 0; padding: 15px; background-color: #f0f8ff; border-left: 4px solid #667eea;">
+            <h4 style="margin-top: 0; color: #667eea;">📦 Sprite Storage Formats</h4>
+            <p><strong>Important:</strong> Pet sprites can now be stored in multiple formats:</p>
+            <ul style="margin: 10px 0;">
+              <li><strong>Directory Format:</strong> Traditional folder structure (e.g., <code>Agumon_dmc/</code> containing individual PNG files)</li>
+              <li><strong>ZIP Format:</strong> Compressed archive (e.g., <code>Agumon_dmc.zip</code> containing all sprite frames)</li>
+              <li><strong>Fallback System:</strong> The game automatically checks module folders first, then falls back to global assets folder</li>
+            </ul>
+            <p>The editor and game support both formats seamlessly. ZIP files offer better organization and smaller file sizes.</p>
+          </div>
           <li style="margin-bottom: 15px; padding-left: 20px; position: relative;">
             <span style="position: absolute; left: 0; color: #667eea;">•</span>
             <strong>Stage:</strong> Evolution stage: 0=Egg, 1=Baby, 2=Baby II, 3=Child, 4=Adult, 5=Perfect, 6=Ultimate,
@@ -590,58 +620,50 @@
         <p>Disable the Connection Tool by clicking the "Toggle Connection" button again.</p>
         <p>Click the Criteria Box to define the evolution conditions.</p>
         <p>Here you can edit the evolution conditions, by default, empty and 0 fields will be ignored. You can use value
-          <strong>999999</strong> to indicate infinite. You can find below a description of all evolution criterias.</p>
-        <p>Once you have defined the evolution criterias, click .</p>
-      </div>
-    </div>
+          <strong>999999</strong> to indicate infinite. Below is a complete list of all available evolution criteria:</p>
+        
+        <div class="feature-card" style="margin: 20px 0; padding: 15px; background-color: #f9f9f9; border-left: 4px solid #667eea;">
+          <h4 style="margin-top: 0; color: #667eea;">🎯 Evolution Criteria Reference</h4>
+          
+          <h5>Basic Requirements:</h5>
+          <ul style="margin: 10px 0;">
+            <li><strong>mistakes</strong> - Care mistake count range [min, max]</li>
+            <li><strong>condition_hearts</strong> - Condition hearts range (alternative to mistakes)</li>
+            <li><strong>training</strong> - Effort/training level range</li>
+            <li><strong>level</strong> - Pet level range</li>
+            <li><strong>weight</strong> - Pet weight range in grams</li>
+            <li><strong>overfeed</strong> - Overfeed count range</li>
+            <li><strong>sleep_disturbances</strong> - Sleep disturbance count range</li>
+          </ul>
 
-    <div class=" content-section">
-      <h2 class="section-title" onclick="toggleSection(this)">Publishing Your Module<span class="arrow">▼</span>
-      </h2>
-      <div class="section-content" style="display:none;">
-        <p>Once your module is complete, you can:</p>
-        <ul style="list-style: none; padding: 0; margin-top: 20px;">
-          <li style="margin-bottom: 15px; padding-left: 20px; position: relative;">
-            <span style="position: absolute; left: 0; color: #ffd700;">✅</span>
-            Test it thoroughly in the module tester
-          </li>
-          <li style="margin-bottom: 15px; padding-left: 20px; position: relative;">
-            <span style="position: absolute; left: 0; color: #ffd700;">✅</span>
-            Package it for distribution
-          </li>
-          <li style="margin-bottom: 15px; padding-left: 20px; position: relative;">
-            <span style="position: absolute; left: 0; color: #ffd700;">✅</span>
-            Share it with the community
-          </li>
-          <li style="margin-bottom: 15px; padding-left: 20px; position: relative;">
-            <span style="position: absolute; left: 0; color: #ffd700;">✅</span>
-            Submit it to the official module repository
-          </li>
-        </ul>
-      </div>
-    </div>
+          <h5>Battle & Competition:</h5>
+          <ul style="margin: 10px 0;">
+            <li><strong>battles</strong> - Total battle count range</li>
+            <li><strong>win_count</strong> - Total wins range</li>
+            <li><strong>win_ratio</strong> - Win percentage range (0-100)</li>
+            <li><strong>pvp</strong> - PvP wins range</li>
+            <li><strong>stage-5</strong> to <strong>stage-9</strong> - Enemies defeated at specific stages</li>
+          </ul>
 
-    <div class="content-section">
-      <h2 class="section-title" onclick="toggleSection(this)">Best Practices<span class="arrow">▼</span></h2>
-      <div class="section-content" style="display:none;">
-        <ul style="list-style: none; padding: 0;">
-          <li style="margin-bottom: 15px; padding-left: 20px; position: relative;">
-            <span style="position: absolute; left: 0; color: #667eea;">💡</span>
-            Start simple and gradually add complexity
-          </li>
-          <li style="margin-bottom: 15px; padding-left: 20px; position: relative;">
-            <span style="position: absolute; left: 0; color: #667eea;">💡</span>
-            Test your module with different game states
-          </li>
-          <li style="margin-bottom: 15px; padding-left: 20px; position: relative;">
-            <span style="position: absolute; left: 0; color: #667eea;">💡</span>
-            Provide clear documentation for users
-          </li>
-          <li style="margin-bottom: 15px; padding-left: 20px; position: relative;">
-            <span style="position: absolute; left: 0; color: #667eea;">💡</span>
-            Follow the community guidelines for content
-          </li>
-        </ul>
+          <h5>Achievement & Progress:</h5>
+          <ul style="margin: 10px 0;">
+            <li><strong>quests_completed</strong> - Quest completion count range</li>
+            <li><strong>trophies</strong> - Trophy count range</li>
+            <li><strong>vital_values</strong> - Special achievement parameter range</li>
+          </ul>
+
+          <h5>Special Conditions:</h5>
+          <ul style="margin: 10px 0;">
+            <li><strong>special_encounter</strong> - Boolean: requires special encounter flag</li>
+            <li><strong>time_range</strong> - Real-world time requirement ["HH:MM", "HH:MM"]</li>
+            <li><strong>jogress</strong> - Special evolution requiring two pets</li>
+            <li><strong>item</strong> - Evolution requiring specific items</li>
+          </ul>
+
+          <p><strong>Note:</strong> All numeric criteria use ranges [minimum, maximum]. If a pet doesn't meet ANY of the specified criteria, the evolution will not occur.</p>
+        </div>
+        
+        <p>Once you have defined the evolution criteria, save your changes to apply them to the module.</p>
       </div>
     </div>
   </div>

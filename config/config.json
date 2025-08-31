@@ -5,6 +5,9 @@
     "MAX_PETS": 4,
     "FULLSCREEN": false,
     "AUTO_RESOLUTION": false,
-    "DEBUG": false,
-    "LOGGING": false
+    "SHOW_FPS": false,
+    "DEBUG_MODE": true,
+    "DEBUG_BLIT_LOGGING": false,
+    "DEBUG_FILE_LOGGING": false,
+    "DEBUG_BATTLE_INFO": true
 }

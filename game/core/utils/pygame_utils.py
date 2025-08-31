@@ -24,7 +24,7 @@ def blit_with_shadow(surface, sprite, pos, offset=(2, 2)):
     """
     Blits a sprite with a shadow effect and logs the number of calls per second.
     """
-    if constants.DEBUG:
+    if constants.DEBUG_MODE and constants.DEBUG_BLIT_LOGGING:
         global _blit_shadow_calls, _last_log_time
 
         # Increment the counter
@@ -43,10 +43,10 @@ def blit_with_shadow(surface, sprite, pos, offset=(2, 2)):
     surface.blit(sprite, pos)
 
 def get_font(size=24):
-    return pygame.font.Font("resources/vpet_font.TTF", size)
+    return pygame.font.Font(constants.FONT_TTF_PATH, size)
 
 def get_font_alt(size=24):
-    return pygame.font.Font("resources/vpet_font_alt.ttf", size)
+    return pygame.font.Font(constants.FONT_ALT_TTF_PATH, size)
 
 def sprite_load(path, size=None, scale=1):
     img = pygame.image.load(path).convert_alpha()
@@ -96,9 +96,9 @@ def sprite_load_percent_wh(path, percent_w=100, percent_h=100, keep_proportion=T
 
 def load_attack_sprites():
     attack_sprites = {}
-    for filename in os.listdir("resources/atk"):
+    for filename in os.listdir(constants.ATK_FOLDER):
         if filename.endswith(".png"):
-            path = os.path.join("resources/atk", filename)
+            path = os.path.join(constants.ATK_FOLDER, filename)
             sprite = pygame.image.load(path).convert_alpha()
             sprite = pygame.transform.scale(sprite, (24 * constants.UI_SCALE, 24 * constants.UI_SCALE))
             atk_id = filename.split(".")[0]
@@ -141,12 +141,13 @@ def load_misc_sprites():
     sprite_files = [
         "Cheer.png", "Mad1.png", "Mad2.png",
         "Sick1.png", "Sick2.png", "Sleep1.png",
-        "Sleep2.png", "Poop1.png", "Poop2.png",
-        "JumboPoop1.png", "JumboPoop2.png", "Wash.png"
+    "Sleep2.png", "Poop1.png", "Poop2.png",
+    "JumboPoop1.png", "JumboPoop2.png", "Wash.png",
+    "CallSignInverted.png", "SickInverted.png", "PoopInverted.png"
     ]
     misc_sprites = {}
     for filename in sprite_files:
-        path = os.path.join("resources", filename)
+        path = os.path.join("assets", filename)
         try:
             sprite = sprite_load(path)
             misc_sprites[filename.split('.')[0]] = pygame.transform.scale(
@@ -171,7 +172,7 @@ def blit_with_cache(surface, sprite, pos):
     """
     Blits a sprite using caching and logs the number of calls per second.
     """
-    if constants.DEBUG:
+    if constants.DEBUG_MODE and constants.DEBUG_BLIT_LOGGING:
         global _blit_cache_calls, _last_cache_log_time
 
         # Generate a hash for the sprite

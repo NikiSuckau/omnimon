@@ -151,3 +151,6 @@ class WindowFreezer:
 
     def handle_event(self, input_action):
         pass
+
+    def update(self):
+        pass

@@ -69,6 +69,7 @@
       <HintPath>..\packages\System.Buffers.4.5.1\lib\net461\System.Buffers.dll</HintPath>
     </Reference>
     <Reference Include="System.Core" />
+    <Reference Include="System.IO.Compression" />
     <Reference Include="System.IO.Compression.FileSystem" />
     <Reference Include="System.IO.Pipelines, Version=9.0.0.6, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
       <HintPath>..\packages\System.IO.Pipelines.9.0.6\lib\net462\System.IO.Pipelines.dll</HintPath>
@@ -121,7 +122,10 @@
     </Compile>
     <Compile Include="docgenerators\IndexGenerator.cs" />
     <Compile Include="docgenerators\ItemGenerator.cs" />
+    <Compile Include="docgenerators\QuestEventGenerator.cs" />
     <Compile Include="docgenerators\UnlockGenerator.cs" />
+    <Compile Include="models\Event.cs" />
+    <Compile Include="models\Quest.cs" />
     <Compile Include="tabs\editors\EnemyFastEditorForm.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -172,10 +176,14 @@
     <Compile Include="tabs\ModuleTab.cs">
       <SubType>Form</SubType>
     </Compile>
+    <Compile Include="tabs\QuestEventTab.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
     <Compile Include="utils\PetUtils.cs" />
     <Compile Include="controls\StageSelectForm.cs">
       <SubType>Form</SubType>
     </Compile>
+    <Compile Include="utils\SpriteUtils.cs" />
     <EmbeddedResource Include="ModuleEditorForm.resx">
       <DependentUpon>ModuleEditorForm.cs</DependentUpon>
     </EmbeddedResource>
@@ -236,6 +244,9 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="template\module.css">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="template\questevents.html">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="template\unlocks.html">

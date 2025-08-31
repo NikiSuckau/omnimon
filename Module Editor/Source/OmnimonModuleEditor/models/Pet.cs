@@ -44,6 +44,9 @@ namespace OmnimonModuleEditor.Models
         [JsonPropertyName("min_weight")]
         public int MinWeight { get; set; }
 
+        [JsonPropertyName("evol_weight")]
+        public int EvolWeight { get; set; }
+
         [JsonPropertyName("stomach")]
         public int Stomach { get; set; }
 

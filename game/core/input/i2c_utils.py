@@ -8,6 +8,12 @@ try:
 except ImportError:
     HAS_SMBUS = False
 
+try:
+    import psutil
+    HAS_PSUTIL = True
+except ImportError:
+    HAS_PSUTIL = False
+
 import platform
 
 IS_LINUX = platform.system() == "Linux"
@@ -17,16 +23,17 @@ CW2015_ADDRESS = 0x62
 CW2015_REG_VCELL = 0x02
 CW2015_REG_SOC = 0x04
 CW2015_REG_MODE = 0x0A
-
+BMI160_ADDRESS = 0x69
 
 class I2CUtils:
     def __init__(self):
         i2c_device_exists = os.path.exists("/dev/i2c-1")
         self.bus = smbus.SMBus(1) if IS_RPI and i2c_device_exists else None
-        self.battery_addr = 0x62
-        self.bmi160_addr = 0x69
+        self.battery_addr = CW2015_ADDRESS
+        self.bmi160_addr = BMI160_ADDRESS
         self.valid = IS_RPI and i2c_device_exists
         self.charging = False
+        self.battery_percent = 0.0
 
         self._last_voltage = None
         self._charging_counter = 0  # For debounce
@@ -69,7 +76,7 @@ class I2CUtils:
             return None
 
     def read_capacity(self):
-        """ Read battery percentage """
+        """ Read battery capacity on RPI """
         if not IS_RPI:
             return None
         try:
@@ -80,14 +87,25 @@ class I2CUtils:
             print(f"Capacity read error: {e}")
             return None
 
-    def is_charging(self):
-        return self.charging
-
-    def get_battery_percentage(self):
-        value = self.read_capacity() if IS_RPI else 100
-        if value is None:
-            return 0.0
-        return value
+    def get_battery_info(self):
+        if HAS_PSUTIL:
+            battery_stats = psutil.sensors_battery()
+            if battery_stats == None:
+                self.battery_percent = 0.0
+                self.charging = True
+            elif battery_stats.power_plugged == True:
+                self.battery_percent = battery_stats.percent
+                self.charging = True
+            else:
+                self.battery_percent = battery_stats.percent
+                self.charging = False
+        elif IS_RPI:
+            self.battery_percent = self.read_capacity()
+            self.charging = False
+        else:
+            self.battery_percent = 0.0
+            self.charging = False
+        return self.battery_percent, self.charging
 
     def test_battery(self):
         """ Run continuous battery monitoring """

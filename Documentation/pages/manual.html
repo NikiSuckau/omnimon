@@ -120,6 +120,25 @@
         </div>
 
         <div class="content-section">
+            <h2 class="section-title" onclick="toggleSection(this)">Main Menu Options<span class="arrow">▼</span></h2>
+            <div class="section-content" style="display:none;">
+                <p>From the main game screen in "Menu Mode", you have access to two primary menu options:</p>
+                
+                <div class="feature-card">
+                    <h3 class="feature-title">Status Menu</h3>
+                    <p class="feature-description">Access detailed information about your pets including age, weight, level, battle statistics, care information, and evolution status. Navigate through multiple pages to see all pet data.</p>
+                </div>
+
+                <div class="feature-card">
+                    <h3 class="feature-title">Settings Menu</h3>
+                    <p class="feature-description">Access game configuration, the Digidex, Freezer Box, unlockables, and background selection. This is your central hub for managing the game and your pet collection.</p>
+                </div>
+
+                <p>Use the directional keys to navigate between these options, and press A to enter your selected menu.</p>
+            </div>
+        </div>
+
+        <div class="content-section">
             <h2 class="section-title" onclick="toggleSection(this)"><span class="status-title"><img
                         src="../assets/Status.png" width="48" height="48" alt="" /> Status Menu</span><span
                     class="arrow">▼</span></h2>
@@ -265,6 +284,8 @@
                                 won in the current stage. Many evolutions require a minimum of 80% to evolve.</p>
                             <p class="feature-description item"><strong>* Win Rate Total:</strong> The overall
                                 percentage of battles won throughout your pet's life.</p>
+                            <p class="feature-description item"><strong>* PvP Wins:</strong> Number of Player vs Player battles won. Some evolutions require specific PvP victory counts.</p>
+                            <p class="feature-description item"><strong>* Enemy Kills by Stage:</strong> Tracks enemies defeated at different stages (Stage V-IX). Higher stage enemy kills unlock special evolutions.</p>
                         </td>
                     </tr>
                     <tr>
@@ -288,6 +309,9 @@
                                 mistake. It can lead to death after a certain amount of time.</p>
                             <p class="feature-description item"><strong>* Flags:</strong> Special status indicators for
                                 your pet, such as traited, shaken and special (secret evolutions)</p>
+                            <p class="feature-description item"><strong>* Quests Completed:</strong> Number of quests completed by this pet. Some evolutions require completing specific numbers of quests.</p>
+                            <p class="feature-description item"><strong>* Trophies:</strong> Number of trophies earned by this pet through various achievements.</p>
+                            <p class="feature-description item"><strong>* Vital Values:</strong> Special evolution parameter that tracks important life events and achievements.</p>
                         </td>
                     </tr>
                 </table>

@@ -200,7 +200,7 @@
                                 moduleNameFormat = format;
                             };
                         }(testFormats[i]);
-                        testImg.src = '../monsters/' + testName + '/0.png';
+                        testImg.src = 'assets/' + getSafeFileName(pet.name) + '.png';
                     }
                 } catch(e) {
                     console.warn('Could not extract module name format:', e);
@@ -208,11 +208,25 @@
             }
         }
         
-        // Get sprite URL using module name format
+        // Get sprite URL using assets folder
         function getPetSpriteUrl(petName) {
-            var safeName = petName.replace(/:/g, '_');
-            var folderName = moduleNameFormat.replace('$', safeName);
-            return '../monsters/' + folderName + '/0.png';
+            return 'assets/' + getSafeFileName(petName) + '.png';
+        }
+        
+        // Convert pet name to safe filename
+        function getSafeFileName(petName) {
+            return petName.replace(/ /g, '_')
+                         .replace(/\(/g, '')
+                         .replace(/\)/g, '')
+                         .replace(/:/g, '_')
+                         .replace(/\//g, '_')
+                         .replace(/\\/g, '_')
+                         .replace(/\?/g, '_')
+                         .replace(/\*/g, '_')
+                         .replace(/"/g, '_')
+                         .replace(/</g, '_')
+                         .replace(/>/g, '_')
+                         .replace(/\|/g, '_');
         }
         
         // Get attack sprite URL with fallback handling
@@ -368,6 +382,7 @@
             addRow('Time', pet.time + ' hours', 'Evolution timer in hours. Pet evolves when this time expires (if evolution requirements are met).');
             addRow('Energy', pet.energy, 'Maximum DP (energy) capacity. DP is consumed during battles and training.');
             addRow('Min Weight', pet.minWeight, 'Minimum weight threshold. Weight can cause sickness when reaches 99g. Can be lost through training, but never below the minimun.');
+            if (pet.evolWeight > pet.minWeight) addRow('Evol Weight', pet.evolWeight, 'Evolution weight. Determines the starting weight of a pet after evolution.');
             addRow('Stomach', pet.stomach, 'Hunger capacity. Determines how much food the pet can eat before becoming full.');
             addRow('Hunger Loss', pet.hungerLoss + ' minutes', 'Rate of hunger depletion over time. Hunger will decrease in 1.');
             if (pet.strengthLoss !== undefined) addRow('Strength Loss', pet.strengthLoss + ' minutes', 'Rate of strength depletion over time. Strength affects power and evolution.');
@@ -375,9 +390,9 @@
             if (pet.sleeps) addRow('Sleeps', pet.sleeps, 'Sleep start time. Pet will call to be put to sleep at this time.');
             if (pet.wakes) addRow('Wakes', pet.wakes, 'Wake up time. Pet will wake automatically at this time.');
             
-            if (pet.conditionHearts !== undefined) addRow('Condition Hearts', pet.conditionHearts, 'Condition/health hearts. Represents overall care quality and affects evolution.');
+            if (pet.conditionHearts !== undefined) addRow('Condition Hearts', pet.conditionHearts, 'Condition/health hearts. Represents overall care quality and affects evolution. Used in PVP battles and evolution requirements.');
             if (pet.healDoses !== undefined) addRow('Heal Doses', pet.healDoses, 'Number of medicine doses needed to cure sickness.');
-            if (pet.jogressAvailable !== undefined) addRow('Jogress Available', pet.jogressAvailable ? 'Yes' : 'No', 'Can participate in Jogress (fusion) evolution with another compatible pet.');
+            if (pet.jogressAvailable !== undefined) addRow('Jogress Available', pet.jogressAvailable ? 'Yes' : 'No', 'Can participate in Jogress (fusion) evolution with another compatible pet. Also enables PVP and Versus battle modes.');
             
             body.innerHTML = bodyHtml;
             document.getElementById('pet-modal').style.display = 'flex';

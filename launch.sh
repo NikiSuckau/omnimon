@@ -1,6 +1,6 @@
 #!/bin/bash
 # Launch script for Omnimon Virtual Pet Game
-# Works on Ubuntu, Batocera, and other Linux distributions
+# Works on Ubuntu, Batocera, other Linux distributions, and macOS
 # Edit config.json to change fullscreen, screen size, and other settings
 
 # Set environment variables for better compatibility
@@ -17,6 +17,9 @@ elif [ -n "$WAYLAND_DISPLAY" ]; then
 elif [ -n "$DISPLAY" ]; then
     echo "Detected X11 environment"
     export SDL_VIDEODRIVER=x11
+elif [ -d "/Library/Apple" ]; then
+    echo "Detected macOS environment"
+    export SDL_VIDEODRIVER=cocoa
 else
     echo "No display server detected, trying framebuffer"
     export SDL_VIDEODRIVER=fbcon

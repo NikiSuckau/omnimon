@@ -10,9 +10,10 @@ from core.game_digidex_entry import GameDigidexEntry
 from core.utils.module_utils import get_module
 from core.utils.pygame_utils import blit_with_shadow, get_font, sprite_load_percent
 from core.utils.scene_utils import change_scene
+from core.utils.sprite_utils import load_pet_sprites
 from core.utils.utils_unlocks import unlock_item
 
-UNKNOWN_SPRITE_PATH = "resources/Unknown.png"
+UNKNOWN_SPRITE_PATH = constants.UNKNOWN_SPRITE_PATH
 SPRITE_BUFFER = 10 
 SPRITE_FRAME = "0.png"
 SPRITE_SIZE = int(48 * constants.UI_SCALE)
@@ -95,8 +96,8 @@ class SceneDigidex:
             if isinstance(unlocks, list):
                 module_known_count = known_count_by_module.get(module.name, 0)
                 for unlock in unlocks:
-                    if unlock.get("type") == "digidex" and "amout" in unlock:
-                        if module_known_count >= unlock["amout"]:
+                    if unlock.get("type") == "digidex" and "amount" in unlock:
+                        if module_known_count >= unlock["amount"]:
                             unlock_item(module.name, "digidex", unlock["name"])
 
         # Ordena: estágio, nome do módulo, versão
@@ -119,22 +120,27 @@ class SceneDigidex:
                     pet.sprite = None
             else:
                 # Dentro da janela → carrega sprite se necessário
-                sprite_path = ""
                 if not pet.sprite:
                     try:
                         module = get_module(pet.module)
-                        folder = f"modules/{module.name}/monsters/{module.name_format}"
-                        folder = folder.replace("$", pet.name)
-                        sprite_path = os.path.join(folder, "0.png")
-                        # Use new method for pet sprite and scale
-                        pet.sprite = sprite_load_percent(
-                            sprite_path, 
-                            percent=(SPRITE_SIZE / constants.SCREEN_HEIGHT) * 100, 
-                            keep_proportion=True, 
-                            base_on="height"
+                        module_path = f"modules/{module.name}"
+                        
+                        # Use the new sprite utilities to load pet sprites with fallback support
+                        sprites_dict = load_pet_sprites(
+                            pet.name, 
+                            module_path, 
+                            module.name_format, 
+                            size=(SPRITE_SIZE, SPRITE_SIZE)
                         )
+                        
+                        # Get the first frame (0.png)
+                        if "0" in sprites_dict:
+                            pet.sprite = sprites_dict["0"]
+                        else:
+                            pet.sprite = self.unknown_sprite
+                            
                     except Exception as e:
-                        runtime_globals.game_console.log(f"[Digidex] Falha ao carregar {sprite_path}: {e}")
+                        runtime_globals.game_console.log(f"[Digidex] Failed to load sprite for {pet.name}: {e}")
                         pet.sprite = self.unknown_sprite
 
     def update(self):
@@ -253,16 +259,24 @@ class SceneDigidex:
             if pet.name in visible_names and not pet.sprite and pet.known:
                 try:
                     module = get_module(pet.module)
-                    folder = f"modules/{module.name}/monsters/{module.name_format}".replace("$", pet.name)
-                    sprite_path = os.path.join(folder, "0.png")
-                    pet.sprite = sprite_load_percent(
-                        sprite_path, 
-                        percent=(SPRITE_SIZE / constants.SCREEN_HEIGHT) * 100, 
-                        keep_proportion=True, 
-                        base_on="height"
+                    module_path = f"modules/{module.name}"
+                    
+                    # Use the new sprite utilities to load pet sprites with fallback support
+                    sprites_dict = load_pet_sprites(
+                        pet.name, 
+                        module_path, 
+                        module.name_format, 
+                        size=(SPRITE_SIZE, SPRITE_SIZE)
                     )
+                    
+                    # Get the first frame (0.png)
+                    if "0" in sprites_dict:
+                        pet.sprite = sprites_dict["0"]
+                    else:
+                        pet.sprite = self.unknown_sprite
+                        
                 except Exception as e:
-                    runtime_globals.game_console.log(f"[Digidex] Falha ao carregar {sprite_path}: {e}")
+                    runtime_globals.game_console.log(f"[Digidex] Failed to load sprite for {pet.name}: {e}")
                     pet.sprite = self.unknown_sprite
             elif pet.name not in visible_names and pet.sprite:
                 pet.sprite = None

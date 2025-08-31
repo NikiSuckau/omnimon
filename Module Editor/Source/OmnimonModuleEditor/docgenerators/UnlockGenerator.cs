@@ -129,6 +129,24 @@ namespace OmnimonModuleEditor.docgenerators
                     groupDesc.Append(".");
                     return groupDesc.ToString();
 
+                case "pvp":
+                    var pvpDesc = new StringBuilder("Unlocked by competing in PVP battles against other devices");
+                    if (unlock.Amount.HasValue && unlock.Amount > 0)
+                    {
+                        pvpDesc.Append($" and completing {unlock.Amount} PVP matches");
+                    }
+                    pvpDesc.Append(".");
+                    return pvpDesc.ToString();
+
+                case "versus":
+                    var versusDesc = new StringBuilder("Unlocked by participating in Versus battles between pets of the same owner");
+                    if (unlock.Amount.HasValue && unlock.Amount > 0)
+                    {
+                        versusDesc.Append($" and completing {unlock.Amount} Versus matches");
+                    }
+                    versusDesc.Append(".");
+                    return versusDesc.ToString();
+
                 default:
                     var genericDesc = new StringBuilder($"Unlocked not yet available");
                     

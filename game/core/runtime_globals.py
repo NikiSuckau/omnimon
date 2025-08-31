@@ -34,6 +34,7 @@ pet_sprites = {}
 evolution_data = []
 evolution_pet = None
 last_headtohead_pattern = random.randint(0, 5)
+special_encounter = []
 
 # --- Global Managers ---
 game_sound = GameSound()
@@ -85,3 +86,4 @@ vb_enabled = False
 # --- Hardware/Input ---
 i2c = I2CUtils()
 shake_detector = ShakeDetector(i2c)
+last_input_frame = 0

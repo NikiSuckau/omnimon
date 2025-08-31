@@ -230,3 +230,20 @@ class HeadToHeadTraining(Training):
             for pet in self.pets:
                 pet.trophies += 1
             runtime_globals.game_console.log(f"[TROPHY] Head-to-head training won! Trophy awarded.")
+
+    def get_attack_count(self):
+        """
+        Map victories (out of 5 hits) to attack count:
+          5 wins -> 3
+          4 wins -> 2
+          3 wins -> 1
+          <3 wins -> 0 (defeat)
+        """
+        wins = max(0, min(self.victories, 5))
+        if wins >= 5:
+            return 3
+        if wins == 4:
+            return 2
+        if wins == 3:
+            return 1
+        return 0

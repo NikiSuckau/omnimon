@@ -18,7 +18,9 @@ def get_training_targets():
     if runtime_globals.strategy_index == 0:
         return [pet for pet in get_selected_pets() if pet.can_train()]
     else:
-        return [pet for pet in get_selected_pets() if pet.can_train() and pet.effort < 16]
+        return [pet for pet in get_selected_pets() if pet.can_train() and (pet.effort < 16 or (
+            pet.strength < 4 and
+            runtime_globals.game_modules.get(pet.module).training_strengh_gain_win > 0))]
 
 def get_battle_targets():
     """
@@ -58,6 +60,7 @@ def distribute_pets_evenly():
     for i, pet in enumerate(pet_list):
         pet.x = int(center_positions[i] - constants.PET_WIDTH / 2)
         pet.subpixel_x = float(pet.x)
+        pet.dirty = True
 
 def draw_pet_outline(surface, frame, x, y, color=(255, 255, 0)):
     """

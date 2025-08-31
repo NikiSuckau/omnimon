@@ -10,7 +10,7 @@ import time
 
 SAVE_FILE = "save/save_data.dat"
 SAVE_DIR = "save"
-MAX_BACKUPS = 5  # Keep 5 backup files
+MAX_BACKUPS = 10  # Keep 10 backup files
 
 # Persistent variables
 game_background = None
@@ -32,60 +32,65 @@ inventory = {}
 battle_effects = {}
 wake_time = None
 sleep_time = None
+screen_timeout = 60
+quests = []
+event = None
+event_time = None
 
 # Internal timer for autosave
 _last_save_time = time.time()
 AUTOSAVE_INTERVAL_SECONDS = 60  # 5 minutes
 
 def get_next_save_number():
-    """Get the next save file number for backup rotation."""
+    """Get the next save file number for backup rotation (1 to MAX_BACKUPS)."""
     if not os.path.exists(SAVE_DIR):
         return 1
+
+    # Get the highest number and increment by 1
+    latest_save = get_latest_save_file()
+    if latest_save == None:
+        next_number = 1
+    else:
+        latest_save = os.path.basename(latest_save)
+        next_number = int(latest_save.replace("save_data_", "").replace(".dat", "")) + 1
     
-    # Find existing save files
-    save_numbers = []
-    for filename in os.listdir(SAVE_DIR):
-        if filename.startswith("save_data") and filename.endswith(".dat"):
-            if filename == "save_data.dat":
-                save_numbers.append(1)
-            else:
-                # Extract number from save_data_X.dat
-                try:
-                    number_part = filename.replace("save_data_", "").replace(".dat", "")
-                    save_numbers.append(int(number_part))
-                except ValueError:
-                    continue
-    
-    if not save_numbers:
+    # If we exceed MAX_BACKUPS, wrap around to 1
+    if next_number > MAX_BACKUPS:
         return 1
     
-    return max(save_numbers) + 1
+    return next_number
 
 def get_latest_save_file():
     """Get the path to the most recent save file."""
     if not os.path.exists(SAVE_DIR):
         return None
     
-    # Find existing save files with their numbers
+    # Check if old save_data.dat exists and migrate it first
+    old_save_path = os.path.join(SAVE_DIR, "save_data.dat")
+    if os.path.exists(old_save_path):
+        new_save_path = os.path.join(SAVE_DIR, "save_data_1.dat")
+        try:
+            os.rename(old_save_path, new_save_path)
+            print(f"[Save] Migrated save_data.dat to save_data_1.dat")
+        except Exception as e:
+            print(f"[Save] Failed to migrate save_data.dat: {e}")
+    
+    # Find existing numbered save files
     save_files = []
     for filename in os.listdir(SAVE_DIR):
-        if filename.startswith("save_data") and filename.endswith(".dat"):
-            full_path = os.path.join(SAVE_DIR, filename)
-            if filename == "save_data.dat":
-                save_files.append((1, full_path))
-            else:
-                # Extract number from save_data_X.dat
-                try:
-                    number_part = filename.replace("save_data_", "").replace(".dat", "")
-                    save_files.append((int(number_part), full_path))
-                except ValueError:
-                    continue
+        if filename.startswith("save_data_") and filename.endswith(".dat"):
+            try:
+                number_part = filename.replace("save_data_", "").replace(".dat", "")
+                full_path = os.path.join(SAVE_DIR, filename)
+                save_files.append((int(number_part), full_path))
+            except ValueError:
+                continue
     
     if not save_files:
         return None
-    
-    # Return the file with the highest number
-    save_files.sort(key=lambda x: x[0], reverse=True)
+
+    # Return the most recent file
+    save_files.sort(key=lambda x: os.path.getmtime(x[1]), reverse=True)
     return save_files[0][1]
 
 def cleanup_old_saves():
@@ -93,23 +98,20 @@ def cleanup_old_saves():
     if not os.path.exists(SAVE_DIR):
         return
     
-    # Find all save files with their numbers
+    # Find all numbered save files
     save_files = []
     for filename in os.listdir(SAVE_DIR):
-        if filename.startswith("save_data") and filename.endswith(".dat"):
-            full_path = os.path.join(SAVE_DIR, filename)
-            if filename == "save_data.dat":
-                save_files.append((1, full_path))
-            else:
-                try:
-                    number_part = filename.replace("save_data_", "").replace(".dat", "")
-                    save_files.append((int(number_part), full_path))
-                except ValueError:
-                    continue
+        if filename.startswith("save_data_") and filename.endswith(".dat"):
+            try:
+                number_part = filename.replace("save_data_", "").replace(".dat", "")
+                full_path = os.path.join(SAVE_DIR, filename)
+                save_files.append((int(number_part), full_path))
+            except ValueError:
+                continue
     
     # Keep only the most recent MAX_BACKUPS files
     if len(save_files) > MAX_BACKUPS:
-        save_files.sort(key=lambda x: x[0], reverse=True)
+        save_files.sort(key=lambda x: os.path.getmtime(x[1]), reverse=True)
         files_to_remove = save_files[MAX_BACKUPS:]
         
         for _, file_path in files_to_remove:
@@ -131,7 +133,7 @@ def save() -> None:
         except Exception as e:
             print(f"[Save] Failed to create save directory: {e}")
             return
-    
+
     data = {
         "pet_list": pet_list,
         "poop_list": poop_list,
@@ -150,14 +152,15 @@ def save() -> None:
         "background_high_res": background_high_res,
         "wake_time": wake_time,
         "sleep_time": sleep_time,
+        "screen_timeout": screen_timeout,
+        "quests": quests,
+        "event": event,
+        "event_time": event_time,
     }
 
     # Get the next save number and create the filename
     save_number = get_next_save_number()
-    if save_number == 1:
-        save_path = SAVE_FILE  # First save uses the original name
-    else:
-        save_path = os.path.join(SAVE_DIR, f"save_data_{save_number}.dat")
+    save_path = os.path.join(SAVE_DIR, f"save_data_{save_number}.dat")
 
     try:
         with open(save_path, "wb") as f:
@@ -179,7 +182,8 @@ def load() -> None:
     """
     global pet_list, poop_list, traited, unlocks, battle_area, battle_round, xai, xai_date, background_high_res
     global game_background, background_module_name, showClock, sound, inventory, battle_effects
-    global wake_time, sleep_time
+    global wake_time, sleep_time, screen_timeout
+    global quests, event, event_time  # <-- Added
 
     # Get all available save files in order (newest first)
     save_files_to_try = []
@@ -192,28 +196,30 @@ def load() -> None:
             print(f"[Save] Failed to create save directory: {e}")
             return
 
-    if os.path.exists(SAVE_DIR):
-        # Find all save files with their numbers
-        all_saves = []
-        for filename in os.listdir(SAVE_DIR):
-            if filename.startswith("save_data") and filename.endswith(".dat"):
+    # Check if old save_data.dat exists and migrate it first
+    old_save_path = os.path.join(SAVE_DIR, "save_data.dat")
+    if os.path.exists(old_save_path):
+        new_save_path = os.path.join(SAVE_DIR, "save_data_1.dat")
+        try:
+            os.rename(old_save_path, new_save_path)
+            print(f"[Save] Migrated save_data.dat to save_data_1.dat")
+        except Exception as e:
+            print(f"[Save] Failed to migrate save_data.dat: {e}")
+
+    # Find all numbered save files
+    all_saves = []
+    for filename in os.listdir(SAVE_DIR):
+        if filename.startswith("save_data_") and filename.endswith(".dat"):
+            try:
+                number_part = filename.replace("save_data_", "").replace(".dat", "")
                 full_path = os.path.join(SAVE_DIR, filename)
-                if filename == "save_data.dat":
-                    all_saves.append((1, full_path))
-                else:
-                    try:
-                        number_part = filename.replace("save_data_", "").replace(".dat", "")
-                        all_saves.append((int(number_part), full_path))
-                    except ValueError:
-                        continue
-        
-        # Sort by number (newest first)
-        all_saves.sort(key=lambda x: x[0], reverse=True)
-        save_files_to_try = [save_path for _, save_path in all_saves]
+                all_saves.append((int(number_part), full_path))
+            except ValueError:
+                continue
     
-    # If no numbered saves found, try the original file
-    if not save_files_to_try and os.path.exists(SAVE_FILE):
-        save_files_to_try = [SAVE_FILE]
+    # Sort by modification time (newest first)
+    all_saves.sort(key=lambda x: os.path.getmtime(x[1]), reverse=True)
+    save_files_to_try = [save_path for _, save_path in all_saves]
 
     # Try to load each save file in order
     for save_path in save_files_to_try:
@@ -239,6 +245,11 @@ def load() -> None:
                                 pet.trophies = 0
                             if not hasattr(pet, 'vital_values'):
                                 pet.vital_values = 0
+                            # Ensure PvP counters exist for compatibility with older saves
+                            if not hasattr(pet, 'pvp_battles'):
+                                pet.pvp_battles = 0
+                            if not hasattr(pet, 'pvp_wins'):
+                                pet.pvp_wins = 0
                             
                             # Apply any patches from the pet class
                             if hasattr(pet, 'patch'):
@@ -274,7 +285,11 @@ def load() -> None:
                 background_high_res = data.get("background_high_res", False)
                 wake_time = data.get("wake_time", None)
                 sleep_time = data.get("sleep_time", None)
-                
+                screen_timeout = data.get("screen_timeout", 60)
+                quests = data.get("quests", [])
+                event = data.get("event", None)
+                event_time = data.get("event_time", None)
+
                 print(f"[Game] Successfully loaded save file: {os.path.basename(save_path)} with {len(pet_list)} valid pets")
                 return  # Successfully loaded, exit the function
                 
@@ -302,6 +317,7 @@ def load() -> None:
     background_high_res = False
     wake_time = None
     sleep_time = None
+    screen_timeout = 60
 
 def autosave() -> None:
     """

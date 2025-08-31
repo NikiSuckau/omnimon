@@ -199,8 +199,8 @@ namespace OmnimonModuleEditor.Controls
                 return;
             }
 
-            string nameFormat = CurrentModule.NameFormat ?? "$";
-            string zipName = nameFormat.Replace("$", CurrentPet.Name).Replace(':', '_') + ".zip";
+            // Use fixed name format instead of module.NameFormat
+            string zipName = SpriteUtils.GetSpriteName(CurrentPet.Name, SpriteUtils.DefaultNameFormat) + ".zip";
 
             string downloads = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
             string downloadsFolder = Path.Combine(downloads, "Downloads");
@@ -216,7 +216,7 @@ namespace OmnimonModuleEditor.Controls
             }
 
             var result = MessageBox.Show(
-                string.Format(Properties.Resources.ImportSpritesConfirm ?? "Import sprites from \"{0}\" for this pet?\n\nThe contents will be extracted to the pet's folder.", zipName),
+                string.Format(Properties.Resources.ImportSpritesConfirm ?? "Import sprites from \"{0}\" for this pet?\n\nThe zip file will be copied to the monsters folder.", zipName),
                 Properties.Resources.ImportSpritesTitle ?? "Import sprites",
                 MessageBoxButtons.YesNo, MessageBoxIcon.Question);
 
@@ -227,23 +227,12 @@ namespace OmnimonModuleEditor.Controls
             if (!Directory.Exists(monstersFolder))
                 Directory.CreateDirectory(monstersFolder);
 
-            string petFolder = Path.Combine(monstersFolder, nameFormat.Replace("$", CurrentPet.Name).Replace(':', '_'));
-            if (!Directory.Exists(petFolder))
-                Directory.CreateDirectory(petFolder);
+            // New approach: just copy the zip file to the monsters folder
+            string destinationZipPath = Path.Combine(monstersFolder, zipName);
 
             try
             {
-                string tempExtract = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
-                Directory.CreateDirectory(tempExtract);
-
-                ZipFile.ExtractToDirectory(zipPath, tempExtract);
-
-                foreach (var file in Directory.GetFiles(tempExtract))
-                {
-                    string dest = Path.Combine(petFolder, Path.GetFileName(file));
-                    File.Copy(file, dest, true);
-                }
-                Directory.Delete(tempExtract, true);
+                File.Copy(zipPath, destinationZipPath, true);
 
                 MessageBox.Show(Properties.Resources.ImportSpritesSuccess ?? "Sprites imported successfully!",
                     Properties.Resources.ImportSpritesTitle ?? "Import sprites", MessageBoxButtons.OK, MessageBoxIcon.Information);

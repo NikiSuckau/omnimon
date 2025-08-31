@@ -1,5 +1,4 @@
 import pygame
-import time
 import random
 
 from core import runtime_globals
@@ -222,3 +221,22 @@ class CountMatchTraining(Training):
             for pet in self.pets:
                 pet.trophies += 1
             runtime_globals.game_console.log(f"[TROPHY] Count training perfect score achieved! Trophy awarded.")
+
+    # ...existing code...
+    def get_attack_count(self):
+        """
+        Determine attack count based on super-hit count:
+          5 hits -> 3
+          4 hits -> 2
+          3 hits -> 1
+          <3  -> 0 (defeat)
+        Supports reading hits from self.super_hits (dict) or falls back to self.victories.
+        """
+        hits = self.super_hits.get(self.pets[0], 0)
+        if hits >= 5:
+            return 3
+        if hits == 4:
+            return 2
+        if hits == 3:
+            return 1
+        return 0

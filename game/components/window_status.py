@@ -158,26 +158,28 @@ class WindowStatus:
         trophies_text = self.font_small.render(trophies_value, True, constants.FONT_COLOR_DEFAULT)
         blit_with_shadow(surface, trophies_text, (PAGE_MARGIN + int(32 * constants.UI_SCALE), y_pos_trophies_vital))
 
-        # Vital Values icon and value  
-        vital_x = PAGE_MARGIN + icon_spacing
-        blit_with_shadow(surface, self.sprites["vital_values"], (vital_x, y_pos_trophies_vital))
-        vital_values_value = str(getattr(self.pet, 'vital_values', 0))
-        vital_values_text = self.font_small.render(vital_values_value, True, constants.FONT_COLOR_DEFAULT)
-        blit_with_shadow(surface, vital_values_text, (vital_x + int(32 * constants.UI_SCALE), y_pos_trophies_vital))
+        # Vital Values icon and value
+        if module.vital_value_base > 0:
+            vital_x = PAGE_MARGIN + icon_spacing
+            blit_with_shadow(surface, self.sprites["vital_values"], (vital_x, y_pos_trophies_vital))
+            vital_values_value = str(getattr(self.pet, 'vital_values', 0))
+            vital_values_text = self.font_small.render(vital_values_value, True, constants.FONT_COLOR_DEFAULT)
+            blit_with_shadow(surface, vital_values_text, (vital_x + int(32 * constants.UI_SCALE), y_pos_trophies_vital))
 
         # Level and Experience (moved down, now on 3rd line, with icons)
         level_exp_y = PAGE_MARGIN + distance * 3
         icon_spacing = int(40 * constants.UI_SCALE)
         icon_y = level_exp_y - int(2 * constants.UI_SCALE)
-        # Level icon and value
-        blit_with_shadow(surface, self.sprites["level"], (PAGE_MARGIN, icon_y))
-        level_text = self.font_small.render(f"Lv: {getattr(self.pet, 'level', '-')}", True, constants.FONT_COLOR_DEFAULT)
-        blit_with_shadow(surface, level_text, (PAGE_MARGIN + icon_spacing, level_exp_y))
-        # Exp icon and value
-        exp_icon_x = PAGE_MARGIN + icon_spacing * 2
-        exp_val = getattr(self.pet, 'exp', getattr(self.pet, 'experience', '-'))
-        exp_text = self.font_small.render(f"EXP: {exp_val}", True, constants.FONT_COLOR_DEFAULT)
-        blit_with_shadow(surface, exp_text, (exp_icon_x + icon_spacing, level_exp_y))
+        if self.pet.module == "DMX":
+            # Level icon and value
+            blit_with_shadow(surface, self.sprites["level"], (PAGE_MARGIN, icon_y))
+            level_text = self.font_small.render(f"Lv: {getattr(self.pet, 'level', '-')}", True, constants.FONT_COLOR_DEFAULT)
+            blit_with_shadow(surface, level_text, (PAGE_MARGIN + icon_spacing, level_exp_y))
+            # Exp icon and value
+            exp_icon_x = PAGE_MARGIN + icon_spacing * 2
+            exp_val = getattr(self.pet, 'exp', getattr(self.pet, 'experience', '-'))
+            exp_text = self.font_small.render(f"EXP: {exp_val}", True, constants.FONT_COLOR_DEFAULT)
+            blit_with_shadow(surface, exp_text, (exp_icon_x + icon_spacing, level_exp_y))
 
         # Condition hearts or mistakes (moved down, now on 4th line, with icon for mistakes)
         y_pos = PAGE_MARGIN + distance * 4
@@ -359,7 +361,7 @@ class WindowStatus:
         # Poop Time
         y += distance
         poop_label = self.font_small.render("Poop Time:", True, constants.FONT_COLOR_DEFAULT)
-        poop_seconds = (self.pet.poop_timer * 60) - ((self.pet.timer // constants.FRAME_RATE) % (self.pet.poop_timer * 60))
+        poop_seconds = (self.pet.poop_timer * 60) - ((self.pet.timer // constants.FRAME_RATE) % max(1,(self.pet.poop_timer * 60)))
         poop_text = format_seconds(poop_seconds)
         poop_value = self.font_small.render(poop_text, True, constants.FONT_COLOR_DEFAULT)
         blit_with_shadow(surface, poop_label, (PAGE_MARGIN, y))
@@ -368,7 +370,7 @@ class WindowStatus:
         # Feed Time
         y += distance
         feed_label = self.font_small.render("Feed Time:", True, constants.FONT_COLOR_DEFAULT)
-        feed_seconds = (self.pet.hunger_loss * 60) - ((self.pet.timer // constants.FRAME_RATE) % (self.pet.hunger_loss * 60))
+        feed_seconds = (self.pet.hunger_loss * 60) - ((self.pet.timer // constants.FRAME_RATE) % max(1,(self.pet.hunger_loss * 60)))
         feed_text = format_seconds(feed_seconds)
         feed_value = self.font_small.render(feed_text, True, constants.FONT_COLOR_DEFAULT)
         blit_with_shadow(surface, feed_label, (PAGE_MARGIN, y))
@@ -433,7 +435,7 @@ class WindowStatus:
             filled_blocks = visible_blocks
         else:
             # Scale value proportionally to the number of visible blocks
-            filled_blocks = ((value - 1) * visible_blocks) // (max_energy - 1) + 1
+            filled_blocks = (value * visible_blocks) // max_energy
 
         # Draw background of the energy bar (offset for border effect)
         #surface.blit(self.sprites["energy_bar_back"], ((x - 5) - (visible_blocks * (block_width + block_spacing) * UI_SCALE), y + int(4 * UI_SCALE)))

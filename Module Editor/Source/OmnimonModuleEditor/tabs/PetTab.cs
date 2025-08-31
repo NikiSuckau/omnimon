@@ -187,30 +187,9 @@ namespace OmnimonModuleEditor.Tabs
                 BorderStyle = BorderStyle.FixedSingle
             };
 
-            string nameFormat = module?.NameFormat ?? "_";
-            string safePetName = pet.Name.Replace(':', '_');
-            string folderName = nameFormat.Replace("$", safePetName);
-            string spritePath = Path.Combine(modulePath, "monsters", folderName, "0.png");
-
-            if (File.Exists(spritePath))
-            {
-                try
-                {
-                    using (var fs = new FileStream(spritePath, FileMode.Open, FileAccess.Read, FileShare.Read))
-                    {
-                        var img = Image.FromStream(fs);
-                        pb.Image = new Bitmap(img);
-                    }
-                }
-                catch
-                {
-                    pb.Image = null;
-                }
-            }
-            else
-            {
-                pb.Image = null;
-            }
+            // Use new sprite loading system
+            var sprite = PetUtils.LoadSinglePetSprite(pet.Name, modulePath);
+            pb.Image = sprite;
 
             itemPanel.Controls.Add(pb);
 
@@ -417,6 +396,7 @@ namespace OmnimonModuleEditor.Tabs
             public NumericUpDown NumPoopTimer;
             public NumericUpDown NumEnergy;
             public NumericUpDown NumMinWeight;
+            public NumericUpDown NumEvolWeight;
             public NumericUpDown NumStomach;
             public NumericUpDown NumHungerLoss;
             public NumericUpDown NumStrengthLoss;
@@ -464,6 +444,7 @@ namespace OmnimonModuleEditor.Tabs
                 NumPoopTimer.Value = Math.Max(NumPoopTimer.Minimum, pet.PoopTimer);
                 NumEnergy.Value = Math.Max(NumEnergy.Minimum, pet.Energy);
                 NumMinWeight.Value = Math.Max(NumMinWeight.Minimum, pet.MinWeight);
+                NumEvolWeight.Value = Math.Max(NumEvolWeight.Minimum, pet.EvolWeight);
                 NumStomach.Value = Math.Max(NumStomach.Minimum, pet.Stomach);
                 NumHungerLoss.Value = Math.Max(NumHungerLoss.Minimum, pet.HungerLoss);
                 NumStrengthLoss.Value = Math.Max(NumStrengthLoss.Minimum, pet.StrengthLoss);
@@ -495,7 +476,7 @@ namespace OmnimonModuleEditor.Tabs
                 pet.Special = ChkSpecial.Checked;
                 pet.SpecialKey = TxtSpecialKey.Text;
 
-                // Salva null se vazio, inválido ou igual a "  :"
+                // Salva null se vazio, invï¿½lido ou igual a "  :"
                 pet.Sleeps = IsValidTime(TxtSleeps.Text) ? TxtSleeps.Text : null;
                 pet.Wakes = IsValidTime(TxtWakes.Text) ? TxtWakes.Text : null;
 
@@ -505,6 +486,7 @@ namespace OmnimonModuleEditor.Tabs
                 pet.PoopTimer = (int)NumPoopTimer.Value;
                 pet.Energy = (int)NumEnergy.Value;
                 pet.MinWeight = (int)NumMinWeight.Value;
+                pet.EvolWeight = (int)NumEvolWeight.Value;
                 pet.Stomach = (int)NumStomach.Value;
                 pet.HungerLoss = (int)NumHungerLoss.Value;
                 pet.StrengthLoss = (int)NumStrengthLoss.Value;
@@ -519,7 +501,7 @@ namespace OmnimonModuleEditor.Tabs
                 pet.Hp = (int)NumHp.Value;
             }
 
-            // Função auxiliar para validar hora no formato HH:mm
+            // Funï¿½ï¿½o auxiliar para validar hora no formato HH:mm
             private bool IsValidTime(string value)
             {
                 if (string.IsNullOrWhiteSpace(value)) return false;
@@ -541,15 +523,14 @@ namespace OmnimonModuleEditor.Tabs
                     box.BackColor = Color.White;
                 }
 
-                if (pet == null || module == null) return;
+                if (pet == null || string.IsNullOrEmpty(modulePath)) return;
 
-                string nameFormat = module?.NameFormat ?? "_";
-                string safePetName = pet.Name.Replace(':', '_');
-                string folderName = nameFormat.Replace("$", safePetName);
+                // Use new sprite loading system
+                var spritesDict = SpriteUtils.LoadPetSprites(pet.Name, modulePath, PetUtils.FixedNameFormat, spriteBoxes.Count);
+                var sprites = SpriteUtils.ConvertSpritesToList(spritesDict, spriteBoxes.Count);
 
                 for (int i = 0; i < spriteBoxes.Count; i++)
                 {
-                    string spritePath = Path.Combine(modulePath, "monsters", folderName, $"{i}.png");
                     var box = spriteBoxes[i];
 
                     PictureBox pb;
@@ -568,20 +549,9 @@ namespace OmnimonModuleEditor.Tabs
                         pb = box.Controls[0] as PictureBox;
                     }
 
-                    if (File.Exists(spritePath))
+                    if (i < sprites.Count && sprites[i] != null)
                     {
-                        try
-                        {
-                            using (var fs = new FileStream(spritePath, FileMode.Open, FileAccess.Read, FileShare.Read))
-                            {
-                                var img = Image.FromStream(fs);
-                                pb.Image = new Bitmap(img);
-                            }
-                        }
-                        catch
-                        {
-                            pb.Image = null;
-                        }
+                        pb.Image = sprites[i];
                     }
                     else
                     {
@@ -792,6 +762,7 @@ namespace OmnimonModuleEditor.Tabs
                 NumStomach = new NumericUpDown { Minimum = 2, Value = 4 };
                 NumStrengthLoss = new NumericUpDown { Minimum = 2, Value = 4, Maximum = 99999 };
                 NumMinWeight = new NumericUpDown { Minimum = 5, Value = 5 };
+                NumEvolWeight = new NumericUpDown { Minimum = 0, Value = 0, Maximum = 99 };
                 NumPoopTimer = new NumericUpDown { Minimum = 3, Value = 3, Maximum = 99999 };
                 NumConditionHearts = new NumericUpDown { Minimum = 0, Value = 0 };
                 NumHealDoses = new NumericUpDown { Minimum = 1, Value = 1 };
@@ -817,6 +788,7 @@ namespace OmnimonModuleEditor.Tabs
                 AddField("Strength Loss:", NumStrengthLoss);
                 AddField("Min Weight:", NumMinWeight);
                 AddField("Poop Timer:", NumPoopTimer);
+                AddField("Evol Weight:", NumEvolWeight);
                 AddField("Condition Hearts:", NumConditionHearts);
                 AddField("Heal Doses:", NumHealDoses);
                 AddField("Jogress Available:", ChkJogress);
@@ -913,15 +885,14 @@ namespace OmnimonModuleEditor.Tabs
                     if (Parent is TableLayoutPanel parentLayout && parentLayout.Parent is PetTab pt)
                         petTab = pt;
 
-                    if (currentPet == null || petTab == null || petTab.module == null || string.IsNullOrWhiteSpace(currentPet.Name))
+                    if (currentPet == null || petTab == null || string.IsNullOrWhiteSpace(currentPet.Name))
                     {
                         MessageBox.Show("Select a valid pet to import sprites.", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                         return;
                     }
 
-                    // Build the expected zip file name
-                    string nameFormat = petTab.module.NameFormat ?? "$";
-                    string zipName = nameFormat.Replace("$", currentPet.Name).Replace(':', '_') + ".zip";
+                    // Build the expected zip file name using fixed format
+                    string zipName = SpriteUtils.GetSpriteName(currentPet.Name, PetUtils.FixedNameFormat) + ".zip";
 
                     // Get the user's default downloads folder
                     string downloads = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
@@ -935,7 +906,7 @@ namespace OmnimonModuleEditor.Tabs
                     }
 
                     var result = MessageBox.Show(
-                        $"Import sprites from \"{zipName}\" for this pet?\n\nThe contents will be extracted to the pet's folder.",
+                        $"Import sprites from \"{zipName}\" for this pet?\n\nThe zip file will be copied to the monsters folder.",
                         "Import sprites",
                         MessageBoxButtons.YesNo,
                         MessageBoxIcon.Question
@@ -943,29 +914,17 @@ namespace OmnimonModuleEditor.Tabs
                     if (result != DialogResult.Yes)
                         return;
 
-                    // Create monsters folder and pet subfolder if needed
+                    // Create monsters folder if needed
                     string monstersFolder = Path.Combine(petTab.modulePath, "monsters");
                     if (!Directory.Exists(monstersFolder))
                         Directory.CreateDirectory(monstersFolder);
 
-                    string petFolder = Path.Combine(monstersFolder, nameFormat.Replace("$", currentPet.Name).Replace(':', '_'));
-                    if (!Directory.Exists(petFolder))
-                        Directory.CreateDirectory(petFolder);
+                    // New approach: just copy the zip file to the monsters folder
+                    string destinationZipPath = Path.Combine(monstersFolder, zipName);
 
-                    // Extract the zip to the pet folder (overwrite existing files)
                     try
                     {
-                        string tempExtract = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
-                        Directory.CreateDirectory(tempExtract);
-
-                        ZipFile.ExtractToDirectory(zipPath, tempExtract);
-
-                        foreach (var file in Directory.GetFiles(tempExtract))
-                        {
-                            string dest = Path.Combine(petFolder, Path.GetFileName(file));
-                            File.Copy(file, dest, true);
-                        }
-                        Directory.Delete(tempExtract, true);
+                        File.Copy(zipPath, destinationZipPath, true);
 
                         MessageBox.Show("Sprites imported successfully!", "Import sprites", MessageBoxButtons.OK, MessageBoxIcon.Information);
 
@@ -978,7 +937,7 @@ namespace OmnimonModuleEditor.Tabs
                     }
                 };
 
-                // Botão Edit Evolutions
+                // Botï¿½o Edit Evolutions
                 btnEditEvolutions = new Button
                 {
                     Text = "Edit Evolutions",
@@ -988,7 +947,7 @@ namespace OmnimonModuleEditor.Tabs
                     Anchor = AnchorStyles.Right
                 };
 
-                // Adicione o botão ao final do painel de campos
+                // Adicione o botï¿½o ao final do painel de campos
                 var bottomPanel = new FlowLayoutPanel
                 {
                     Dock = DockStyle.Bottom,
@@ -998,7 +957,7 @@ namespace OmnimonModuleEditor.Tabs
                 bottomPanel.Controls.Add(btnEditEvolutions);
                 this.Controls.Add(bottomPanel);
 
-                // Evento do botão
+                // Evento do botï¿½o
                 btnEditEvolutions.Click += (s, e) =>
                 {
                     {
