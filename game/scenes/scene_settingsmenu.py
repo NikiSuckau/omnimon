@@ -62,7 +62,7 @@ class SceneSettingsMenu:
         self.unlocked_backgrounds = []
         for module in runtime_globals.game_modules.values():
             # Get unlocked backgrounds as dicts with name and label
-            for bg in get_unlocked_backgrounds(module.name, getattr(module, "unlocks", [])):
+            for bg in get_unlocked_backgrounds(module.name, getattr(module, "backgrounds", [])):
                 self.unlocked_backgrounds.append((module.name, bg["name"], bg.get("label", bg["name"])))
         self.current_bg_index = self.get_current_background_index()
         runtime_globals.game_console.log("[SceneSettingsMenu] Settings menu loaded.")
