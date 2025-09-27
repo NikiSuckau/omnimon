@@ -115,6 +115,7 @@ class GamePet:
         self.vital_values = 100
         self.overfeed = 0
         self.sleep_disturbances = 0
+        self.injuries = 0
 
         module = get_module(self.module)
 
