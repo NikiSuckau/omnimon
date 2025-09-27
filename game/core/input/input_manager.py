@@ -12,23 +12,10 @@ except ImportError:
     HAS_GPIO = False
 
 CONFIG_PATH = "config/input_config.json"
-if platform.system() == "Linux":
-        if os.path.exists("/usr/bin/batocera-info"):
-            input_config = "config/input_config.json"
-        elif os.path.exists("/boot/config.txt"):
-            input_config = "config/input_config.json"
-        else:
-            input_config = "config/input_config.json"
-elif platform.system() == "Windows":
-    input_config = "config/input_config.json"
-elif platform.system() == "Darwin":
-    input_config = "config/input_config.json"
-else:
-    input_config = CONFIG_PATH
 
 def load_input_config():
     # Load and parse the config file
-    with open(input_config, "r") as f:
+    with open(CONFIG_PATH, "r") as f:
         config = json.load(f)
     # Keyboard: convert string to pygame constant
     key_map = {}
@@ -63,11 +50,20 @@ class InputManager:
         self.pin_map = pin_map
         self.default_joystick_button_map = joystick_button_map
 
-        # Mouse configuration
-        self.mouse_enabled = mouse_config.get("enabled", False)
-        self.mouse_left_action = mouse_config.get("left_click", "A")
-        self.mouse_right_action = mouse_config.get("right_click", "B")
+        # Mouse configuration - defer detection until pygame video is ready
+        self.mouse_force_disabled = mouse_config.get("force_disabled", False)
+        self.mouse_enabled = False  # Will be set during first update/event
+        self.mouse_detection_done = False
+        self.mouse_left_action = mouse_config.get("left_click", "LCLICK")
+        self.mouse_right_action = mouse_config.get("right_click", "RCLICK")
         self.mouse_position = (0, 0)
+        self.mouse_drag_start = None
+        self.mouse_dragging = False
+        self.drag_threshold = mouse_config.get("drag_threshold", 5)
+        
+        # Touch/click states
+        self.touch_start_pos = None
+        self.is_touching = False
 
         # We’ll populate per‑joystick button maps after init (allows overrides).
         self.joystick_button_maps = {}  # joy_id -> {button_index: action}
@@ -102,6 +98,54 @@ class InputManager:
                     self.buttons[pin] = btn
                 except Exception:
                     pass  # ignore missing pins
+
+    def _detect_mouse_support(self):
+        """Auto-detect mouse/touch support"""
+        try:
+            # Check if mouse is available
+            pygame.mouse.get_pressed()
+            
+            # Platform-specific detection
+            if platform.system() == "Windows":
+                print("[Input] Mouse support detected: Windows platform")
+                return True  # Windows always has mouse support
+            elif platform.system() == "Darwin":
+                print("[Input] Mouse support detected: macOS platform")
+                return True  # macOS always has mouse support
+            elif platform.system() == "Linux":
+                # Check for desktop environment or touch device
+                import subprocess
+                try:
+                    # Check if running on desktop with display
+                    display = os.environ.get('DISPLAY')
+                    wayland = os.environ.get('WAYLAND_DISPLAY')
+                    if display or wayland:
+                        print(f"[Input] Mouse support detected: Linux desktop (DISPLAY={display}, WAYLAND={wayland})")
+                        return True
+                    
+                    # Check for touch devices
+                    result = subprocess.run(['find', '/dev/input', '-name', 'event*'], 
+                                         capture_output=True, text=True, timeout=2)
+                    if result.returncode == 0 and result.stdout:
+                        print("[Input] Touch/mouse input devices detected on Linux")
+                        return True
+                except:
+                    pass
+                    
+                # Default for Pi: check if it's not headless
+                has_config = os.path.exists("/boot/config.txt")
+                has_ssh = os.path.exists("/boot/ssh")
+                if has_config and not has_ssh:
+                    print("[Input] Touch support detected: Raspberry Pi with display")
+                    return True
+                print("[Input] No mouse/touch support detected: headless Linux")
+                return False
+            else:
+                print(f"[Input] Unknown platform {platform.system()}, defaulting to no mouse")
+                return False  # Conservative default
+        except Exception as e:
+            print(f"[Input] Error detecting mouse support: {e}")
+            return False
 
     # ------------------------------------------------------------------
     # GPIO helpers
@@ -186,6 +230,46 @@ class InputManager:
         """Get the current mouse position."""
         return self.mouse_position
 
+    def _ensure_mouse_detection(self):
+        """Ensure mouse detection has been performed"""
+        if not self.mouse_detection_done:
+            self.mouse_enabled = self._detect_mouse_support() and not self.mouse_force_disabled
+            self.mouse_detection_done = True
+    
+    def is_mouse_enabled(self):
+        """Check if mouse/touch input is enabled."""
+        self._ensure_mouse_detection()
+        return self.mouse_enabled
+
+    def force_disable_mouse(self, disabled=True):
+        """Force disable mouse for testing purposes."""
+        self.mouse_force_disabled = disabled
+        self._ensure_mouse_detection()
+        old_enabled = self.mouse_enabled
+        self.mouse_enabled = self._detect_mouse_support() and not self.mouse_force_disabled
+        
+        if old_enabled != self.mouse_enabled:
+            status = "disabled" if disabled else "enabled"
+            print(f"[Input] Mouse/touch support forcefully {status}")
+        
+        return self.mouse_enabled
+
+    def is_dragging(self):
+        """Check if currently dragging."""
+        return self.mouse_dragging
+
+    def get_drag_start(self):
+        """Get the starting position of current drag."""
+        return self.mouse_drag_start
+
+    def get_drag_distance(self):
+        """Get the distance dragged from start position."""
+        if not self.mouse_dragging or not self.mouse_drag_start:
+            return 0
+        dx = self.mouse_position[0] - self.mouse_drag_start[0]
+        dy = self.mouse_position[1] - self.mouse_drag_start[1]
+        return (dx ** 2 + dy ** 2) ** 0.5
+
     def is_mouse_in_rect(self, rect):
         """Check if mouse position is inside a rectangle (x, y, width, height)."""
         if not self.mouse_enabled:
@@ -211,18 +295,37 @@ class InputManager:
     # Event processing
     # ------------------------------------------------------------------
     def process_event(self, event):
+        # Ensure mouse detection is done when we start processing events
+        self._ensure_mouse_detection()
+        
+        # Check if we need to end an active drag due to other input
+        should_end_drag = False
+        
         # --- Keyboard ---
         if event.type == pygame.KEYDOWN and event.key in self.key_map:
-            return self.key_map[event.key]
+            if self.mouse_dragging:
+                should_end_drag = True
+            action = self.key_map[event.key]
+            
+            if should_end_drag:
+                self._end_drag()
+                # Process the keyboard action after ending drag
+                return action
+            return action
 
         # --- Joystick Buttons ---
         if event.type == pygame.JOYBUTTONDOWN:
+            if self.mouse_dragging:
+                should_end_drag = True
+                
             jid = self._event_instance_id(event)
             btn = event.button
             action = self.joystick_button_maps.get(jid, {}).get(btn)
             if action:
                 # Only trigger if not already active to prevent duplicates
                 if action not in self.joystick_active_inputs:
+                    if should_end_drag:
+                        self._end_drag()
                     self._joy_press(action)
                     return action
 
@@ -236,14 +339,30 @@ class InputManager:
 
         # --- Joystick Hat (D‑pad) ---
         elif event.type == pygame.JOYHATMOTION:
+            # Only end drag if hat actually moved to a non-zero position
+            if self.mouse_dragging and event.value != (0, 0):
+                should_end_drag = True
+                
             jid = self._event_instance_id(event)
             hat_x, hat_y = event.value  # (-1,0,+1)
+            
+            if should_end_drag:
+                self._end_drag()
+                
             self._update_hat_state(jid, hat_x, hat_y)
             return None  # actions emitted via state change
 
         # --- Joystick Axis (analog sticks) ---
         elif event.type == pygame.JOYAXISMOTION:
+            # Only end drag if axis moved significantly
+            if self.mouse_dragging and abs(event.value) > self.analog_deadzone:
+                should_end_drag = True
+                
             jid = self._event_instance_id(event)
+            
+            if should_end_drag:
+                self._end_drag()
+                
             self._update_axis_state(jid, event.axis, event.value)
             return None
 
@@ -251,13 +370,22 @@ class InputManager:
         elif event.type == pygame.MOUSEBUTTONDOWN:
             if self.mouse_enabled:
                 self.mouse_position = event.pos
+                
                 if event.button == 1:  # Left click
                     action = self.mouse_left_action
                     if action not in self.mouse_active_inputs:
                         self.mouse_just_pressed.add(action)
                         self.mouse_active_inputs.add(action)
+                        # Start potential drag
+                        self.touch_start_pos = event.pos
+                        self.is_touching = True
                         return action
+                        
                 elif event.button == 3:  # Right click
+                    # End any active drag when right clicking
+                    if self.mouse_dragging:
+                        self._end_drag()
+                        
                     action = self.mouse_right_action
                     if action not in self.mouse_active_inputs:
                         self.mouse_just_pressed.add(action)
@@ -267,10 +395,20 @@ class InputManager:
         elif event.type == pygame.MOUSEBUTTONUP:
             if self.mouse_enabled:
                 self.mouse_position = event.pos
-                if event.button == 1:  # Left click
+                
+                if event.button == 1:  # Left click release
                     action = self.mouse_left_action
                     self.mouse_active_inputs.discard(action)
-                elif event.button == 3:  # Right click
+                    
+                    # End drag if dragging
+                    if self.mouse_dragging:
+                        self._end_drag()
+                        return "DRAG_END"
+                    
+                    self.is_touching = False
+                    self.touch_start_pos = None
+                    
+                elif event.button == 3:  # Right click release
                     action = self.mouse_right_action
                     self.mouse_active_inputs.discard(action)
             return None
@@ -278,6 +416,38 @@ class InputManager:
         elif event.type == pygame.MOUSEMOTION:
             if self.mouse_enabled:
                 self.mouse_position = event.pos
+                
+                # Check for drag start
+                if self.is_touching and not self.mouse_dragging and self.touch_start_pos:
+                    dx = abs(event.pos[0] - self.touch_start_pos[0])
+                    dy = abs(event.pos[1] - self.touch_start_pos[1])
+                    distance = (dx ** 2 + dy ** 2) ** 0.5
+                    
+                    if distance > self.drag_threshold:
+                        self.mouse_dragging = True
+                        self.mouse_drag_start = self.touch_start_pos
+                        self.mouse_just_pressed.add("DRAG_START")
+                        return "DRAG_START"
+                
+                # Emit drag motion if dragging
+                if self.mouse_dragging:
+                    self.mouse_just_pressed.add("DRAG_MOTION")
+                    return "DRAG_MOTION"
+                    
+            return None
+
+        elif event.type == pygame.MOUSEWHEEL:
+            if self.mouse_enabled:
+                # End any active drag when scrolling
+                if self.mouse_dragging:
+                    self._end_drag()
+                    
+                if event.y > 0:  # Scroll up
+                    self.mouse_just_pressed.add("SCROLL_UP")
+                    return "SCROLL_UP"
+                elif event.y < 0:  # Scroll down
+                    self.mouse_just_pressed.add("SCROLL_DOWN")
+                    return "SCROLL_DOWN"
             return None
 
         # --- Device add/remove ---
@@ -295,6 +465,15 @@ class InputManager:
                 self.joystick_button_maps.pop(inst, None)
 
         return None
+
+    def _end_drag(self):
+        """Helper method to cleanly end drag operations"""
+        if self.mouse_dragging:
+            self.mouse_dragging = False
+            self.mouse_drag_start = None
+            self.is_touching = False
+            self.touch_start_pos = None
+            self.mouse_just_pressed.add("DRAG_END")
 
     # ------------------------------------------------------------------
     # Helpers: decode instance id (compat w/old pygame)

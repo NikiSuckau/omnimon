@@ -8,6 +8,166 @@ using System.Windows.Forms;
 
 namespace OmnimonModuleEditor.Tabs
 {
+    // Visible Stats Editor Form - NEW
+    public class VisibleStatsEditorForm : Form
+    {
+        private CheckedListBox checkedListBox;
+        private Button btnOK;
+        private Button btnCancel;
+        private Button btnSelectAll;
+        private Button btnSelectNone;
+
+        public List<string> SelectedStats { get; private set; }
+
+        public VisibleStatsEditorForm(List<string> currentSelection)
+        {
+            InitializeComponent();
+            PopulateStats(currentSelection);
+        }
+
+        private void InitializeComponent()
+        {
+            this.Text = "Edit Visible Stats";
+            this.Size = new Size(450, 550);
+            this.StartPosition = FormStartPosition.CenterParent;
+            this.FormBorderStyle = FormBorderStyle.FixedDialog;
+            this.MaximizeBox = false;
+            this.MinimizeBox = false;
+
+            var mainLayout = new TableLayoutPanel
+            {
+                Dock = DockStyle.Fill,
+                RowCount = 3,
+                ColumnCount = 1,
+                Padding = new Padding(15)
+            };
+            mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            mainLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+            mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+
+            // Title and instructions
+            var titleLabel = new Label
+            {
+                Text = "Select which stats should be visible in the game UI:",
+                Dock = DockStyle.Fill,
+                AutoSize = true,
+                Font = new Font(SystemFonts.DefaultFont, FontStyle.Bold),
+                Padding = new Padding(0, 0, 0, 10)
+            };
+            mainLayout.Controls.Add(titleLabel, 0, 0);
+
+            // CheckedListBox
+            checkedListBox = new CheckedListBox
+            {
+                Dock = DockStyle.Fill,
+                CheckOnClick = true,
+                IntegralHeight = false,
+                AutoSize = false
+            };
+            mainLayout.Controls.Add(checkedListBox, 0, 1);
+
+            // Buttons panel
+            var buttonPanel = new TableLayoutPanel
+            {
+                Dock = DockStyle.Fill,
+                RowCount = 1,
+                ColumnCount = 4,
+                Height = 40,
+                Padding = new Padding(0, 10, 0, 0)
+            };
+            buttonPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 25));
+            buttonPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 25));
+            buttonPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 25));
+            buttonPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 25));
+
+            btnSelectAll = new Button
+            {
+                Text = "Select All",
+                Dock = DockStyle.Fill,
+                Margin = new Padding(0, 0, 5, 0)
+            };
+            btnSelectAll.Click += (s, e) =>
+            {
+                for (int i = 0; i < checkedListBox.Items.Count; i++)
+                    checkedListBox.SetItemChecked(i, true);
+            };
+
+            btnSelectNone = new Button
+            {
+                Text = "Select None",
+                Dock = DockStyle.Fill,
+                Margin = new Padding(0, 0, 5, 0)
+            };
+            btnSelectNone.Click += (s, e) =>
+            {
+                for (int i = 0; i < checkedListBox.Items.Count; i++)
+                    checkedListBox.SetItemChecked(i, false);
+            };
+
+            btnOK = new Button
+            {
+                Text = "OK",
+                DialogResult = DialogResult.OK,
+                Dock = DockStyle.Fill,
+                Margin = new Padding(0, 0, 5, 0)
+            };
+
+            btnCancel = new Button
+            {
+                Text = "Cancel",
+                DialogResult = DialogResult.Cancel,
+                Dock = DockStyle.Fill
+            };
+
+            buttonPanel.Controls.Add(btnSelectAll, 0, 0);
+            buttonPanel.Controls.Add(btnSelectNone, 1, 0);
+            buttonPanel.Controls.Add(btnOK, 2, 0);
+            buttonPanel.Controls.Add(btnCancel, 3, 0);
+
+            mainLayout.Controls.Add(buttonPanel, 0, 2);
+
+            this.Controls.Add(mainLayout);
+            this.AcceptButton = btnOK;
+            this.CancelButton = btnCancel;
+
+            btnOK.Click += BtnOK_Click;
+        }
+
+        private void PopulateStats(List<string> currentSelection)
+        {
+            checkedListBox.Items.Clear();
+
+            string[] availableStats = {
+                "Age", "Weight", "Hunger", "Strength", "Trophies", "Vital Values",
+                "Level", "Experience", "Mistakes/Condition Hearts", "Sleep Disturbances",
+                "Overfeed", "Injuries", "Effort", "Power", "DP", "Battles", "Win Rate",
+                "Total Win Rate", "Evolution Timer", "Sleeps", "Wakes", "Poop Time",
+                "Feed Time", "Flags"
+            };
+
+            foreach (string stat in availableStats)
+            {
+                int index = checkedListBox.Items.Add(stat);
+                
+                // Check if this stat is in the current selection
+                if (currentSelection != null && currentSelection.Contains(stat))
+                {
+                    checkedListBox.SetItemChecked(index, true);
+                }
+            }
+        }
+
+        private void BtnOK_Click(object sender, EventArgs e)
+        {
+            SelectedStats = new List<string>();
+            
+            foreach (var item in checkedListBox.CheckedItems)
+            {
+                SelectedStats.Add(item.ToString());
+            }
+        }
+    }
+
     // Group Unlock Editor Form
     public class GroupUnlockEditorForm : Form
     {
@@ -322,6 +482,8 @@ namespace OmnimonModuleEditor.Tabs
                 NameFormat = OmnimonModuleEditor.Utils.PetUtils.FixedNameFormat, // Always use fixed format
                 Ruleset = mainPanel.cmbRuleset?.SelectedItem?.ToString() ?? "",
                 AdventureMode = mainPanel.chkAdventureMode?.Checked ?? false,
+                HighDefinitionSprites = mainPanel.chkHighDefinitionSprites?.Checked ?? false,
+                VisibleStats = mainPanel.currentVisibleStats ?? "", // Use stored value
                 CareMeatWeightGain = (int)(mainPanel.numCareMeatWeightGain?.Value ?? 0),
                 CareMeatHungerGain = (float)(mainPanel.numCareMeatHungerGain?.Value ?? 0),
                 CareMeatCareMistakeTime = (int)(mainPanel.numCareMeatCareMistakeTime?.Value ?? 0),
@@ -403,6 +565,27 @@ namespace OmnimonModuleEditor.Tabs
             else if (mainPanel.cmbRuleset.Items.Count > 0)
                 mainPanel.cmbRuleset.SelectedIndex = 0;
             mainPanel.chkAdventureMode.Checked = module.AdventureMode;
+
+            // High Definition Sprites
+            mainPanel.chkHighDefinitionSprites.Checked = module.HighDefinitionSprites;
+
+            // Visible Stats - store in currentVisibleStats field
+            if (!string.IsNullOrWhiteSpace(module.VisibleStats))
+            {
+                mainPanel.currentVisibleStats = module.VisibleStats;
+            }
+            else
+            {
+                // Default: all stats are visible for old modules
+                string[] availableStats = {
+                    "Age", "Weight", "Hunger", "Strength", "Trophies", "Vital Values",
+                    "Level", "Experience", "Mistakes/Condition Hearts", "Sleep Disturbances",
+                    "Overfeed", "Injuries", "Effort", "Power", "DP", "Battles", "Win Rate",
+                    "Total Win Rate", "Evolution Timer", "Sleeps", "Wakes", "Poop Time",
+                    "Feed Time", "Flags"
+                };
+                mainPanel.currentVisibleStats = string.Join(",", availableStats);
+            }
 
             // Care Meat
             mainPanel.numCareMeatWeightGain.Value = module.CareMeatWeightGain;
@@ -516,6 +699,13 @@ namespace OmnimonModuleEditor.Tabs
             // Vital Values - NEW
             public NumericUpDown numVitalValueBase, numVitalValueLoss;
 
+            // High Definition Sprites
+            public CheckBox chkHighDefinitionSprites;
+
+            // Visible Stats - NEW (stored as string, button to edit)
+            public string currentVisibleStats;
+            private Button btnEditVisibleStats;
+
             public MainPanel()
             {
                 InitializeLayout();
@@ -593,7 +783,7 @@ namespace OmnimonModuleEditor.Tabs
                 // --- MAIN FIELDS SECTION (RIGHT) ---
                 var mainFieldsTable = new TableLayoutPanel
                 {
-                    RowCount = 4,
+                    RowCount = 4, // Back to 4 rows - removing HD and Visible Stats
                     ColumnCount = 2,
                     Dock = DockStyle.Fill,
                     Padding = new Padding(20, 0, 0, 0)
@@ -607,7 +797,7 @@ namespace OmnimonModuleEditor.Tabs
                 txtDescription = new TextBox() { Width = 200, Multiline = true, Height = 60, ScrollBars = ScrollBars.Vertical };
                 txtAuthor = new TextBox() { Width = 200 };
 
-                // Add main fields to table
+                // Add fields to table - ONLY the basic 4 fields
                 var mainFields = new (string, Control)[]
                 {
                     ("Name:", txtName),
@@ -675,7 +865,43 @@ namespace OmnimonModuleEditor.Tabs
                     ("", new Label()),
                 };
 
-                cmbRuleset.Items.AddRange(Enum.GetNames(typeof(Models.RulesetType)));
+                // Create the HD Sprites and Visible Stats controls properly
+                chkHighDefinitionSprites = new CheckBox
+                {
+                    Text = "High Definition Sprites",
+                    AutoSize = true
+                };
+
+                btnEditVisibleStats = new Button
+                {
+                    Text = "Edit Visible Stats...",
+                    Width = 140,
+                    Height = 25
+                };
+                btnEditVisibleStats.Click += (s, e) =>
+                {
+                    var currentStats = new List<string>();
+                    if (!string.IsNullOrWhiteSpace(currentVisibleStats))
+                    {
+                        currentStats = currentVisibleStats.Split(',').Select(stat => stat.Trim()).ToList();
+                    }
+
+                    using (var form = new VisibleStatsEditorForm(currentStats))
+                    {
+                        if (form.ShowDialog() == DialogResult.OK)
+                        {
+                            currentVisibleStats = string.Join(",", form.SelectedStats);
+                        }
+                    }
+                };
+
+                // Now insert HD Sprites and Visible Stats after Adventure Mode
+                var col1Updated = new List<(string, Control)>(col1);
+                col1Updated.Insert(3, ("HD Sprites:", chkHighDefinitionSprites));
+                col1Updated.Insert(4, ("Visible Stats:", btnEditVisibleStats));
+                col1 = col1Updated.ToArray();
+
+                cmbRuleset.Items.AddRange(new string[] { "dmc", "penc", "dmx", "vb" });
                 cmbRuleset.SelectedIndex = 0;
 
                 var col2 = new (string, Control)[]
@@ -718,7 +944,7 @@ namespace OmnimonModuleEditor.Tabs
                     ("", new Label()),
                 };
 
-                // Descobrir o maior n�mero de linhas
+                // Descobrir o maior número de linhas
                 int maxRows = Math.Max(col1.Length, Math.Max(col2.Length, col3.Length));
                 fieldsTable.RowCount = maxRows;
 

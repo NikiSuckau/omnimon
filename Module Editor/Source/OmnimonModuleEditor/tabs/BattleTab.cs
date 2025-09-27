@@ -241,8 +241,9 @@ namespace OmnimonModuleEditor.Tabs
                 BorderStyle = BorderStyle.FixedSingle
             };
 
-            // Use new SpriteUtils system for loading enemy sprites
-            var sprite = SpriteUtils.LoadSingleSprite(enemy.Name, modulePath, module?.NameFormat ?? SpriteUtils.DefaultNameFormat);
+            // Use new SpriteUtils system for loading enemy sprites with high definition support
+            bool moduleHighDefinitionSprites = module?.HighDefinitionSprites ?? false;
+            var sprite = SpriteUtils.LoadSingleSprite(enemy.Name, modulePath, module?.NameFormat ?? SpriteUtils.DefaultNameFormat, moduleHighDefinitionSprites);
             pb.Image = sprite;
 
             itemPanel.Controls.Add(pb);

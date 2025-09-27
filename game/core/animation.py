@@ -3,10 +3,22 @@ from enum import Enum
 
 
 class PetFrame(Enum):
-    IDLE1, IDLE2, HAPPY, ANGRY = range(4)
-    TRAIN1, TRAIN2, ATK1, ATK2 = range(4, 8)
-    EAT1, EAT2, NOPE, EXTRA = range(8, 12)
-    NAP1, NAP2, SICK, LOSE = range(11, 15)
+    IDLE1 = 0
+    IDLE2 = 1
+    HAPPY = 2
+    ANGRY = 3
+    TRAIN1 = 4
+    TRAIN2 = 5
+    ATK1 = 6
+    ATK2 = 7
+    EAT1 = 8
+    EAT2 = 9
+    NOPE = 10
+    #EXTRA = 11
+    NAP1 = 11
+    NAP2 = 12
+    SICK = 13
+    LOSE = 14
 
 class EggFrame(Enum):
     IDLE1, IDLE2, HATCH, DEAD = range(4)

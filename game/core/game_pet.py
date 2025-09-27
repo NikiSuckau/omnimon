@@ -22,6 +22,7 @@ class GamePet:
         self.traited = traited
         self.shiny = False
         self.shook = False
+        self.edited = False
 
         self.set_data(pet_data)
         self.reset_variables()
@@ -76,6 +77,9 @@ class GamePet:
 
         self.heal_doses = data.get("heal_doses", 1)
         self.hp = data.get("hp", 0)
+        self.star = data.get("star", 0)
+        self.attack = data.get("attack", 1)
+        self.critical_turn = data.get("critical_turn", 0)
 
         self.condition_hearts_max = int(data.get("condition_hearts", 0))
         self.jogress_avaliable = int(data.get("jogress_avaliable", 0))
@@ -98,7 +102,7 @@ class GamePet:
         self.special_encounter = False
 
         self.enemy_kills = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-
+        self.injuries = 0
         self.starvation_counter = 0
         self.disturbance_penalty = 0
         self.overfeed_timer = 0
@@ -115,7 +119,6 @@ class GamePet:
         self.vital_values = 100
         self.overfeed = 0
         self.sleep_disturbances = 0
-        self.injuries = 0
 
         module = get_module(self.module)
 
@@ -186,7 +189,7 @@ class GamePet:
         name_format = getattr(module_obj, 'name_format', '$_dmc')  # Default format if not specified
         
         # Load sprites using the new utility function
-        sprites_dict = load_pet_sprites(self.name, module_path, name_format, size=(constants.PET_WIDTH, constants.PET_HEIGHT))
+        sprites_dict = load_pet_sprites(self.name, module_path, name_format, module_high_definition_sprites=module_obj.high_definition_sprites, size=(constants.PET_WIDTH, constants.PET_HEIGHT))
         
         # Convert to list format expected by existing code
         runtime_globals.pet_sprites[self] = convert_sprites_to_list(sprites_dict)
@@ -806,6 +809,8 @@ class GamePet:
                 if key not in game_globals.traited:
                     game_globals.traited.append(key)
                     runtime_globals.game_console.log(f"Traited Egg granted for {self.name}!")
+        elif ruleset == "vb":
+            pass # No Traited Eggs in VB
 
 
     def can_battle(self):
@@ -907,6 +912,19 @@ class GamePet:
             if self.level >= 9:
                 power += 10
             return power
+
+        elif ruleset == "vb":
+            """Normalize VB ruleset power using power and star values.
+
+            Requirement: a pet with base power 70 and 10 stars should return 230.
+            We use a simple linear mapping where each star contributes 16 points
+            on top of the base power: normalized = base_power + star * 16.
+
+            The implementation below is defensive: it coerces non-numeric
+            values to sensible defaults (0) to avoid runtime errors.
+            """
+            normalized = power + (self.star * 16)
+            return int(normalized)
 
     def get_attack(self):
         attack = constants.ATK_LEVEL[self.stage]
@@ -1114,3 +1132,5 @@ class GamePet:
             self.pvp_battles = 0
         if not hasattr(self, "protein_feedings"):
             self.protein_feedings = 0
+        if not hasattr(self, "edited"):
+            self.edited = False

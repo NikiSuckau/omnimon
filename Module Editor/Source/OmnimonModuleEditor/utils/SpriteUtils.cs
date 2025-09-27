@@ -43,19 +43,25 @@ namespace OmnimonModuleEditor.Utils
 
         /// <summary>
         /// Load pet sprites with fallback support and zip file compatibility.
+        /// Matches the Python game implementation with proper fallback logic.
         /// 
-        /// Loading order:
-        /// 1. Try module_path/monsters/PetName_format/ directory
-        /// 2. Try module_path/monsters/PetName_format.zip file
-        /// 3. Try assets/monsters/PetName_format/ directory (fallback)
-        /// 4. Try assets/monsters/PetName_format.zip file (fallback)
+        /// Loading order depends on module settings and sprite resolution preference:
+        /// - If module supports hidef: Try hidef first, then regular as fallback
+        /// - If module doesn't support hidef: Use regular only
+        /// 
+        /// For each resolution type, tries:
+        /// 1. module_path/monsters(_hidef)/PetName_format/ directory
+        /// 2. module_path/monsters(_hidef)/PetName_format.zip file
+        /// 3. assets/monsters(_hidef)/PetName_format/ directory (fallback)
+        /// 4. assets/monsters(_hidef)/PetName_format.zip file (fallback)
         /// </summary>
         /// <param name="petName">Name of the pet</param>
         /// <param name="modulePath">Path to the module folder</param>
         /// <param name="nameFormat">Format string for sprite naming (default: "$_dmc")</param>
         /// <param name="maxFrames">Maximum number of sprite frames to load</param>
+        /// <param name="moduleHighDefinitionSprites">Whether module supports high definition sprites</param>
         /// <returns>Dictionary mapping sprite frame names to Images</returns>
-        public static Dictionary<string, Image> LoadPetSprites(string petName, string modulePath, string nameFormat = DefaultNameFormat, int maxFrames = 20)
+        public static Dictionary<string, Image> LoadPetSprites(string petName, string modulePath, string nameFormat = DefaultNameFormat, int maxFrames = 20, bool moduleHighDefinitionSprites = false)
         {
             var spriteName = GetSpriteName(petName, nameFormat);
             var sprites = new Dictionary<string, Image>();
@@ -63,63 +69,80 @@ namespace OmnimonModuleEditor.Utils
             if (string.IsNullOrEmpty(petName) || string.IsNullOrEmpty(modulePath))
                 return sprites;
 
-            // Path 1: Try module_path/monsters/PetName_format/ directory
-            var moduleSpritesDir = Path.Combine(modulePath, "monsters", spriteName);
-            System.Diagnostics.Debug.WriteLine($"[SpriteUtils] Trying path 1: {moduleSpritesDir}");
-            sprites = LoadSpritesFromDirectory(moduleSpritesDir, maxFrames);
-            if (sprites.Count > 0)
+            // Helper function to try loading sprites from a specific folder type
+            Dictionary<string, Image> TryLoadSprites(string spriteFolder, string logSuffix)
             {
-                System.Diagnostics.Debug.WriteLine($"[SpriteUtils] Found {sprites.Count} sprites in path 1");
-                return sprites;
-            }
-
-            // Path 2: Try module_path/monsters/PetName_format.zip file
-            var moduleSpriteZip = Path.Combine(modulePath, "monsters", $"{spriteName}.zip");
-            System.Diagnostics.Debug.WriteLine($"[SpriteUtils] Trying path 2: {moduleSpriteZip}");
-            sprites = LoadSpritesFromZip(moduleSpriteZip, spriteName, maxFrames);
-            if (sprites.Count > 0)
-            {
-                System.Diagnostics.Debug.WriteLine($"[SpriteUtils] Found {sprites.Count} sprites in path 2");
-                return sprites;
-            }
-
-            // Path 3: Try assets/monsters/PetName_format/ directory (fallback)
-            // Go up from module path to find the game's root directory, then access assets
-            // modulePath is typically something like "E:\Omnimon\modules\DMC"
-            // We want to get to "E:\Omnimon\assets\monsters\..."
-            var gameRootDirectory = Directory.GetParent(modulePath)?.Parent?.FullName;
-            System.Diagnostics.Debug.WriteLine($"[SpriteUtils] Module path: {modulePath}");
-            System.Diagnostics.Debug.WriteLine($"[SpriteUtils] Calculated game root directory: {gameRootDirectory ?? "null"}");
-            
-            if (!string.IsNullOrEmpty(gameRootDirectory))
-            {
-                var assetsSpritesDir = Path.Combine(gameRootDirectory, "assets", "monsters", spriteName);
-                System.Diagnostics.Debug.WriteLine($"[SpriteUtils] Trying path 3 (fallback): {assetsSpritesDir}");
-                sprites = LoadSpritesFromDirectory(assetsSpritesDir, maxFrames);
-                if (sprites.Count > 0)
+                // Try module directory first
+                var moduleSpritesDir = Path.Combine(modulePath, spriteFolder, spriteName);
+                System.Diagnostics.Debug.WriteLine($"[SpriteUtils] Trying {logSuffix} directory: {moduleSpritesDir}");
+                var result = LoadSpritesFromDirectory(moduleSpritesDir, maxFrames);
+                if (result.Count > 0)
                 {
-                    System.Diagnostics.Debug.WriteLine($"[SpriteUtils] Found {sprites.Count} sprites in path 3 (fallback)");
+                    System.Diagnostics.Debug.WriteLine($"[SpriteUtils] Loaded {result.Count} sprites for {petName} from module {logSuffix} directory");
+                    return result;
+                }
+
+                // Try module zip file
+                var moduleSpriteZip = Path.Combine(modulePath, spriteFolder, $"{spriteName}.zip");
+                System.Diagnostics.Debug.WriteLine($"[SpriteUtils] Trying {logSuffix} zip: {moduleSpriteZip}");
+                result = LoadSpritesFromZip(moduleSpriteZip, spriteName, maxFrames);
+                if (result.Count > 0)
+                {
+                    System.Diagnostics.Debug.WriteLine($"[SpriteUtils] Loaded {result.Count} sprites for {petName} from module {logSuffix} zip");
+                    return result;
+                }
+
+                // Try assets directory (fallback) - use the same sprite folder type
+                var gameRootDirectory = Directory.GetParent(modulePath)?.Parent?.FullName;
+                if (!string.IsNullOrEmpty(gameRootDirectory))
+                {
+                    var assetsSpritesDir = Path.Combine(gameRootDirectory, "assets", spriteFolder, spriteName);
+                    System.Diagnostics.Debug.WriteLine($"[SpriteUtils] Trying assets {logSuffix} fallback directory: {assetsSpritesDir}");
+                    result = LoadSpritesFromDirectory(assetsSpritesDir, maxFrames);
+                    if (result.Count > 0)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"[SpriteUtils] Loaded {result.Count} sprites for {petName} from assets {logSuffix} fallback directory");
+                        return result;
+                    }
+
+                    // Try assets zip file (fallback) - use the same sprite folder type
+                    var assetsSpriteZip = Path.Combine(gameRootDirectory, "assets", spriteFolder, $"{spriteName}.zip");
+                    System.Diagnostics.Debug.WriteLine($"[SpriteUtils] Trying assets {logSuffix} fallback zip: {assetsSpriteZip}");
+                    result = LoadSpritesFromZip(assetsSpriteZip, spriteName, maxFrames);
+                    if (result.Count > 0)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"[SpriteUtils] Loaded {result.Count} sprites for {petName} from assets {logSuffix} fallback zip");
+                        return result;
+                    }
+                }
+
+                return new Dictionary<string, Image>();
+            }
+
+            // Auto preference: Use hidef if module supports it, otherwise regular
+            if (moduleHighDefinitionSprites)
+            {
+                // Try hidef first
+                sprites = TryLoadSprites("monsters_hidef", "hidef");
+                if (sprites.Count > 0)
                     return sprites;
-                }
-
-                // Path 4: Try assets/monsters/PetName_format.zip file (fallback)
-                var assetsSpriteZip = Path.Combine(gameRootDirectory, "assets", "monsters", $"{spriteName}.zip");
-                System.Diagnostics.Debug.WriteLine($"[SpriteUtils] Trying path 4 (fallback): {assetsSpriteZip}");
-                sprites = LoadSpritesFromZip(assetsSpriteZip, spriteName, maxFrames);
+                    
+                // Fallback to regular
+                System.Diagnostics.Debug.WriteLine($"[SpriteUtils] Hidef sprites not found for {petName}, falling back to regular");
+                sprites = TryLoadSprites("monsters", "regular");
                 if (sprites.Count > 0)
-                {
-                    System.Diagnostics.Debug.WriteLine($"[SpriteUtils] Found {sprites.Count} sprites in path 4 (fallback)");
-                }
-                else
-                {
-                    System.Diagnostics.Debug.WriteLine($"[SpriteUtils] No sprites found for {petName} in any path");
-                }
+                    return sprites;
             }
             else
             {
-                System.Diagnostics.Debug.WriteLine($"[SpriteUtils] Could not determine game root directory from module path: {modulePath}");
+                // Module doesn't support hidef, use regular only
+                sprites = TryLoadSprites("monsters", "regular");
+                if (sprites.Count > 0)
+                    return sprites;
             }
 
+            // No sprites found
+            System.Diagnostics.Debug.WriteLine($"[SpriteUtils] No sprites found for {petName} ({spriteName}) with format {nameFormat}");
             return sprites;
         }
 
@@ -130,11 +153,12 @@ namespace OmnimonModuleEditor.Utils
         /// <param name="modulePath">Path to the module folder</param>
         /// <param name="nameFormat">Format string for sprite naming (default: "$_dmc")</param>
         /// <param name="maxFrames">Maximum number of sprite frames to load</param>
+        /// <param name="moduleHighDefinitionSprites">Whether module supports high definition sprites</param>
         /// <returns>Dictionary mapping sprite frame names to Images</returns>
-        public static Dictionary<string, Image> LoadEnemySprites(string enemyName, string modulePath, string nameFormat = DefaultNameFormat, int maxFrames = 20)
+        public static Dictionary<string, Image> LoadEnemySprites(string enemyName, string modulePath, string nameFormat = DefaultNameFormat, int maxFrames = 20, bool moduleHighDefinitionSprites = false)
         {
             // Enemies use the same loading system as pets
-            return LoadPetSprites(enemyName, modulePath, nameFormat, maxFrames);
+            return LoadPetSprites(enemyName, modulePath, nameFormat, maxFrames, moduleHighDefinitionSprites);
         }
 
         /// <summary>
@@ -167,10 +191,25 @@ namespace OmnimonModuleEditor.Utils
         /// <param name="petName">Name of the pet</param>
         /// <param name="modulePath">Path to the module folder</param>
         /// <param name="nameFormat">Format string for sprite naming</param>
+        /// <param name="moduleHighDefinitionSprites">Whether module supports high definition sprites</param>
         /// <returns>First sprite frame or null if not found</returns>
-        public static Image LoadSingleSprite(string petName, string modulePath, string nameFormat = DefaultNameFormat)
+        public static Image LoadSingleSprite(string petName, string modulePath, string nameFormat = DefaultNameFormat, bool moduleHighDefinitionSprites = false)
         {
-            var sprites = LoadPetSprites(petName, modulePath, nameFormat, 1);
+            var sprites = LoadPetSprites(petName, modulePath, nameFormat, 1, moduleHighDefinitionSprites);
+            return sprites.ContainsKey("0") ? sprites["0"] : null;
+        }
+
+        /// <summary>
+        /// Loads a single enemy sprite (frame 0) for display purposes.
+        /// </summary>
+        /// <param name="enemyName">Name of the enemy</param>
+        /// <param name="modulePath">Path to the module folder</param>
+        /// <param name="nameFormat">Format string for sprite naming</param>
+        /// <param name="moduleHighDefinitionSprites">Whether module supports high definition sprites</param>
+        /// <returns>First sprite frame or null if not found</returns>
+        public static Image LoadSingleEnemySprite(string enemyName, string modulePath, string nameFormat = DefaultNameFormat, bool moduleHighDefinitionSprites = false)
+        {
+            var sprites = LoadEnemySprites(enemyName, modulePath, nameFormat, 1, moduleHighDefinitionSprites);
             return sprites.ContainsKey("0") ? sprites["0"] : null;
         }
 

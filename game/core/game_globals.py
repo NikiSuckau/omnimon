@@ -36,6 +36,7 @@ screen_timeout = 60
 quests = []
 event = None
 event_time = None
+sprite_resolution_preference = 0
 
 # Internal timer for autosave
 _last_save_time = time.time()
@@ -156,6 +157,7 @@ def save() -> None:
         "quests": quests,
         "event": event,
         "event_time": event_time,
+        "sprite_resolution_preference": sprite_resolution_preference,
     }
 
     # Get the next save number and create the filename
@@ -182,8 +184,8 @@ def load() -> None:
     """
     global pet_list, poop_list, traited, unlocks, battle_area, battle_round, xai, xai_date, background_high_res
     global game_background, background_module_name, showClock, sound, inventory, battle_effects
-    global wake_time, sleep_time, screen_timeout
-    global quests, event, event_time  # <-- Added
+    global wake_time, sleep_time, screen_timeout, sprite_resolution_preference
+    global quests, event, event_time
 
     # Get all available save files in order (newest first)
     save_files_to_try = []
@@ -289,6 +291,7 @@ def load() -> None:
                 quests = data.get("quests", [])
                 event = data.get("event", None)
                 event_time = data.get("event_time", None)
+                sprite_resolution_preference = data.get("sprite_resolution_preference", 0)
 
                 print(f"[Game] Successfully loaded save file: {os.path.basename(save_path)} with {len(pet_list)} valid pets")
                 return  # Successfully loaded, exit the function

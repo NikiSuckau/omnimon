@@ -98,6 +98,10 @@ namespace OmnimonModuleEditor.Utils
                 ConditionHearts = pet.ConditionHearts,
                 JogressAvaliable = pet.JogressAvaliable,
                 Hp = pet.Hp,
+                // VB-specific fields - NEW
+                Star = pet.Star,
+                Attack = pet.Attack,
+                CriticalTurn = pet.CriticalTurn,
                 Evolve = pet.Evolve != null ? new List<Evolution>(pet.Evolve) : null
             };
         }
@@ -110,19 +114,22 @@ namespace OmnimonModuleEditor.Utils
             if (pet == null || string.IsNullOrEmpty(modulePath))
                 return new List<Image>();
 
-            var spritesDict = SpriteUtils.LoadPetSprites(pet.Name, modulePath, FixedNameFormat, spriteCount);
+            bool moduleHighDefinitionSprites = module?.HighDefinitionSprites ?? false;
+            var spritesDict = SpriteUtils.LoadPetSprites(pet.Name, modulePath, FixedNameFormat, spriteCount, moduleHighDefinitionSprites);
             return SpriteUtils.ConvertSpritesToList(spritesDict, spriteCount);
         }
 
         /// <summary>
         /// Loads a single pet sprite (frame 0) for display purposes.
         /// </summary>
-        public static Image LoadSinglePetSprite(string petName, string modulePath)
+        public static Image LoadSinglePetSprite(string petName, string modulePath, Module module = null)
         {
             if (string.IsNullOrEmpty(petName) || string.IsNullOrEmpty(modulePath))
                 return null;
 
-            return SpriteUtils.LoadSingleSprite(petName, modulePath, FixedNameFormat);
+            bool moduleHighDefinitionSprites = module?.HighDefinitionSprites ?? false;
+            var sprites = SpriteUtils.LoadPetSprites(petName, modulePath, FixedNameFormat, 1, moduleHighDefinitionSprites);
+            return sprites.ContainsKey("0") ? sprites["0"] : null;
         }
 
         public static Dictionary<int, Image> LoadAtkSprites(string modulePath)

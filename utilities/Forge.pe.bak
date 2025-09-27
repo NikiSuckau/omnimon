@@ -1,0 +1,26 @@
+# Open base font
+Open("ProggySmall.ttf")
+SelectNone()
+
+# Save reference to base font
+Base = $font
+
+# Open donor font (GNU Unifont)
+Donor = Open("GNUUnifont9FullHintInstrUCSUR.ttf")
+
+# Copy selected useful ranges from donor to base
+SelectNone()
+SelectMore(0u2190, 0u21FF)   # Arrows
+SelectMore(0u25A0, 0u25FF)   # Geometric Shapes
+SelectMore(0u2600, 0u26FF)   # Misc Symbols
+SelectMore(0u2700, 0u27BF)   # Dingbats
+
+Copy()
+Close()   # close donor font
+
+# Switch back to base font and paste
+SelectPaste()
+Paste()
+
+# Generate the cleaned merged font
+Generate("ProggySmall-merged.ttf")

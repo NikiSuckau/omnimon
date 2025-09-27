@@ -365,8 +365,9 @@ namespace OmnimonModuleEditor
                 BorderStyle = BorderStyle.FixedSingle
             };
 
-            // Use new sprite loading system
-            var sprite = SpriteUtils.LoadSingleSprite(pet.Name, modulePath, PetUtils.FixedNameFormat);
+            // Use new sprite loading system with high definition support
+            bool moduleHighDefinitionSprites = module?.HighDefinitionSprites ?? false;
+            var sprite = SpriteUtils.LoadSingleSprite(pet.Name, modulePath, PetUtils.FixedNameFormat, moduleHighDefinitionSprites);
             pb.Image = sprite;
 
             itemPanel.Controls.Add(pb);

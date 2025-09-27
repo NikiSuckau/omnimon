@@ -1,5 +1,6 @@
 ﻿using OmnimonModuleEditor.Models;
 using System.IO;
+using System.Linq;
 
 namespace OmnimonModuleEditor.docgenerators
 {
@@ -12,6 +13,10 @@ namespace OmnimonModuleEditor.docgenerators
                 // Always replace longer tokens first to avoid conflicts
                 .Replace("#MODULEADVENTUREMODECLASS", module?.AdventureMode == true ? "boolean-true" : "boolean-false")
                 .Replace("#MODULEADVENTUREMODE", module?.AdventureMode == true ? "Yes" : "No")
+                .Replace("#MODULEHIGHDEFINITIONSPRITESCLASS", module?.HighDefinitionSprites == true ? "boolean-true" : "boolean-false")
+                .Replace("#MODULEHIGHDEFINITIONSPRITES", module?.HighDefinitionSprites == true ? "Yes" : "No")
+                .Replace("#MODULEVISIBLESTATSCLASS", !string.IsNullOrWhiteSpace(module?.VisibleStats) ? "" : "boolean-false")
+                .Replace("#MODULEVISIBLESTATS", GetVisibleStatsDisplayValue(module?.VisibleStats))
                 .Replace("#MODULECAREMEATWEIGHTGAINCLASS", GetIntegerCssClass(module?.CareMeatWeightGain))
                 .Replace("#MODULECAREMEATWEIGHTGAIN", GetIntegerDisplayValue(module?.CareMeatWeightGain))
                 .Replace("#MODULECAREMEATHUNGERGAINCLASS", GetFloatCssClass(module?.CareMeatHungerGain))
@@ -170,6 +175,24 @@ namespace OmnimonModuleEditor.docgenerators
         {
             float actualValue = value ?? 0;
             return actualValue == 0 ? "boolean-false" : "";
+        }
+
+        /// <summary>
+        /// Returns a formatted display value for visible stats
+        /// </summary>
+        private static string GetVisibleStatsDisplayValue(string visibleStats)
+        {
+            if (string.IsNullOrWhiteSpace(visibleStats))
+                return "None configured";
+
+            var stats = visibleStats.Split(',').Select(s => s.Trim()).Where(s => !string.IsNullOrEmpty(s)).ToArray();
+            if (stats.Length == 0)
+                return "None configured";
+
+            if (stats.Length <= 5)
+                return string.Join(", ", stats);
+            
+            return $"{string.Join(", ", stats.Take(5))} and {stats.Length - 5} more";
         }
     }
 }

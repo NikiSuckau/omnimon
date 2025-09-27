@@ -223,12 +223,16 @@ namespace OmnimonModuleEditor.Controls
             if (result != DialogResult.Yes)
                 return;
 
-            string monstersFolder = Path.Combine(ModulePath, "monsters");
-            if (!Directory.Exists(monstersFolder))
-                Directory.CreateDirectory(monstersFolder);
+            // Determine which monsters folder to use based on high definition setting
+            bool useHighDefinition = CurrentModule?.HighDefinitionSprites ?? false;
+            string monstersFolder = useHighDefinition ? "monsters_hidef" : "monsters";
+            string targetFolder = Path.Combine(ModulePath, monstersFolder);
+            
+            if (!Directory.Exists(targetFolder))
+                Directory.CreateDirectory(targetFolder);
 
-            // New approach: just copy the zip file to the monsters folder
-            string destinationZipPath = Path.Combine(monstersFolder, zipName);
+            // Copy the zip file to the appropriate monsters folder
+            string destinationZipPath = Path.Combine(targetFolder, zipName);
 
             try
             {

@@ -113,7 +113,8 @@ class SceneEggSelection:
                     sprites_dict = load_pet_sprites(
                         egg_name, 
                         module_path, 
-                        module.name_format, 
+                        module.name_format,
+                        module_high_definition_sprites=module.high_definition_sprites,
                         size=self.EGG_SIZE
                     )
                     

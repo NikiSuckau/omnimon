@@ -23,10 +23,10 @@ from scenes.scene_evolution import SceneEvolution
 from scenes.scene_freezerbox import SceneFreezerBox
 from scenes.scene_library import SceneLibrary
 from scenes.scene_settingsmenu import SceneSettingsMenu
-from scenes.scene_sleepmenu import SceneSleepMenu
-from scenes.scene_statusmenu import SceneStatusMenu
+from scenes.scene_sleep import SceneSleep
+from game.scenes.scene_status import SceneStatus
 from scenes.scene_maingame import SceneMainGame
-from scenes.scene_feedingmenu import SceneFeedingMenu
+from scenes.scene_inventory import SceneInventory
 from scenes.scene_training import SceneTraining
 from scenes.scene_debug import SceneDebug
 
@@ -118,8 +118,8 @@ class VirtualPetGame:
                 pointer_x = mouse_pos[0] - 2
                 pointer_y = mouse_pos[1] - 2
                 # Ensure pointer stays within screen bounds
-                pointer_x = max(0, min(pointer_x, constants.SCREEN_WIDTH - self.mouse_pointer.get_width()))
-                pointer_y = max(0, min(pointer_y, constants.SCREEN_HEIGHT - self.mouse_pointer.get_height()))
+                #pointer_x = max(0, min(pointer_x, constants.SCREEN_WIDTH - self.mouse_pointer.get_width()))
+                #pointer_y = max(0, min(pointer_y, constants.SCREEN_HEIGHT - self.mouse_pointer.get_height()))
                 blit_with_cache(surface, self.mouse_pointer, (pointer_x, pointer_y))
 
         if self.rotated:
@@ -130,6 +130,12 @@ class VirtualPetGame:
         """
         Delegates event handling to the current scene.
         """
+        # First, let the scene handle the raw pygame event (for mouse motion, etc.)
+        if hasattr(self.scene, 'handle_event'):
+            if self.scene.handle_event(event):
+                return
+        
+        # Then process it through input manager for action conversion
         input_action = runtime_globals.game_input.process_event(event)
         if input_action:
             self.scene.handle_event(input_action)
@@ -153,10 +159,10 @@ class VirtualPetGame:
             "egg": SceneEggSelection,
             "game": SceneMainGame,
             "settings": SceneSettingsMenu,
-            "status": SceneStatusMenu,
-            "feeding": SceneFeedingMenu,
+            "status": SceneStatus,
+            "feeding": SceneInventory,
             "training": SceneTraining,
-            "sleepmenu": SceneSleepMenu,
+            "sleepmenu": SceneSleep,
             "battle": SceneBattle,
             "battle_pvp": SceneBattlePvP,
             "connect": SceneConnect,

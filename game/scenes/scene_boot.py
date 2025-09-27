@@ -115,7 +115,7 @@ class SceneBoot:
         Handles key press events, allowing early skip with ENTER.
         """
 
-        if input_action == "A" or input_action == "START":
+        if input_action in ["A", "START", "LCLICK"]:
             runtime_globals.game_console.log("[SceneBoot] Skipped boot timer with ENTER")
             self.boot_timer = 0
 

@@ -129,7 +129,8 @@ class SceneDigidex:
                         sprites_dict = load_pet_sprites(
                             pet.name, 
                             module_path, 
-                            module.name_format, 
+                            module.name_format,
+                            module_high_definition_sprites=module.high_definition_sprites,
                             size=(SPRITE_SIZE, SPRITE_SIZE)
                         )
                         
@@ -265,7 +266,8 @@ class SceneDigidex:
                     sprites_dict = load_pet_sprites(
                         pet.name, 
                         module_path, 
-                        module.name_format, 
+                        module.name_format,
+                        module_high_definition_sprites=module.high_definition_sprites,
                         size=(SPRITE_SIZE, SPRITE_SIZE)
                     )
                     

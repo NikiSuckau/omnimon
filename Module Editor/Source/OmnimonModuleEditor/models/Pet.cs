@@ -74,6 +74,15 @@ namespace OmnimonModuleEditor.Models
         [JsonPropertyName("hp")]
         public int Hp { get; set; }
 
+        [JsonPropertyName("star")]
+        public int Star { get; set; }
+
+        [JsonPropertyName("attack")]
+        public int Attack { get; set; }
+
+        [JsonPropertyName("critical_turn")]
+        public int CriticalTurn { get; set; }
+
         [JsonPropertyName("evolve")]
         public List<Evolution> Evolve { get; set; }
     }

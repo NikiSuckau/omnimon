@@ -60,7 +60,6 @@ def distribute_pets_evenly():
     for i, pet in enumerate(pet_list):
         pet.x = int(center_positions[i] - constants.PET_WIDTH / 2)
         pet.subpixel_x = float(pet.x)
-        pet.dirty = True
 
 def draw_pet_outline(surface, frame, x, y, color=(255, 255, 0)):
     """

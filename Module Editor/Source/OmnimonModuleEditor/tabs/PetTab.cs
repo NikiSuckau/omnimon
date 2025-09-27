@@ -187,8 +187,8 @@ namespace OmnimonModuleEditor.Tabs
                 BorderStyle = BorderStyle.FixedSingle
             };
 
-            // Use new sprite loading system
-            var sprite = PetUtils.LoadSinglePetSprite(pet.Name, modulePath);
+            // Use new sprite loading system with module support
+            var sprite = PetUtils.LoadSinglePetSprite(pet.Name, modulePath, module);
             pb.Image = sprite;
 
             itemPanel.Controls.Add(pb);
@@ -407,6 +407,11 @@ namespace OmnimonModuleEditor.Tabs
             public CheckBox ChkJogress;
             public NumericUpDown NumHp;
 
+            // VB-specific fields - NEW
+            public NumericUpDown NumStar;
+            public NumericUpDown NumAttack;
+            public NumericUpDown NumCriticalTurn;
+
             private Button btnSave;
             private Button btnCancel;
 
@@ -455,6 +460,11 @@ namespace OmnimonModuleEditor.Tabs
                 NumConditionHearts.Value = Math.Max(NumConditionHearts.Minimum, pet.ConditionHearts);
                 ChkJogress.Checked = pet.JogressAvaliable;
                 NumHp.Value = Math.Max(NumHp.Minimum, pet.Hp);
+
+                // VB-specific fields - NEW
+                NumStar.Value = Math.Max(NumStar.Minimum, pet.Star);
+                NumAttack.Value = Math.Max(NumAttack.Minimum, pet.Attack);
+                NumCriticalTurn.Value = Math.Max(NumCriticalTurn.Minimum, pet.CriticalTurn);
             }
 
             // Helper to normalize time format
@@ -476,7 +486,7 @@ namespace OmnimonModuleEditor.Tabs
                 pet.Special = ChkSpecial.Checked;
                 pet.SpecialKey = TxtSpecialKey.Text;
 
-                // Salva null se vazio, inv�lido ou igual a "  :"
+                // Salva null se vazio, inválido ou igual a "  :"
                 pet.Sleeps = IsValidTime(TxtSleeps.Text) ? TxtSleeps.Text : null;
                 pet.Wakes = IsValidTime(TxtWakes.Text) ? TxtWakes.Text : null;
 
@@ -499,9 +509,14 @@ namespace OmnimonModuleEditor.Tabs
                 pet.ConditionHearts = (int)NumConditionHearts.Value;
                 pet.JogressAvaliable = ChkJogress.Checked;
                 pet.Hp = (int)NumHp.Value;
+
+                // VB-specific fields - NEW
+                pet.Star = (int)NumStar.Value;
+                pet.Attack = (int)NumAttack.Value;
+                pet.CriticalTurn = (int)NumCriticalTurn.Value;
             }
 
-            // Fun��o auxiliar para validar hora no formato HH:mm
+            // Função auxiliar para validar hora no formato HH:mm
             private bool IsValidTime(string value)
             {
                 if (string.IsNullOrWhiteSpace(value)) return false;
@@ -525,8 +540,9 @@ namespace OmnimonModuleEditor.Tabs
 
                 if (pet == null || string.IsNullOrEmpty(modulePath)) return;
 
-                // Use new sprite loading system
-                var spritesDict = SpriteUtils.LoadPetSprites(pet.Name, modulePath, PetUtils.FixedNameFormat, spriteBoxes.Count);
+                // Use new sprite loading system with high definition support
+                bool useHighDefinition = module?.HighDefinitionSprites ?? false;
+                var spritesDict = SpriteUtils.LoadPetSprites(pet.Name, modulePath, PetUtils.FixedNameFormat, spriteBoxes.Count, useHighDefinition);
                 var sprites = SpriteUtils.ConvertSpritesToList(spritesDict, spriteBoxes.Count);
 
                 for (int i = 0; i < spriteBoxes.Count; i++)
@@ -768,6 +784,11 @@ namespace OmnimonModuleEditor.Tabs
                 NumHealDoses = new NumericUpDown { Minimum = 1, Value = 1 };
                 ChkJogress = new CheckBox();
 
+                // VB-specific fields - NEW
+                NumStar = new NumericUpDown { Minimum = 0, Value = 0, Maximum = 99 };
+                NumAttack = new NumericUpDown { Minimum = 0, Value = 1, Maximum = 99 };
+                NumCriticalTurn = new NumericUpDown { Minimum = 0, Value = 0, Maximum = 99 };
+
                 // Add fields
                 AddField("Name:", TxtName);
                 AddField("Special:", ChkSpecial);
@@ -792,6 +813,10 @@ namespace OmnimonModuleEditor.Tabs
                 AddField("Condition Hearts:", NumConditionHearts);
                 AddField("Heal Doses:", NumHealDoses);
                 AddField("Jogress Available:", ChkJogress);
+                // VB-specific fields - NEW
+                AddField("Star:", NumStar);
+                AddField("Attack:", NumAttack);
+                AddField("Critical Turn:", NumCriticalTurn);
 
                 // Save and Cancel buttons
                 btnSave = new Button { Text = "Save", Width = 80, Margin = new Padding(8, 8, 8, 8) };
@@ -914,13 +939,16 @@ namespace OmnimonModuleEditor.Tabs
                     if (result != DialogResult.Yes)
                         return;
 
-                    // Create monsters folder if needed
-                    string monstersFolder = Path.Combine(petTab.modulePath, "monsters");
-                    if (!Directory.Exists(monstersFolder))
-                        Directory.CreateDirectory(monstersFolder);
+                    // Determine which monsters folder to use based on high definition setting
+                    bool useHighDefinition = petTab.module?.HighDefinitionSprites ?? false;
+                    string monstersFolder = useHighDefinition ? "monsters_hidef" : "monsters";
+                    string targetFolder = Path.Combine(petTab.modulePath, monstersFolder);
+                    
+                    if (!Directory.Exists(targetFolder))
+                        Directory.CreateDirectory(targetFolder);
 
-                    // New approach: just copy the zip file to the monsters folder
-                    string destinationZipPath = Path.Combine(monstersFolder, zipName);
+                    // Copy the zip file to the appropriate monsters folder
+                    string destinationZipPath = Path.Combine(targetFolder, zipName);
 
                     try
                     {

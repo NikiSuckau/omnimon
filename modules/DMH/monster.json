@@ -22,6 +22,9 @@
       "condition_hearts": 0,
       "jogress_avaliable": false,
       "hp": 0,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Egg (Phase II)"
@@ -50,6 +53,9 @@
       "condition_hearts": 0,
       "jogress_avaliable": false,
       "hp": 1,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Gore Magala (Young)",
@@ -197,6 +203,9 @@
       "condition_hearts": 0,
       "jogress_avaliable": false,
       "hp": 10,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Gore Magala"
@@ -227,6 +236,9 @@
       "condition_hearts": 0,
       "jogress_avaliable": false,
       "hp": 10,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Red Khezu",
@@ -279,6 +291,9 @@
       "condition_hearts": 0,
       "jogress_avaliable": false,
       "hp": 10,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Mizutsune"
@@ -309,6 +324,9 @@
       "condition_hearts": 0,
       "jogress_avaliable": false,
       "hp": 10,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Green Nargacuga",
@@ -380,6 +398,9 @@
       "condition_hearts": 0,
       "jogress_avaliable": false,
       "hp": 10,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Rajang"
@@ -410,6 +431,9 @@
       "condition_hearts": 0,
       "jogress_avaliable": false,
       "hp": 10,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Azure Rathalos",
@@ -492,6 +516,9 @@
       "condition_hearts": 0,
       "jogress_avaliable": false,
       "hp": 10,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Brute Tigrex",
@@ -563,6 +590,9 @@
       "condition_hearts": 0,
       "jogress_avaliable": false,
       "hp": 10,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Stygian Zinogre",
@@ -645,6 +675,9 @@
       "condition_hearts": 0,
       "jogress_avaliable": false,
       "hp": 12,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Silver Rathalos",
@@ -702,6 +735,9 @@
       "condition_hearts": 0,
       "jogress_avaliable": false,
       "hp": 12,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Molten Tigrex",
@@ -759,6 +795,9 @@
       "condition_hearts": 0,
       "jogress_avaliable": false,
       "hp": 12,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Chaotic Gore Magala",
@@ -816,6 +855,9 @@
       "condition_hearts": 0,
       "jogress_avaliable": false,
       "hp": 12,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Lucent Nargacuga",
@@ -873,6 +915,9 @@
       "condition_hearts": 0,
       "jogress_avaliable": false,
       "hp": 12,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": []
     },
     {
@@ -899,6 +944,9 @@
       "condition_hearts": 0,
       "jogress_avaliable": false,
       "hp": 12,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Apex Mizutsune",
@@ -967,6 +1015,9 @@
       "condition_hearts": 0,
       "jogress_avaliable": false,
       "hp": 12,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Lucent Nargacuga",
@@ -1020,6 +1071,9 @@
       "condition_hearts": 0,
       "jogress_avaliable": false,
       "hp": 12,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Furious Rajang",
@@ -1062,6 +1116,9 @@
       "condition_hearts": 0,
       "jogress_avaliable": false,
       "hp": 12,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Silver Rathalos",
@@ -1115,6 +1172,9 @@
       "condition_hearts": 0,
       "jogress_avaliable": false,
       "hp": 12,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": []
     },
     {
@@ -1141,6 +1201,9 @@
       "condition_hearts": 0,
       "jogress_avaliable": false,
       "hp": 12,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Thunderlord Zinogre",
@@ -1183,6 +1246,9 @@
       "condition_hearts": 0,
       "jogress_avaliable": false,
       "hp": 12,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Molten Tigrex",
@@ -1236,6 +1302,9 @@
       "condition_hearts": 0,
       "jogress_avaliable": false,
       "hp": 12,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Thunderlord Zinogre",
@@ -1278,6 +1347,9 @@
       "condition_hearts": 0,
       "jogress_avaliable": false,
       "hp": 15,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": []
     },
     {
@@ -1304,6 +1376,9 @@
       "condition_hearts": 0,
       "jogress_avaliable": false,
       "hp": 15,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": []
     },
     {
@@ -1330,6 +1405,9 @@
       "condition_hearts": 0,
       "jogress_avaliable": false,
       "hp": 15,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Rathalos Greymon",
@@ -1372,6 +1450,9 @@
       "condition_hearts": 0,
       "jogress_avaliable": false,
       "hp": 15,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": []
     },
     {
@@ -1398,6 +1479,9 @@
       "condition_hearts": 0,
       "jogress_avaliable": false,
       "hp": 15,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": []
     },
     {
@@ -1424,6 +1508,9 @@
       "condition_hearts": 0,
       "jogress_avaliable": false,
       "hp": 15,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": []
     },
     {
@@ -1450,6 +1537,9 @@
       "condition_hearts": 0,
       "jogress_avaliable": false,
       "hp": 15,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": []
     },
     {
@@ -1476,6 +1566,9 @@
       "condition_hearts": 0,
       "jogress_avaliable": false,
       "hp": 15,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": []
     },
     {
@@ -1502,6 +1595,9 @@
       "condition_hearts": 0,
       "jogress_avaliable": false,
       "hp": 15,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Rathalos Greymon",
@@ -1544,6 +1640,9 @@
       "condition_hearts": 0,
       "jogress_avaliable": false,
       "hp": 15,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": []
     },
     {
@@ -1570,6 +1669,9 @@
       "condition_hearts": 0,
       "jogress_avaliable": false,
       "hp": 15,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": []
     },
     {
@@ -1596,6 +1698,9 @@
       "condition_hearts": 0,
       "jogress_avaliable": false,
       "hp": 15,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Zino Garurumon",
@@ -1638,6 +1743,9 @@
       "condition_hearts": 0,
       "jogress_avaliable": false,
       "hp": 15,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": []
     },
     {
@@ -1664,6 +1772,9 @@
       "condition_hearts": 0,
       "jogress_avaliable": false,
       "hp": 18,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": []
     },
     {
@@ -1690,6 +1801,9 @@
       "condition_hearts": 0,
       "jogress_avaliable": false,
       "hp": 18,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": []
     }
   ]

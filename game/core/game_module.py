@@ -29,6 +29,7 @@ class GameModule:
         self.ruleset = ""
         self.unlocks = {"eggs": [], "backgrounds": [], "evolutions": []}
         self.backgrounds = []
+        self.visible_stats = []
         self.load_module_data()
         self.load_sprites()
         self.load_items()
@@ -117,6 +118,15 @@ class GameModule:
                     })
 
                     self.backgrounds = data.get("backgrounds", [])
+
+                    # Add missing attributes
+                    self.high_definition_sprites = bool(data.get("high_definition_sprites", False))
+
+                    visible_stats_raw = data.get("visible_stats", "")
+                    if isinstance(visible_stats_raw, str):
+                        self.visible_stats = [s.strip() for s in visible_stats_raw.split(",") if s.strip()]
+                    elif isinstance(visible_stats_raw, list):
+                        self.visible_stats = visible_stats_raw
             except json.JSONDecodeError:
                 runtime_globals.game_console.log(f"⚠️ Failed to parse {json_path}")
         else:

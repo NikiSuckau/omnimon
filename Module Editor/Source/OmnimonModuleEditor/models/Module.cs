@@ -26,6 +26,14 @@ namespace OmnimonModuleEditor.Models
         [JsonPropertyName("adventure_mode")]
         public bool AdventureMode { get; set; }
 
+        // High Definition Sprites - NEW
+        [JsonPropertyName("high_definition_sprites")]
+        public bool HighDefinitionSprites { get; set; } = false;
+
+        // Visible Stats - NEW
+        [JsonPropertyName("visible_stats")]
+        public string VisibleStats { get; set; }
+
         // Care Meat
         [JsonPropertyName("care_meat_weight_gain")]
         public int CareMeatWeightGain { get; set; }
@@ -225,7 +233,8 @@ namespace OmnimonModuleEditor.Models
     {
         dmc,
         penc,
-        dmx
+        dmx,
+        vb
     }
 
     public class StringOrStringListConverter : JsonConverter<List<string>>

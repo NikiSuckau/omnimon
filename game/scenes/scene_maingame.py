@@ -802,7 +802,7 @@ class SceneMainGame:
             runtime_globals.last_input_frame = getattr(self, 'frame_counter', 0)
 
         # Handle mouse clicks in pet area to toggle hearts view
-        if input_action == "A" and runtime_globals.game_input.mouse_enabled:
+        if input_action == "LCLICK" and runtime_globals.game_input.mouse_enabled:
             mouse_pos = runtime_globals.game_input.get_mouse_position()
             if self.is_mouse_in_pet_area(mouse_pos):
                 runtime_globals.show_hearts = not runtime_globals.show_hearts
@@ -878,9 +878,14 @@ class SceneMainGame:
 
     def handle_debug_keys(self, input_action) -> None:
         """
-        Debugging shortcuts (F12).
+        Debugging shortcuts (F11, F12).
         """
-        if input_action == "F12" and constants.DEBUG_MODE:
+        if input_action == "F11":
+            # Open test scene
+            runtime_globals.game_sound.play("menu")
+            change_scene("test")
+            runtime_globals.game_console.log("[DEBUG] Opening test scene")
+        elif input_action == "F12" and constants.DEBUG_MODE:
             # Open debug scene
             runtime_globals.game_sound.play("menu")
             change_scene("debug")
@@ -934,7 +939,7 @@ class SceneMainGame:
         """
         index = runtime_globals.main_menu_index
 
-        if input_action == "A":
+        if input_action in ["A", "LCLICK"]:
             if index == 0:
                 runtime_globals.game_sound.play("menu")
                 self.start_scene("status")

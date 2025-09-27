@@ -49,6 +49,8 @@
   "death_old_age": 0,
   "vital_value_base": 0,
   "vital_value_loss": 0,
+  "high_definition_sprites": false,
+  "visible_stats": "Age,Weight,Hunger,Strength,Mistakes/Condition Hearts,Sleep Disturbances,Overfeed,Injuries,Effort,Power,DP,Battles,Win Rate,Total Win Rate,Flags",
   "unlocks": [
     {
       "name": "Forest_and_Hills",
