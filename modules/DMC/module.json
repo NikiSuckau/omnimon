@@ -37,7 +37,7 @@
   "battle_global_hit_points": 4,
   "battle_sequential_rounds": false,
   "death_max_injuries": 15,
-  "death_care_mistake": 5,
+  "death_care_mistake": 0,
   "death_sick_timer": 360,
   "death_hunger_timer": 720,
   "death_starvation_count": 0,
