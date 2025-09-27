@@ -1,0 +1,323 @@
+"""
+Enhanced Item List Component - Vertical scrollable list for inventory items
+Inherits from BaseList and adds custom cut-rectangle design with amount and item display sections.
+"""
+import pygame
+from components.ui.base_list import BaseList
+from core import runtime_globals
+from core.utils.inventory_utils import get_inventory_value
+
+
+class ItemList(BaseList):
+    def __init__(self, x, y, width, height, on_item_activated=None):
+        """Initialize the item list with vertical orientation"""
+        super().__init__(x, y, width, height, orientation="vertical")
+        
+        # Item activation callback
+        self.on_item_activated_callback = on_item_activated
+        
+        # Custom settings for item list
+        self.base_item_size = 31  # Height of each item at 1x scale
+        self.base_item_spacing = 7   # Spacing between items
+        self.base_arrow_size = 12    # Height of arrow buttons
+        self.base_margin = 2         # Margin around arrows
+        
+        # Visual settings for cut rectangles
+        self.cut_width = 10     # Width of the cut section
+        
+        # Animation settings for text scrolling
+        self.text_scroll_speed = 20 * (30 / (runtime_globals.FRAME_RATE if hasattr(runtime_globals, 'FRAME_RATE') else 30))
+        self.text_scroll_offset = {}  # Dict to track scroll offset per item
+        self.text_scroll_delay = 1000  # Delay before starting scroll (ms)
+        self.text_scroll_start_time = {}  # Track when scrolling started per item
+        
+    def _calculate_cut_points(self, x, y, width, height, cut_width, left_side=True):
+        """
+        Return 6 corner points for a block.
+        If left_side=True => flat left side, cut on RIGHT.
+        If left_side=False => flat right side, cut on LEFT.
+        """
+        x = int(x); y = int(y)
+        width = max(0, int(width)) - 3
+        height = max(0, int(height))
+        cw = max(0, min(int(cut_width), width // 2))
+
+        top_cut_y = y + int(round(height * 0.25))
+        bottom_cut_y = y + int(round(height * 0.75))
+
+        if left_side:
+            # flat left, cut on right
+            return [
+                (x, y),                             # top-left
+                (x + width - cw, y),                # top edge before cut
+                (x + width, top_cut_y),             # diagonal down
+                (x + width, bottom_cut_y),          # vertical cut
+                (x + width - cw, y + height),       # diagonal up
+                (x, y + height)                     # bottom-left
+            ]
+        else:
+            approximation = 5 * self.manager.ui_scale if self.manager else 5
+            # flat right, cut on left (mirrored of above)
+            return [
+                (x - approximation, y),                        # top edge after cut
+                (x + width, y),                     # top-right
+                (x + width, y + height),            # bottom-right
+                (x - approximation, y + height),               # bottom edge after cut
+                (x + cut_width - approximation, bottom_cut_y),                  # diagonal up
+                (x + cut_width - approximation, top_cut_y)                      # vertical cut up
+            ]
+        
+    def _draw_items(self, surface):
+        """Draw inventory items with custom cut-rectangle design"""
+        if not self.items or not self.items_rect:
+            return
+            
+        colors = self.manager.get_theme_colors()
+        
+        # Calculate visible range
+        item_total_size = self.item_size + self.item_spacing
+        scaled_scroll_offset = self.scroll_offset
+        first_visible = max(0, int(scaled_scroll_offset // item_total_size))
+        last_visible = min(len(self.items), first_visible + self.get_visible_item_count() + 2)
+        
+        for i in range(first_visible, last_visible):
+            if i >= len(self.items):
+                break
+                
+            item = self.items[i]
+            
+            # Calculate item position within items area
+            item_y = self.items_rect.y + (i * item_total_size) - scaled_scroll_offset
+            
+            # Skip if completely outside visible items area
+            if item_y + self.item_size < self.items_rect.y or item_y > self.items_rect.y + self.items_rect.height:
+                continue
+                
+            # Determine colors based on selection state
+            is_selected = (i == self.selected_index)
+            is_hovered = (i == self.mouse_over_index)
+
+            fill_color = colors["bg"]
+            border_color = colors["fg"]
+            text_color = colors["fg"]
+            if is_hovered:
+                border_color = colors["highlight"]
+            if is_selected:
+                fill_color = colors["fg"]
+                text_color = colors["highlight"]
+                
+            # Calculate dimensions
+            scaled_cut_width = self.manager.scale_value(self.cut_width)
+            amount_width = scaled_cut_width * 3  # Width for amount section
+            item_width = self.rect.width - amount_width
+            
+            # Draw amount block (left side with right cut)
+            amount_points = self._calculate_cut_points(
+                0, item_y, amount_width, self.item_size, scaled_cut_width, left_side=True
+            )
+            if len(amount_points) >= 3:
+                pygame.draw.polygon(surface, fill_color, amount_points)
+                pygame.draw.polygon(surface, border_color, amount_points, self.manager.get_border_size())
+                
+            # Draw item block (right side with left cut)
+            item_points = self._calculate_cut_points(
+                amount_width, item_y, item_width, self.item_size, scaled_cut_width, left_side=False
+            )
+            if len(item_points) >= 3:
+                pygame.draw.polygon(surface, fill_color, item_points)
+                pygame.draw.polygon(surface, border_color, item_points, self.manager.get_border_size())
+                
+            # Draw amount text
+            # Use item's quantity property if available (for default items with -1), otherwise get from inventory
+            if hasattr(item, 'quantity') and item.quantity != 0:
+                amount = item.quantity
+            else:
+                amount = get_inventory_value(item.id) if hasattr(item, 'id') else 0
+                
+            if amount < 0 or amount > 999:  # Infinite or very large amount
+                amount_text = "∞"
+            else:
+                amount_text = f"{amount}x"
+                
+            # Use manager's get_font method for consistency
+            font = self.get_font("text", custom_size=24*self.manager.ui_scale)
+                
+            if font:
+                amount_surface = font.render(amount_text, True, text_color)
+                amount_rect = amount_surface.get_rect()
+                amount_rect.center = (amount_width // 2, item_y + self.item_size // 2)
+                surface.blit(amount_surface, amount_rect)
+                
+            # Draw item icon and name
+            icon_size = self.item_size - (3 * self.manager.ui_scale)
+            icon_x = amount_width + (6 * self.manager.ui_scale)
+            icon_y = item_y + (2 * self.manager.ui_scale)
+            
+            # Draw item icon if available
+            if hasattr(item, 'icon') and item.icon:
+                # Scale icon to fit the icon area
+                scaled_icon = pygame.transform.scale(item.icon, (icon_size, icon_size))
+                surface.blit(scaled_icon, (icon_x, icon_y))
+            else:
+                # Draw placeholder rectangle if no icon
+                icon_rect = pygame.Rect(icon_x, icon_y, icon_size, icon_size)
+                pygame.draw.rect(surface, border_color, icon_rect, 1)
+            
+            # Draw item name with scrolling if needed
+            if hasattr(item, 'game_item') and item.game_item.name:
+                name_x = icon_x + icon_size + 4
+                name_y = item_y + self.item_size // 2
+                available_width = item_width - icon_size - 8
+                self._draw_scrolling_text(surface, item.game_item.name, i, name_x, name_y, available_width, text_color)
+                
+    def _draw_scrolling_text(self, surface, text, item_index, x, y, max_width, color):
+        """Draw text with scrolling effect if it doesn't fit, trying 2-line layout first"""
+        # Try with smaller font size first (16*scale) for 2-line text
+        small_font = self.get_font("text", custom_size=16 * self.manager.ui_scale)
+        
+        if small_font:
+            # Try to fit text in 2 lines
+            words = text.split()
+            if len(words) > 1:
+                # Try different line breaks to find best fit
+                best_fit = None
+                min_max_width = float('inf')
+                
+                for split_point in range(1, len(words)):
+                    line1 = ' '.join(words[:split_point])
+                    line2 = ' '.join(words[split_point:])
+                    
+                    line1_surface = small_font.render(line1, True, color)
+                    line2_surface = small_font.render(line2, True, color)
+                    
+                    max_line_width = max(line1_surface.get_width(), line2_surface.get_width())
+                    
+                    if max_line_width <= max_width and max_line_width < min_max_width:
+                        best_fit = (line1, line2, line1_surface, line2_surface)
+                        min_max_width = max_line_width
+                
+                # If we found a good 2-line fit, use it
+                if best_fit:
+                    line1, line2, line1_surface, line2_surface = best_fit
+                    line_height = small_font.get_height()
+                    line_spacing = int(line_height * 0.3)  # Increased spacing between lines
+                    
+                    # Draw first line (left-aligned)
+                    line1_rect = line1_surface.get_rect()
+                    line1_rect.midleft = (x, y - line_spacing // 2)
+                    surface.blit(line1_surface, line1_rect)
+                    
+                    # Draw second line (left-aligned)
+                    line2_rect = line2_surface.get_rect()
+                    line2_rect.midleft = (x, y + line_spacing // 2)
+                    surface.blit(line2_surface, line2_rect)
+                    
+                    # Reset scroll state for this item since we're using 2-line layout
+                    if item_index in self.text_scroll_offset:
+                        del self.text_scroll_offset[item_index]
+                    if item_index in self.text_scroll_start_time:
+                        del self.text_scroll_start_time[item_index]
+                    return
+        
+        # If 2-line doesn't work, fall back to scrolling with larger font
+        font = self.get_font("text", custom_size=24 * self.manager.ui_scale)
+            
+        if not font:
+            return
+            
+        text_surface = font.render(text, True, color)
+        text_width = text_surface.get_width()
+        
+        if text_width <= max_width:
+            # Text fits, no scrolling needed
+            text_rect = text_surface.get_rect()
+            text_rect.midleft = (x, y)  # Left-align the text
+            surface.blit(text_surface, text_rect)
+            # Reset scroll state for this item
+            if item_index in self.text_scroll_offset:
+                del self.text_scroll_offset[item_index]
+            if item_index in self.text_scroll_start_time:
+                del self.text_scroll_start_time[item_index]
+        else:
+            # Text needs scrolling
+            current_time = pygame.time.get_ticks()
+            
+            # Initialize scroll state if needed
+            if item_index not in self.text_scroll_start_time:
+                self.text_scroll_start_time[item_index] = current_time
+                self.text_scroll_offset[item_index] = 0
+                
+            # Check if delay period has passed
+            if current_time - self.text_scroll_start_time[item_index] > self.text_scroll_delay:
+                # Update scroll offset
+                dt = (current_time - self.last_scroll_time) / 1000.0 if self.last_scroll_time > 0 else 0
+                scroll_offset = self.text_scroll_offset.get(item_index, 0)
+                scroll_offset += self.text_scroll_speed * dt
+                
+                # Loop the scroll
+                max_scroll = text_width + max_width  # Extra space before looping
+                if scroll_offset > max_scroll:
+                    scroll_offset = -max_width
+                    
+                self.text_scroll_offset[item_index] = scroll_offset
+                
+                # Create clipping area
+                clip_rect = pygame.Rect(x, y - font.get_height()//2, max_width, font.get_height())
+                surface.set_clip(clip_rect)
+                
+                # Draw text at scrolled position
+                text_rect = text_surface.get_rect()
+                text_rect.midleft = (x - scroll_offset, y)
+                surface.blit(text_surface, text_rect)
+                
+                # Clear clipping
+                surface.set_clip(None)
+            else:
+                # Still in delay period, show static text
+                clip_rect = pygame.Rect(x, y - font.get_height()//2, max_width, font.get_height())
+                surface.set_clip(clip_rect)
+                
+                text_rect = text_surface.get_rect()
+                text_rect.midleft = (x, y)
+                surface.blit(text_surface, text_rect)
+                
+                surface.set_clip(None)
+                
+    def update(self):
+        """Update component state including text scrolling animation"""
+        super().update()
+        
+        # Update text scrolling (this will invalidate cache as needed)
+        if any(item_index in self.text_scroll_offset for item_index in range(len(self.items))):
+            self.needs_redraw = True
+            self.cached_surface = None  # Force cache rebuild for text animation
+            
+    def _on_item_activated(self, index, interaction_type="keyboard"):
+        """Called when an item is activated via keyboard (A button)"""
+        if 0 <= index < len(self.items):
+            item = self.items[index]
+            runtime_globals.game_console.log(f"[ItemList] Activated item via {interaction_type}: {item.name if hasattr(item, 'name') else item}")
+            
+            # For keyboard activation, directly use the item
+            if interaction_type == "keyboard" and self.on_item_activated_callback:
+                # Call with special flag to indicate direct usage
+                self.on_item_activated_callback(item, index, use_immediately=True)
+            elif self.on_item_activated_callback:
+                # For other types, just notify selection
+                self.on_item_activated_callback(item, index, use_immediately=False)
+                
+    def _on_item_clicked(self, index):
+        """Called when an item is clicked with mouse - only selects the item"""
+        if 0 <= index < len(self.items):
+            item = self.items[index]
+            runtime_globals.game_console.log(f"[ItemList] Clicked item: {item.name if hasattr(item, 'name') else item}")
+            
+            # For mouse clicks, just notify selection (switches focus to USE button)
+            if self.on_item_activated_callback:
+                self.on_item_activated_callback(item, index, use_immediately=False)
+
+    def get_focused_sub_rect(self):
+        return None
+    
+    def get_mouse_sub_rect(self, mouse_pos):
+        return None
