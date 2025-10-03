@@ -213,23 +213,91 @@ class Button(UIComponent):
         # Draw content (icon + text)
         font = self.get_font("text")
         
+        # Prepare text surfaces (if any)
+        lines = []
+        line_surfaces = []
+        line_spacing = int(8 * self.manager.ui_scale)
+        total_height = 0
+        max_line_width = 0
+
         if self.text:
-            # Handle multi-line text with custom line spacing
             lines = self.text.split("\n")
             line_surfaces = [font.render(line, True, fg_color) for line in lines]
-            line_spacing = int(8 * self.manager.ui_scale)
             total_height = sum(s.get_height() for s in line_surfaces) + line_spacing * (len(line_surfaces) - 1)
-            y = (self.rect.height - total_height) // 2
-            
-            for line_surface in line_surfaces:
-                text_rect = line_surface.get_rect(centerx=self.rect.width//2, y=y)
-                surface.blit(line_surface, text_rect)
-                y += line_surface.get_height() + line_spacing
-        
+            max_line_width = max((s.get_width() for s in line_surfaces), default=0)
+
+        icon_w = icon_h = 0
         if self.icon_sprite:
-            # Icon only, centered (if no text), or above text if both
-            icon_rect = self.icon_sprite.get_rect(center=(self.rect.width//2, self.rect.height//2))
-            surface.blit(self.icon_sprite, icon_rect)
+            icon_w, icon_h = self.icon_sprite.get_size()
+
+        # Get border inset for available area
+        border_size = self.manager.get_border_size() if self.manager else 0
+        padding = int(8 * (self.manager.ui_scale if self.manager else 1))
+
+        # Decide layout: if we have text and enough vertical room, put icon above text;
+        # otherwise, try to put icon to the left if width allows. If no text, center icon.
+        layout = 'none'
+        inner_height = self.rect.height - (border_size * 2)
+        inner_width = self.rect.width - (border_size * 2)
+
+        if self.icon_sprite and self.text:
+            combined_height = icon_h + padding + total_height
+            if combined_height <= inner_height:
+                layout = 'above'
+            else:
+                # try left layout if width allows
+                combined_width = icon_w + padding + max_line_width
+                if combined_width <= inner_width:
+                    layout = 'left'
+                else:
+                    # fallback to above (may overlap slightly)
+                    layout = 'above'
+        elif self.icon_sprite and not self.text:
+            layout = 'center'
+        elif self.text:
+            layout = 'text_only'
+
+        # Render according to chosen layout
+        if layout == 'above':
+            # Icon centered above text
+            start_y = (self.rect.height - (icon_h + padding + total_height)) // 2
+            if self.icon_sprite:
+                icon_x = (self.rect.width - icon_w) // 2
+                surface.blit(self.icon_sprite, (icon_x, start_y))
+            text_y = start_y + icon_h + padding
+            for s in line_surfaces:
+                text_x = (self.rect.width - s.get_width()) // 2
+                surface.blit(s, (text_x, text_y))
+                text_y += s.get_height() + line_spacing
+
+        elif layout == 'left':
+            # Icon to the left, text centered in remaining area vertically
+            icon_x = border_size + padding
+            icon_y = (self.rect.height - icon_h) // 2
+            if self.icon_sprite:
+                surface.blit(self.icon_sprite, (icon_x, icon_y))
+
+            text_area_x = icon_x + icon_w + padding
+            text_area_width = self.rect.width - text_area_x - border_size
+            text_y = (self.rect.height - total_height) // 2
+            for s in line_surfaces:
+                text_x = text_area_x + (text_area_width - s.get_width()) // 2
+                surface.blit(s, (text_x, text_y))
+                text_y += s.get_height() + line_spacing
+
+        elif layout == 'center':
+            # Icon only, center it
+            icon_x = (self.rect.width - icon_w) // 2
+            icon_y = (self.rect.height - icon_h) // 2
+            surface.blit(self.icon_sprite, (icon_x, icon_y))
+
+        elif layout == 'text_only':
+            # Only text, center vertically and horizontally
+            y = (self.rect.height - total_height) // 2
+            for s in line_surfaces:
+                text_x = (self.rect.width - s.get_width()) // 2
+                surface.blit(s, (text_x, y))
+                y += s.get_height() + line_spacing
         
         # Draw decorators on top of everything
         for decorator in self.decorators:

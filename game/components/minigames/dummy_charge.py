@@ -1,5 +1,6 @@
 import random
 import pygame
+from game.components.ui.ui_manager import UIManager
 from game.core import runtime_globals
 import game.core.constants as constants
 from core.utils.pygame_utils import blit_with_shadow, sprite_load_percent
@@ -7,17 +8,17 @@ from core.utils.pygame_utils import blit_with_shadow, sprite_load_percent
 
 class DummyCharge:
 
-    def __init__(self, ui_scale=constants.UI_SCALE):
+    def __init__(self, ui_manager: UIManager):
         self.strength = 0
         self.bar_level = 14
         self._holding = False
         self._hold_ticks = 0
-        self.ui_scale = ui_scale
+        self.ui_manager = ui_manager
         # cached sprites expected to be provided externally by the caller if needed
         self._sprite_cache = {}
-        self._sprite_cache['bar_piece'] = sprite_load_percent(constants.BAR_PIECE_PATH, percent=(int(12 * constants.UI_SCALE) / constants.SCREEN_HEIGHT) * 100, keep_proportion=True, base_on="height")
-        self._sprite_cache['training_max'] = sprite_load_percent(constants.TRAINING_MAX_PATH, percent=(int(60 * constants.UI_SCALE) / constants.SCREEN_HEIGHT) * 100, keep_proportion=True, base_on="height")
-        self._sprite_cache['bar_back'] = sprite_load_percent(constants.BAR_BACK_PATH, percent=(int(170 * constants.UI_SCALE) / constants.SCREEN_HEIGHT) * 100, keep_proportion=True, base_on="height")
+        self._sprite_cache['bar_piece'] = self.ui_manager.load_sprite_non_integer_scaling(constants.BAR_PIECE_PATH, constants.UI_SCALE)
+        self._sprite_cache['training_max'] = self.ui_manager.load_sprite_non_integer_scaling(constants.TRAINING_MAX_PATH, constants.UI_SCALE)
+        self._sprite_cache['bar_back'] = self.ui_manager.load_sprite_non_integer_scaling(constants.BAR_BACK_PATH, constants.UI_SCALE)
         # internal state
         self.phase = "charge"  # charge, wait_attack, impact, result
         self.frame_counter = 0

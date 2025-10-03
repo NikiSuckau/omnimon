@@ -744,10 +744,11 @@ namespace OmnimonModuleEditor.Tabs
                 CmbAtkAlt.Items.Clear();
                 CmbAtkMain.Items.Add(new AtkComboItem(0, null));
                 CmbAtkAlt.Items.Add(new AtkComboItem(0, null));
-                for (int i = 1; i <= 117; i++)
+                
+                // Use all available attack sprites instead of hardcoding to 117
+                foreach (var kvp in atkSprites.OrderBy(x => x.Key))
                 {
-                    var sprite = atkSprites.ContainsKey(i) ? atkSprites[i] : null;
-                    var item = new AtkComboItem(i, sprite);
+                    var item = new AtkComboItem(kvp.Key, kvp.Value);
                     CmbAtkMain.Items.Add(item);
                     CmbAtkAlt.Items.Add(item);
                 }

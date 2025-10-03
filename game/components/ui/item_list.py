@@ -321,3 +321,42 @@ class ItemList(BaseList):
     
     def get_mouse_sub_rect(self, mouse_pos):
         return None
+    
+    def set_selected_index(self, index):
+        """Set the selected index with bounds checking"""
+        if not self.items:
+            self.selected_index = -1
+            return
+            
+        # Clamp index to valid range
+        if index < 0:
+            self.selected_index = 0
+        elif index >= len(self.items):
+            self.selected_index = len(self.items) - 1
+        else:
+            self.selected_index = index
+            
+        # Ensure selected item is visible by scrolling if needed
+        self._ensure_item_visible(self.selected_index)
+        
+        # Trigger redraw
+        self.needs_redraw = True
+    
+    def _ensure_item_visible(self, index):
+        """Ensure the item at the given index is visible by adjusting scroll offset"""
+        if not self.items or index < 0 or index >= len(self.items):
+            return
+            
+        item_total_size = self.item_size + self.item_spacing
+        item_position = index * item_total_size
+        
+        # Get the visible area bounds
+        visible_height = self.items_rect.height if self.items_rect else self.rect.height
+        
+        # Check if item is above visible area
+        if item_position < self.scroll_offset:
+            self.scroll_offset = item_position
+            
+        # Check if item is below visible area
+        elif item_position + self.item_size > self.scroll_offset + visible_height:
+            self.scroll_offset = item_position + self.item_size - visible_height

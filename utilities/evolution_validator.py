@@ -1,7 +1,7 @@
 import json
 from collections import defaultdict
 
-VALIDATE_FILE = 'e:/Omnimon/modules/VBE/monster.json'
+VALIDATE_FILE = 'e:/Omnimon/modules/VB/monster.json'
 
 def load_json(path):
 	with open(path, 'r', encoding='utf-8') as f:

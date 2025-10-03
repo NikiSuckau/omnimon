@@ -144,7 +144,10 @@ namespace OmnimonModuleEditor.Utils
             string moduleAtk = Path.Combine(modulePath, "atk");
             bool moduleAtkExists = Directory.Exists(moduleAtk);
 
-            for (int i = 1; i <= 117; i++)
+            // Dynamically discover all available attack sprites instead of hardcoding to 117
+            int i = 1;
+            bool foundSprites = true;
+            while (foundSprites)
             {
                 string path = null;
                 if (moduleAtkExists)
@@ -167,10 +170,12 @@ namespace OmnimonModuleEditor.Utils
                         atkSprites[i] = Image.FromFile(path);
                     }
                     catch { atkSprites[i] = null; }
+                    i++;
                 }
                 else
                 {
-                    atkSprites[i] = null;
+                    // No sprite found for this index, stop searching
+                    foundSprites = false;
                 }
             }
             return atkSprites;

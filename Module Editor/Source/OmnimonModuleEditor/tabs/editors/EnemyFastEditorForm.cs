@@ -578,8 +578,9 @@ namespace OmnimonModuleEditor
             {
                 if (string.IsNullOrEmpty(modulePath)) return;
                 
-                // Use new sprite loading system with fixed format
-                var sprite = SpriteUtils.LoadSingleSprite(name, modulePath, PetUtils.FixedNameFormat);
+                // Use new sprite loading system with high definition support
+                bool moduleHighDefinitionSprites = module?.HighDefinitionSprites ?? false;
+                var sprite = SpriteUtils.LoadSingleSprite(name, modulePath, PetUtils.FixedNameFormat, moduleHighDefinitionSprites);
                 pb.Image = sprite;
             }
 

@@ -6,6 +6,7 @@ import pygame
 from core import game_globals, runtime_globals
 from core.animation import PetFrame
 from core.combat.training import Training
+from game.components.ui.ui_manager import UIManager
 from game.core.combat import combat_constants
 import game.core.constants as constants
 from components.window_xaibar import WindowXaiBar
@@ -17,8 +18,8 @@ class ExciteTraining(Training):
     Excite training mode where players build up strength by holding a bar.
     """
 
-    def __init__(self) -> None:
-        super().__init__()
+    def __init__(self, ui_manager: UIManager) -> None:
+        super().__init__(ui_manager)
         self.xaibar = WindowXaiBar(10 * constants.UI_SCALE, constants.SCREEN_HEIGHT // 2 - (18 * constants.UI_SCALE), game_globals.xai, self.pets[0])
         self.xaibar.start()
         # Remove separate sprite assignments; use self._sprite_cache from base class

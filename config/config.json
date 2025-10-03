@@ -1,5 +1,5 @@
 {
-    "SCREEN_WIDTH": 1280,
+    "SCREEN_WIDTH": 1024,
     "SCREEN_HEIGHT": 768,
     "FRAME_RATE": 30,
     "MAX_PETS": 6,

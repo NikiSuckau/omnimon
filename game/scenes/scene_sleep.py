@@ -349,6 +349,10 @@ class SceneSleep:
         if self.scene_state == "sleep":
             self.put_pets_to_sleep()
         else:
+            # Validate there are pets that can be put to sleep before animating
+            if not self.pets_can_sleep():
+                runtime_globals.game_sound.play("cancel")
+                return
             # Start transition animation to sleep state
             self.start_theme_transition("sleep")
         
@@ -360,6 +364,10 @@ class SceneSleep:
         if self.scene_state == "wake":
             self.wake_pets()
         else:
+            # Validate there are sleeping pets that can be woken before animating
+            if not self.pets_can_wake():
+                runtime_globals.game_sound.play("cancel")
+                return
             # Start transition animation to wake state
             self.start_theme_transition("wake")
         

@@ -51,6 +51,37 @@
   "vital_value_loss": 50,
   "high_definition_sprites": true,
   "visible_stats": "Age,Weight,Hunger,Strength,Trophies,Vital Values,Injuries,Effort,Power,DP,Battles,Win Rate,Total Win Rate",
-  "unlocks": [],
+  "unlocks": [
+    {
+      "name": "area_15_6",
+      "type": "adventure",
+      "version": 6,
+      "label": "Area 15 Ver 6",
+      "area": 15,
+      "to": [],
+      "amount": 1,
+      "list": []
+    },
+    {
+      "name": "area_15_7",
+      "type": "adventure",
+      "version": 7,
+      "label": "Area 15 Ver 7",
+      "area": 15,
+      "to": [],
+      "amount": 1,
+      "list": []
+    },
+    {
+      "name": "area_15_8",
+      "type": "adventure",
+      "version": 8,
+      "label": "Area 15 Ver 8",
+      "area": 15,
+      "to": [],
+      "amount": 1,
+      "list": []
+    }
+  ],
   "backgrounds": []
 }

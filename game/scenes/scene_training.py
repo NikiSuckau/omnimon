@@ -5,6 +5,11 @@ Handles both Dummy and Head-to-Head training modes for pets.
 
 import pygame
 
+from components.ui.ui_manager import UIManager
+from components.ui.title_scene import TitleScene
+from components.ui.button import Button
+from components.ui.pet_selector import PetSelector
+from components.ui.background import Background
 from components.window_background import WindowBackground
 from components.window_horizontalmenu import WindowHorizontalMenu
 from components.window_petview import WindowPetList
@@ -19,6 +24,7 @@ import game.core.constants as constants
 from core.utils.pet_utils import get_training_targets
 from core.utils.pygame_utils import get_font, sprite_load_percent
 from core.utils.scene_utils import change_scene
+from components.ui.ui_constants import BASE_RESOLUTION, GREEN
 
 #=====================================================================
 # SceneTraining (Training Menu)
@@ -26,95 +32,250 @@ from core.utils.scene_utils import change_scene
 
 class SceneTraining:
     def __init__(self) -> None:
-        self.background = WindowBackground(False)
-        self.font = get_font(constants.FONT_SIZE_LARGE)
+        # Use GREEN theme for training
+        self.ui_manager = UIManager("GREEN")
+        
+        # UI Components for menu phase
+        self.background = None
+        self.title_scene = None
+        self.pet_selector = None
+        self.dummy_button = None
+        self.head_button = None
+        self.count_button = None
+        self.excite_button = None
+        self.punch_button = None
+        self.exit_button = None
+        
+        # Legacy background for training phase
+        self.window_background = WindowBackground(False)
 
         self.phase = "menu"
         self.mode = None
-
-        self.options = []
-        if runtime_globals.dmc_enabled:
-            self.options.append(("Dummy", sprite_load_percent(constants.DUMMY_TRAINING_ICON_PATH, percent=(constants.OPTION_ICON_SIZE / constants.SCREEN_HEIGHT) * 100, keep_proportion=True, base_on="height")))
-            self.options.append(("HeadtoHead", sprite_load_percent(constants.HEAD_TRAINING_ICON_PATH, percent=(constants.OPTION_ICON_SIZE / constants.SCREEN_HEIGHT) * 100, keep_proportion=True, base_on="height")))
-
-        if runtime_globals.penc_enabled:
-            self.options.append(("CountMatch", sprite_load_percent(constants.SHAKE_MATCH_ICON_PATH, percent=(constants.OPTION_ICON_SIZE / constants.SCREEN_HEIGHT) * 100, keep_proportion=True, base_on="height")))
-
-        if runtime_globals.dmx_enabled:
-            self.options.append(("Excite", sprite_load_percent(constants.EXCITE_MATCH_ICON_PATH, percent=(constants.OPTION_ICON_SIZE / constants.SCREEN_HEIGHT) * 100, keep_proportion=True, base_on="height")))
-
-        if runtime_globals.dmc_enabled:
-            self.options.append(("Punch", sprite_load_percent(constants.PUNCH_MATCH_ICON_PATH, percent=(constants.OPTION_ICON_SIZE / constants.SCREEN_HEIGHT) * 100, keep_proportion=True, base_on="height")))
-
-        self.selectionBackground = sprite_load_percent(constants.PET_SELECTION_BACKGROUND_PATH, percent=100, keep_proportion=True, base_on="width")
-        self.backgroundIm = sprite_load_percent(constants.TRAINING_BACKGROUND_PATH, percent=100, keep_proportion=True, base_on="width")
-
-        self.pet_list_window = WindowPetList(lambda: get_training_targets())
-
-        xai_x = int(constants.SCREEN_WIDTH - (79 * constants.UI_SCALE))
-        xai_y = int(123 * constants.UI_SCALE)
-        xai_size = int(48 * constants.UI_SCALE)
-        self.xai_window = WindowXai(xai_x, xai_y, xai_size, xai_size, game_globals.xai)
-
-        self.menu_window = WindowHorizontalMenu(
-            options=self.options,
-            get_selected_index_callback=lambda: runtime_globals.training_index,
-        )
-
-        # Cache variables for menu phase only
-        self._cache_surface = None
-        self._cache_key = None
+        
+        # Create static background surface with border for menu phase
+        self.static_border_surface = None
+        self.create_static_background()
+        
+        # Set up modern UI for menu
+        self.setup_ui()
 
         runtime_globals.game_console.log("[SceneTraining] Training scene initialized.")
 
-    def update(self):
-        if self.mode:
-            self.mode.update()
+    def create_static_background(self):
+        """Create a static surface with GREEN border around the screen"""
+        # Get screen dimensions and UI information
+        screen_width, screen_height = constants.SCREEN_WIDTH, constants.SCREEN_HEIGHT
+        ui_scale = self.ui_manager.ui_scale
         
-        # Update menu window for mouse hover if in menu phase
-        if self.phase == "menu" and runtime_globals.game_input.mouse_enabled:
-            self.menu_window.update()
+        # Calculate border size (2 pixels * ui_scale)
+        border_size = 2 * ui_scale
+        
+        # Create surface for just the GREEN border
+        self.static_border_surface = pygame.Surface((screen_width, screen_height), pygame.SRCALPHA)
+        self.static_border_surface.fill((0, 0, 0, 0))  # Transparent
+        
+        # Draw GREEN border around the UI area
+        for i in range(border_size):
+            border_rect = pygame.Rect(0, 0, 
+                                    screen_width, screen_height)
+            pygame.draw.rect(self.static_border_surface, GREEN, border_rect, border_size)
+        
+        # Blit position is always (0, 0) since surface covers entire screen
+        self.static_border_pos = (0, 0)
+
+    def setup_ui(self):
+        """Setup the UI components for the training menu."""
+        try:
+            # Use base 240x240 resolution for UI layout
+            ui_width = ui_height = BASE_RESOLUTION
+            
+            # Create and add the UI background that covers the full UI area
+            self.background = Background(ui_width, ui_height)
+            # Set single black region covering entire UI
+            self.background.set_regions([(0, ui_height, "black")])
+            self.ui_manager.add_component(self.background)
+            
+            # Create and add the title scene at top left
+            self.title_scene = TitleScene(0, 5, "TRAINING")
+            self.ui_manager.add_component(self.title_scene)
+            
+            # Create and add the pet selector at bottom right (60% of UI width)
+            selector_width = int(ui_width * 0.6)  # 60% of UI width
+            selector_height = 46
+            selector_x = ui_width - selector_width - 5  # Right aligned with margin
+            selector_y = ui_height - selector_height - 5  # Bottom aligned with margin
+            
+            self.pet_selector = PetSelector(selector_x, selector_y, selector_width, selector_height)
+            # Set pets and make it static for now
+            self.pet_selector.set_pets(get_training_targets())
+            self.pet_selector.set_interactive(False)  # Static display for now
+            self.ui_manager.add_component(self.pet_selector)
+            
+            # Create training type buttons (56x56) arranged in 2 rows of 3
+            button_size = 54
+            button_spacing = 10
+            start_x = 26  # Left margin
+            start_y = 40  # Below title
+            
+            # Row 1: Dummy, Head-to-Head, Count Match
+            self.dummy_button = Button(
+                start_x, start_y, button_size, button_size,
+                "", self.on_dummy_training,
+                cut_corners={'tl': True, 'tr': False, 'bl': False, 'br': False},
+                decorators=["Dummy"]
+            )
+            self.ui_manager.add_component(self.dummy_button)
+
+            self.head_button = Button(
+                start_x + (button_size + button_spacing), start_y, button_size, button_size,
+                "", self.on_head_training,
+                cut_corners={'tl': True, 'tr': False, 'bl': False, 'br': False},
+                decorators=["HeadToHead"]
+            )
+            self.ui_manager.add_component(self.head_button)
+
+            self.count_button = Button(
+                start_x + (button_size + button_spacing) * 2, start_y, button_size, button_size,
+                "", self.on_count_training,
+                cut_corners={'tl': True, 'tr': False, 'bl': False, 'br': True},
+                decorators=["CountMatch"]
+            )
+            self.ui_manager.add_component(self.count_button)
+
+            # Row 2: Excite, Punch, Exit
+            row2_y = start_y + button_size + button_spacing
+
+            # Excite button has two decorators: Excite and current XAI number
+            excite_decorators = ["Excite", f"Xai_{game_globals.xai}"]
+            self.excite_button = Button(
+                start_x, row2_y, button_size, button_size,
+                "", self.on_excite_training,
+                cut_corners={'tl': True, 'tr': False, 'bl': False, 'br': True},
+                decorators=excite_decorators
+            )
+            self.ui_manager.add_component(self.excite_button)
+            
+            self.punch_button = Button(
+                start_x + (button_size + button_spacing), row2_y, button_size, button_size,
+                "", self.on_punch_training,
+                cut_corners={'tl': False, 'tr': False, 'bl': False, 'br': False},
+                decorators=["Punch"]
+            )
+            self.ui_manager.add_component(self.punch_button)
+
+            self.exit_button = Button(
+                start_x + (button_size + button_spacing) * 2, row2_y, button_size, button_size,
+                "EXIT", self.on_exit_training,
+                cut_corners={'tl': True, 'tr': False, 'bl': False, 'br': True}
+            )
+            self.ui_manager.add_component(self.exit_button)
+            
+            runtime_globals.game_console.log("[SceneTraining] UI setup completed successfully")
+            
+        except Exception as e:
+            runtime_globals.game_console.log(f"[SceneTraining] ERROR in setup_ui: {e}")
+            import traceback
+            runtime_globals.game_console.log(f"[SceneTraining] Traceback: {traceback.format_exc()}")
+            raise
+        
+        # Set mouse mode and focus on the first button initially
+        self.ui_manager.set_mouse_mode()
+        if self.dummy_button:
+            self.ui_manager.set_focused_component(self.dummy_button)
+            
+    # Button callback methods that preserve existing training logic
+    def on_dummy_training(self):
+        """Handle Dummy training button press."""
+        if len(get_training_targets()) > 0:
+            runtime_globals.game_sound.play("menu")
+            self.phase = "dummy"
+            self.mode = DummyTraining(self.ui_manager)
+            runtime_globals.game_console.log("Starting Dummy Training.")
+            for pet in get_training_targets():
+                pet.check_disturbed_sleep()
+        else:
+            runtime_globals.game_sound.play("cancel")
+            
+    def on_head_training(self):
+        """Handle Head-to-Head training button press."""
+        if len(get_training_targets()) > 1:
+            runtime_globals.game_sound.play("menu")
+            self.phase = "headtohead"
+            self.mode = HeadToHeadTraining(self.ui_manager)
+            runtime_globals.game_console.log("Starting Head-to-Head Training.")
+            for pet in get_training_targets():
+                pet.check_disturbed_sleep()
+        else:
+            runtime_globals.game_sound.play("cancel")
+            
+    def on_count_training(self):
+        """Handle Count Match training button press."""
+        if len(get_training_targets()) > 0:
+            runtime_globals.game_sound.play("menu")
+            self.phase = "count"
+            self.mode = CountMatchTraining(self.ui_manager)
+            runtime_globals.game_console.log("Starting Count Match Training.")
+            for pet in get_training_targets():
+                pet.check_disturbed_sleep()
+        else:
+            runtime_globals.game_sound.play("cancel")
+            
+    def on_excite_training(self):
+        """Handle Excite training button press."""
+        if len(get_training_targets()) > 0:
+            runtime_globals.game_sound.play("menu")
+            self.phase = "excite"
+            self.mode = ExciteTraining(self.ui_manager)
+            runtime_globals.game_console.log("Starting Excite Training.")
+            for pet in get_training_targets():
+                pet.check_disturbed_sleep()
+        else:
+            runtime_globals.game_sound.play("cancel")
+            
+    def on_punch_training(self):
+        """Handle Punch training button press."""
+        if len(get_training_targets()) > 0:
+            runtime_globals.game_sound.play("menu")
+            self.phase = "punch"
+            self.mode = ShakeTraining(self.ui_manager)
+            runtime_globals.game_console.log("Starting Shake Training.")
+            for pet in get_training_targets():
+                pet.check_disturbed_sleep()
+        else:
+            runtime_globals.game_sound.play("cancel")
+            
+    def on_exit_training(self):
+        """Handle EXIT button press."""
+        runtime_globals.game_sound.play("cancel")
+        change_scene("game")
+
+    def update(self):
+        if self.phase == "menu":
+            # Update UI manager for menu phase
+            self.ui_manager.update()
+            # Update pet selector with current targets
+            if self.pet_selector:
+                self.pet_selector.set_pets(get_training_targets())
+                
+        elif self.mode:
+            self.mode.update()
 
     def draw(self, surface: pygame.Surface):
+        # Always draw the window background first (all states)
+        self.window_background.draw(surface)
+        
+        # Draw the GREEN border on top
+        surface.blit(self.static_border_surface, self.static_border_pos)
+        
         if self.phase == "menu":
-            # Compose a cache key that reflects the dynamic state of the menu
-            cache_key = (
-                runtime_globals.training_index,
-                tuple(pet.name for pet in get_training_targets()),
-                len(self.options),
-            )
-
-            if cache_key != self._cache_key or self._cache_surface is None:
-                # Redraw full menu scene once on state change
-                cache_surface = pygame.Surface((constants.SCREEN_WIDTH, constants.SCREEN_HEIGHT), pygame.SRCALPHA)
-
-                self.background.draw(cache_surface)
-
-                # Draw horizontal menu with spacing logic
-                if len(self.options) > 2:
-                    self.menu_window.draw(cache_surface, x=int(72 * constants.UI_SCALE), y=int(16 * constants.UI_SCALE), spacing=int(30 * constants.UI_SCALE))
-                else:
-                    self.menu_window.draw(cache_surface, x=int(16 * constants.UI_SCALE), y=int(16 * constants.UI_SCALE), spacing=int(16 * constants.UI_SCALE))
-
-                # Draw pets at bottom
-                self.pet_list_window.draw(cache_surface)
-
-                # Draw Xai window if option "Excite" selected
-                if self.options[runtime_globals.training_index][0] == "Excite":
-                    self.xai_window.draw(cache_surface)
-
-                self._cache_surface = cache_surface
-                self._cache_key = cache_key
-
-            # Blit cached menu scene
-            surface.blit(self._cache_surface, (0, 0))
-
+            # Draw UI components on top
+            self.ui_manager.draw(surface)
+            
         elif self.mode:
+            # Use legacy system for training phases
             if self.mode.phase in ["alert", "impact"]:
                 self.mode.draw(surface)
             else:
-                self.background.draw(surface)
-                surface.blit(self.backgroundIm, (0, 0))
                 self.mode.draw(surface)
 
     def handle_event(self, input_action):
@@ -125,76 +286,19 @@ class SceneTraining:
                 self.mode.handle_event(input_action)
 
     def handle_menu_input(self, input_action):
-        # Handle mouse clicks on navigation arrows for multi-option menus
-        if input_action == "A" and runtime_globals.game_input.mouse_enabled:
-            mouse_pos = runtime_globals.game_input.get_mouse_position()
-            if self.menu_window.handle_mouse_click(mouse_pos):
-                # Mouse click was handled by the menu (navigation arrow click)
-                self._cache_surface = None  # Invalidate cache on selection change
+        # Handle pygame events through UI manager first
+        if hasattr(input_action, 'type'):
+            if self.ui_manager.handle_event(input_action):
                 return
         
-        if input_action == "B":
-            runtime_globals.game_sound.play("cancel")
-            change_scene("game")
-        elif input_action in ("LEFT", "RIGHT"):
-            runtime_globals.game_sound.play("menu")
-            delta = -1 if input_action == "LEFT" else 1
-            runtime_globals.training_index = (runtime_globals.training_index + delta) % len(self.options)
-            self._cache_surface = None  # Invalidate cache on selection change
-        elif input_action == "A":
-            selected = self.options[runtime_globals.training_index][0]
-            if selected == "Dummy":
-                if len(get_training_targets()) > 0:
-                    runtime_globals.game_sound.play("menu")
-                    self.phase = "dummy"
-                    self.mode = DummyTraining()
-                    runtime_globals.game_console.log("Starting Dummy Training.")
-                    for pet in get_training_targets():
-                        pet.check_disturbed_sleep()
-                else:
-                    runtime_globals.game_sound.play("cancel")
-            elif selected == "HeadtoHead":
-                if len(get_training_targets()) > 1:
-                    runtime_globals.game_sound.play("menu")
-                    self.phase = "headtohead"
-                    self.mode = HeadToHeadTraining()
-                    runtime_globals.game_console.log("Starting Head-to-Head Training.")
-                    for pet in get_training_targets():
-                        pet.check_disturbed_sleep()
-                else:
-                    runtime_globals.game_sound.play("cancel")
-            elif selected == "CountMatch":
-                if len(get_training_targets()) > 0:
-                    runtime_globals.game_sound.play("menu")
-                    self.phase = "count"
-                    self.mode = CountMatchTraining()
-                    runtime_globals.game_console.log("Starting Dummy Training.")
-                    for pet in get_training_targets():
-                        pet.check_disturbed_sleep()
-                else:
-                    runtime_globals.game_sound.play("cancel")
-            elif selected == "Excite":
-                if len(get_training_targets()) > 0:
-                    runtime_globals.game_sound.play("menu")
-                    self.phase = "excite"
-                    self.mode = ExciteTraining()
-                    runtime_globals.game_console.log("Starting Dummy Training.")
-                    for pet in get_training_targets():
-                        pet.check_disturbed_sleep()
-                else:
-                    runtime_globals.game_sound.play("cancel")
-            elif selected == "Punch":
-                if len(get_training_targets()) > 0:
-                    runtime_globals.game_sound.play("menu")
-                    self.phase = "punch"
-                    self.mode = ShakeTraining()
-                    runtime_globals.game_console.log("Starting Shake Training.")
-                    for pet in get_training_targets():
-                        pet.check_disturbed_sleep()
-                else:
-                    runtime_globals.game_sound.play("cancel")
-        elif input_action == "SELECT" and self.phase == "menu":
-            runtime_globals.game_sound.play("menu")
-            runtime_globals.strategy_index = (runtime_globals.strategy_index + 1) % 2
-            self._cache_surface = None  # Invalidate cache if strategy affects menu visuals
+        # Handle string action events (from input manager)
+        elif isinstance(input_action, str):
+            if input_action == "B":
+                runtime_globals.game_sound.play("cancel")
+                change_scene("game")
+                return
+
+            # Let UI manager handle navigation and other input actions
+            if self.ui_manager.handle_input_action(input_action):
+                return
 

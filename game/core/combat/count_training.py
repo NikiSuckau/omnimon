@@ -4,14 +4,15 @@ import random
 from core import runtime_globals
 from core.animation import PetFrame
 from core.combat.training import Training
+from game.components.ui.ui_manager import UIManager
 from game.core.combat import combat_constants
 import game.core.constants as constants
 from core.utils.pygame_utils import blit_with_cache, blit_with_shadow, sprite_load_percent
 from core.utils.scene_utils import change_scene
 
 class CountMatchTraining(Training):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, ui_manager: UIManager):
+        super().__init__(ui_manager)
         self.press_counter = 0
         self.rotation_index = 0
         self.start_time = 0

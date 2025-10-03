@@ -40,32 +40,15 @@ class TitleScene(UIComponent):
         """Called when UI manager is set - load scaled assets"""
         if not self.manager:
             return
-            
-        # Get sprite scale and current theme
-        sprite_scale = self.manager.get_sprite_scale()
-        theme = self.manager.theme
         
-        runtime_globals.game_console.log(f"[TitleScene] Loading assets: theme={theme}, sprite_scale={sprite_scale}, ui_scale={self.manager.ui_scale}")
-        
-        # Load theme-appropriate background sprites
-        try:
-            sprite_path = f"assets/ui/Sleep_Title_{theme}_{sprite_scale}.png"
-            self.yellow_background_sprite = pygame.image.load(sprite_path).convert_alpha()
-            runtime_globals.game_console.log(f"[TitleScene] Loaded background sprite: {sprite_path}, size={self.yellow_background_sprite.get_size()}")
-        except pygame.error as e:
-            runtime_globals.game_console.log(f"[TitleScene] Could not load {theme} background sprite: {e}")
-            # Create a fallback colored rectangle with current theme
-            theme_colors = self.manager.get_theme_colors()
-            self.yellow_background_sprite = pygame.Surface((self.rect.width, self.rect.height))
-            self.yellow_background_sprite.fill(theme_colors["bg"])
-        
-        # For now, use the same sprite for both modes (can be different in the future)
-        self.blue_background_sprite = self.yellow_background_sprite.copy()
-            
+        self.yellow_background_sprite = self.manager.load_sprite_integer_scaling("Sleep", "Title", "Yellow")
+        self.blue_background_sprite = self.manager.load_sprite_integer_scaling("Sleep", "Title", "Blue")
+        self.green_background_sprite = self.manager.load_sprite_integer_scaling("Sleep", "Title", "Green")
+
         # Get title font using centralized method with proper scaling
         # Manager already handles scaling through get_title_font_size()
-        self.font = self.get_font(font_type="title")
-        font_size = self.manager.get_title_font_size()
+        font_size = self.manager.scale_value(24)
+        self.font = self.get_font(custom_size=font_size)
         runtime_globals.game_console.log(f"[TitleScene] Font loaded: size={font_size}")
         
         # Force redraw
@@ -87,9 +70,9 @@ class TitleScene(UIComponent):
         surface = pygame.Surface((self.rect.width, self.rect.height), pygame.SRCALPHA)
         
         # Draw appropriate background sprite based on current mode
-        if self.current_mode == "wake" and self.yellow_background_sprite:
+        if self.current_mode == "wake":
             surface.blit(self.yellow_background_sprite, (0, 0))
-        elif self.current_mode == "sleep" and self.blue_background_sprite:
+        elif self.current_mode == "sleep":
             surface.blit(self.blue_background_sprite, (0, 0))
         
         # Draw title text with left margin and proper theme color

@@ -9,6 +9,7 @@ import pygame
 from core import runtime_globals
 from core.animation import PetFrame
 from core.combat.training import Training
+from game.components.ui.ui_manager import UIManager
 from game.core.combat import combat_constants
 import game.core.constants as constants
 from core.utils.pet_utils import get_training_targets
@@ -25,8 +26,8 @@ class HeadToHeadTraining(Training):
         "ABBAA", "BABAB", "ABABA"
     ]
 
-    def __init__(self) -> None:
-        super().__init__()
+    def __init__(self, ui_manager: UIManager) -> None:
+        super().__init__(ui_manager)
         self.left_pet = None
         self.right_pet = None
         self.pattern = ""

@@ -8,6 +8,7 @@ import pygame
 from core import runtime_globals
 from core.animation import PetFrame
 from core.combat.training import Training
+from game.components.ui.ui_manager import UIManager
 from game.core.combat import combat_constants
 import game.core.constants as constants
 from core.game_module import sprite_load
@@ -19,8 +20,8 @@ class ShakeTraining(Training):
     Shake training mode where players build up strength by holding a bar.
     """
 
-    def __init__(self) -> None:
-        super().__init__()
+    def __init__(self, ui_manager: UIManager) -> None:
+        super().__init__(ui_manager)
         self.strength = 0
         self.bar_level = 20
         self.bar_timer = 0

@@ -75,7 +75,7 @@ class PetSelector(UIComponent):
         available_height = self.base_rect.height
         num_pets = len(self.pets)
         
-        runtime_globals.game_console.log(f"[PetSelector] update_layout: {num_pets} pets, available_width={available_width}, available_height={available_height}")
+        #runtime_globals.game_console.log(f"[PetSelector] update_layout: {num_pets} pets, available_width={available_width}, available_height={available_height}")
         
         if num_pets == 0:
             self.cell_positions = []
@@ -113,7 +113,7 @@ class PetSelector(UIComponent):
         radius = min(max_radius, base_max_radius)
         radius = max(radius, base_min_radius)
         
-        runtime_globals.game_console.log(f"[PetSelector] radius calculation: max_from_height={max_radius_from_height}, max_from_width={max_radius_from_width}, final={radius} (limits: {base_min_radius}-{base_max_radius})")
+        #runtime_globals.game_console.log(f"[PetSelector] radius calculation: max_from_height={max_radius_from_height}, max_from_width={max_radius_from_width}, final={radius} (limits: {base_min_radius}-{base_max_radius})")
         
         # Step 4: Calculate actual layout with touching hexagons
         if num_pets == 1:
@@ -133,7 +133,7 @@ class PetSelector(UIComponent):
             start_x = radius  # Start from left edge plus radius
         center_y = available_height // 2
         
-        runtime_globals.game_console.log(f"[PetSelector] layout: total_width={total_width}, start_x={start_x}, center_y={center_y}, center_spacing={center_spacing}")
+        #runtime_globals.game_console.log(f"[PetSelector] layout: total_width={total_width}, start_x={start_x}, center_y={center_y}, center_spacing={center_spacing}")
         
         # Step 6: Calculate positions for each hexagon center
         self.cell_positions = []
@@ -144,13 +144,13 @@ class PetSelector(UIComponent):
                 cell_x = start_x + (i * center_spacing)
             cell_y = center_y
             self.cell_positions.append((cell_x, cell_y))
-            runtime_globals.game_console.log(f"[PetSelector] cell {i}: base_pos=({cell_x}, {cell_y})")
+            #runtime_globals.game_console.log(f"[PetSelector] cell {i}: base_pos=({cell_x}, {cell_y})")
             
         # Debug: Show final layout bounds
         if self.cell_positions:
             leftmost = min(pos[0] for pos in self.cell_positions) - radius
             rightmost = max(pos[0] for pos in self.cell_positions) + radius
-            runtime_globals.game_console.log(f"[PetSelector] final bounds: left={leftmost}, right={rightmost}, available_width={available_width}")
+            #runtime_globals.game_console.log(f"[PetSelector] final bounds: left={leftmost}, right={rightmost}, available_width={available_width}")
             
         # Store the calculated radius for this layout (convert to diameter for compatibility)
         self.calculated_cell_size = radius * 2

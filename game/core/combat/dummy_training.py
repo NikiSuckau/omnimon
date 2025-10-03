@@ -8,25 +8,30 @@ import pygame
 from core import runtime_globals
 from core.animation import PetFrame
 from core.combat.training import Training
+from game.components.ui.ui_manager import UIManager
 from game.core.combat import combat_constants
 import game.core.constants as constants
 from core.game_module import sprite_load
 from core.utils.pygame_utils import blit_with_shadow
+from game.components.minigames.dummy_charge import DummyCharge
 
 class DummyTraining(Training):
     """
     Dummy training mode where players build up strength by holding a bar.
     """
 
-    def __init__(self) -> None:
-        super().__init__()
-        self.strength = 0
-        self.bar_level = 14
+    def __init__(self, ui_manager: UIManager) -> None:
+        super().__init__(ui_manager)
+        # Delegate charge/attack logic to the DummyCharge minigame
+        self.minigame = DummyCharge(ui_manager)
+        # expose commonly accessed fields for compatibility
+        self.strength = self.minigame.strength
+        self.bar_level = self.minigame.bar_level
         self.bar_timer = 0
-
         self.attack_phase = 1
         self.flash_frame = 0
 
+        # Restore attack/result assets/positions (training-specific)
         SPRITE_SETS = [
             (constants.BAG1_PATH, constants.BAG2_PATH),
             (constants.ROCK1_PATH, constants.ROCK2_PATH),
@@ -35,11 +40,16 @@ class DummyTraining(Training):
         ]
 
         selected_sprites = random.choice(SPRITE_SETS)
-
         self.bag1 = sprite_load(selected_sprites[0], size=(60 * constants.UI_SCALE, 120 * constants.UI_SCALE))
         self.bag2 = sprite_load(selected_sprites[1], size=(60 * constants.UI_SCALE, 120 * constants.UI_SCALE))
+        self.attack_positions = []
 
     def update_charge_phase(self):
+        # Ensure minigame is updated and synced before checking phase
+        self.minigame.update()
+        self.strength = self.minigame.strength
+
+        # Transition to wait_attack if hold time exceeded
         if pygame.time.get_ticks() - self.bar_timer > combat_constants.BAR_HOLD_TIME_MS:
             self.phase = "wait_attack"
             self.frame_counter = 0
@@ -84,33 +94,27 @@ class DummyTraining(Training):
 
     def check_victory(self):
         """Apply training results and return to game."""
+        # sync strength from minigame
+        self.strength = self.minigame.strength
         return self.strength > 10
 
     def check_and_award_trophies(self):
         """Award trophy if strength reaches maximum (14)"""
+        self.strength = self.minigame.strength
+
         if self.strength == 14:
             for pet in self.pets:
                 pet.trophies += 1
             runtime_globals.game_console.log(f"[TROPHY] Dummy training perfect score achieved! Trophy awarded.")
 
     def draw_charge(self, surface):
-        bar_piece = self._sprite_cache['bar_piece']
-        training_max = self._sprite_cache['training_max']
-        bar_back = self._sprite_cache['bar_back']
-
-        bar_x = (constants.SCREEN_WIDTH // 2 - bar_piece.get_width() // 2) - int(40 * constants.UI_SCALE)
-        bar_bottom_y = constants.SCREEN_HEIGHT // 2 + int(110 * constants.UI_SCALE)
-
-        if self.strength == 14:
-            surface.blit(training_max, (bar_x - int(18 * constants.UI_SCALE), bar_bottom_y - int(209 * constants.UI_SCALE)))
         
-        blit_with_shadow(surface, bar_back, (bar_x - int(3 * constants.UI_SCALE), bar_bottom_y - int(169 * constants.UI_SCALE)))
+        self.minigame.draw(surface)
+        self.draw_pets(surface)
 
-        for i in range(self.strength):
-            y = bar_bottom_y - (i + 1) * bar_piece.get_height()
-            blit_with_shadow(surface, bar_piece, (bar_x, y))
-
-        self.draw_pets(surface, PetFrame.IDLE1)
+    def handle_event(self, event):
+        """Forward input events to the bar component."""
+        self.minigame.handle_event(event)
 
     def draw_attack_move(self, surface):
         if self.attack_phase == 1:
@@ -125,6 +129,8 @@ class DummyTraining(Training):
             blit_with_shadow(surface, sprite, (int(x), int(y)))
 
     def draw_result(self, surface):
+        self.strength = self.minigame.strength
+
         # Use cached result sprites
         bad_sprite = self._sprite_cache['bad']
         great_sprite = self._sprite_cache['great']
@@ -136,24 +142,29 @@ class DummyTraining(Training):
         elif self.strength < 10:
             result_img = self.bag1
 
+        
         if self.frame_counter < 30:
             if result_img:
                 x = int(50 * constants.UI_SCALE)
                 y = constants.SCREEN_HEIGHT // 2 - result_img.get_height() // 2
                 blit_with_shadow(surface, result_img, (x, y))
         else:
+            surface.fill((0, 0, 0))
+            sx, sy = bad_sprite.get_width(), bad_sprite.get_height()
+            center_x = constants.SCREEN_WIDTH // 2 - sx // 2
+            center_y = constants.SCREEN_HEIGHT // 2 - sy // 2
+
             y = constants.SCREEN_HEIGHT // 2 - bad_sprite.get_height() // 2
             if self.strength < 10:
-                blit_with_shadow(surface, bad_sprite, (0, y))
+                blit_with_shadow(surface, bad_sprite, (center_x, center_y))
             elif self.strength < 14:
-                blit_with_shadow(surface, great_sprite, (0, y))
+                blit_with_shadow(surface, great_sprite, (center_x, center_y))
             elif self.strength >= 14:
-                blit_with_shadow(surface, excellent_sprite, (0, y))
+                blit_with_shadow(surface, excellent_sprite, (center_x, center_y))
                 # Draw trophy notification if maximum score achieved
                 self.draw_trophy_notification(surface)
 
     def prepare_attacks(self):
-        """Prepare multiple attacks from each pet based on strength level."""
         attack_count = self.get_attack_count()
         targets = self.pets
         total_pets = len(targets)
@@ -183,6 +194,7 @@ class DummyTraining(Training):
 
     def get_attack_count(self):
         """Returns the number of attacks based on strength."""
+        self.strength = self.minigame.strength
         if self.strength < 10:
             return 1
         elif self.strength < 14:

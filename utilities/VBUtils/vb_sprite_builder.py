@@ -142,10 +142,7 @@ def resolve_duplicate_names(folder_characters):
         char_number = char_data['character_number']
         # Prioritize character_name over manual_name, but handle both cases
         original_name = char_data.get('character_name')
-        if not original_name:
-            original_name = char_data.get('manual_name')
-        if not original_name:
-            original_name = f"Character_{char_number:02d}"
+       
         
         if original_name not in name_counts:
             name_counts[original_name] = []
@@ -557,6 +554,8 @@ def process_folder(folder_path, version, output_sprites_folder, folder_character
     print(f"Processing folder: {folder_name} (Version {version})")
     
     monsters = []
+    specific_fusions_found = []
+    adventure_unlock_found = []
     
     # Resolve duplicate names first
     name_mapping, changes_made = resolve_duplicate_names(folder_character_names)
@@ -578,7 +577,7 @@ def process_folder(folder_path, version, output_sprites_folder, folder_character
     # 2.3 Process character files
     if not os.path.exists(data_folder):
         print(f"Data folder not found: {data_folder}")
-        return monsters, changes_made
+        return monsters, changes_made, specific_fusions_found, adventure_unlock_found
     
     char_files = find_character_files(data_folder)
     file_idx_to_name = {}
@@ -619,6 +618,26 @@ def process_folder(folder_path, version, output_sprites_folder, folder_character
             print(f"⚠️  Warning: No name found for character {char_number:02d} in {folder_name}, skipping")
             continue
         
+        # Check for specificFusions
+        specific_fusions = char_data.get('specificFusions', {})
+        if specific_fusions:
+            specific_fusions_found.append({
+                'folder_name': folder_name,
+                'character_number': char_number,
+                'character_name': char_name,
+                'specificFusions': specific_fusions
+            })
+        
+        # Check for finishAdventureToUnlock
+        finish_adventure = char_data.get('finishAdventureToUnlock', False)
+        if finish_adventure:
+            adventure_unlock_found.append({
+                'folder_name': folder_name,
+                'character_number': char_number,
+                'character_name': char_name,
+                'finishAdventureToUnlock': finish_adventure
+            })
+        
         # Create monster entry
         monster = create_monster_from_character(char_data, char_number, char_name, version, file_idx_to_name)
         monsters.append(monster)
@@ -626,7 +645,7 @@ def process_folder(folder_path, version, output_sprites_folder, folder_character
         # Create character sprite
         process_character_sprites(char_name, char_number, sprites_folder, output_sprites_folder)
     
-    return monsters, changes_made
+    return monsters, changes_made, specific_fusions_found, adventure_unlock_found
 
 def main():
     """Main function to build sprites and monster.json using pre-extracted character names."""
@@ -682,6 +701,9 @@ def main():
     version = 1
     processed_folders = 0
     
+    specific_fusions_summary = []
+    adventure_unlock_summary = []
+    
     try:
         # Get folder order from character_names.json to preserve custom ordering
         folder_order = []
@@ -714,10 +736,13 @@ def main():
                 folder_path = os.path.join(ROOT_FOLDER, folder)
                 folder_character_names = characters_by_folder[folder]
                 
-                monsters, changes_made = process_folder(folder_path, version, output_sprites_folder, folder_character_names)
+                monsters, changes_made, folder_specific_fusions, folder_adventure_unlocks = process_folder(folder_path, version, output_sprites_folder, folder_character_names)
                 all_monsters.extend(monsters)
                 all_name_changes.extend(changes_made)
+                specific_fusions_summary.extend(folder_specific_fusions)
+                adventure_unlock_summary.extend(folder_adventure_unlocks)
                 processed_folders += 1
+                
                 print(f"✅ {folder}: Created {len(monsters)} entries")
                 version += 1
                 
@@ -792,6 +817,29 @@ def main():
                         print(f"     - '{orphan['name']}' (Stage {orphan['stage']})")
             else:
                 print(f"\n✅ No orphaned monsters found - all monsters are connected to evolution chains")
+            
+            # Print summary of specificFusions
+            if specific_fusions_summary:
+                print(f"\n🔗 Summary of Characters with specificFusions:")
+                print(f"   Found {len(specific_fusions_summary)} characters with specificFusions:")
+                for entry in specific_fusions_summary:
+                    print(f"   • Folder: {entry['folder_name']}")
+                    print(f"     Character #{entry['character_number']:02d}: {entry['character_name']}")
+                    print(f"     specificFusions: {entry['specificFusions']}")
+                    print()
+            else:
+                print(f"\n✅ No characters with specificFusions found.")
+            
+            # Print summary of finishAdventureToUnlock
+            if adventure_unlock_summary:
+                print(f"\n🏁 Summary of Characters with finishAdventureToUnlock: true:")
+                print(f"   Found {len(adventure_unlock_summary)} characters that require adventure completion:")
+                for entry in adventure_unlock_summary:
+                    print(f"   • Folder: {entry['folder_name']}")
+                    print(f"     Character #{entry['character_number']:02d}: {entry['character_name']}")
+                    print()
+            else:
+                print(f"\n✅ No characters with finishAdventureToUnlock: true found.")
             
             return 0
             

@@ -5,6 +5,7 @@ import pygame
 
 from core import runtime_globals
 from core.animation import PetFrame
+from game.components.ui.ui_manager import UIManager
 from game.core.combat import combat_constants
 import game.core.constants as constants
 from core.utils.pet_utils import distribute_pets_evenly, get_training_targets
@@ -18,7 +19,8 @@ class Training:
     Training mode where players build up strength by holding a bar.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, ui_manager: UIManager) -> None:
+        self.ui_manager = ui_manager
         self.phase = "alert"
         self.frame_counter = 0
 
@@ -36,18 +38,18 @@ class Training:
         self.pet_state = None
 
         # Load and cache all sprites once
-        self._sprite_cache['ready'] = sprite_load_percent(constants.READY_SPRITE_PATH, 100, keep_proportion=True, base_on="width", alpha=False)
-        self._sprite_cache['go'] = sprite_load_percent(constants.GO_SPRITE_PATH, 100, keep_proportion=True, base_on="width", alpha=False)
-        self._sprite_cache['bar_piece'] = sprite_load_percent(constants.BAR_PIECE_PATH, percent=(int(12 * constants.UI_SCALE) / constants.SCREEN_HEIGHT) * 100, keep_proportion=True, base_on="height")
-        self._sprite_cache['training_max'] = sprite_load_percent(constants.TRAINING_MAX_PATH, percent=(int(60 * constants.UI_SCALE) / constants.SCREEN_HEIGHT) * 100, keep_proportion=True, base_on="height")
-        self._sprite_cache['bar_back'] = sprite_load_percent(constants.BAR_BACK_PATH, percent=(int(170 * constants.UI_SCALE) / constants.SCREEN_HEIGHT) * 100, keep_proportion=True, base_on="height")
-        self._sprite_cache['battle1'] = sprite_load_percent(constants.BATTLE1_PATH, 100, keep_proportion=True, base_on="width", alpha=False)
-        self._sprite_cache['battle2'] = sprite_load_percent(constants.BATTLE2_PATH, 100, keep_proportion=True, base_on="width", alpha=False)
-        self._sprite_cache['bad'] = sprite_load_percent(constants.BAD_SPRITE_PATH, 100, keep_proportion=True, base_on="width", alpha=False)
-        self._sprite_cache['good'] = sprite_load_percent(constants.GOOD_SPRITE_PATH, 100, keep_proportion=True, base_on="width", alpha=False)
-        self._sprite_cache['great'] = sprite_load_percent(constants.GREAT_SPRITE_PATH, 100, keep_proportion=True, base_on="width", alpha=False)
-        self._sprite_cache['excellent'] = sprite_load_percent(constants.EXCELLENT_SPRITE_PATH, 100, keep_proportion=True, base_on="width", alpha=False)
-        self._sprite_cache['trophy'] = sprite_load_percent(constants.TROPHIES_ICON_PATH, percent=(int(24 * constants.UI_SCALE) / constants.SCREEN_HEIGHT) * 100, keep_proportion=True, base_on="height")
+        self._sprite_cache['ready'] = self.ui_manager.load_sprite_integer_scaling(name="Ready", prefix="Training")
+
+        self._sprite_cache['battle1'] = self.ui_manager.load_sprite_integer_scaling(name="Battle1", prefix="Training")
+        self._sprite_cache['battle2'] = self.ui_manager.load_sprite_integer_scaling(name="Battle2", prefix="Training")
+        self._sprite_cache['bad'] = self.ui_manager.load_sprite_integer_scaling(name="Bad", prefix="Training")
+        self._sprite_cache['good'] = self.ui_manager.load_sprite_integer_scaling(name="Good", prefix="Training")
+        self._sprite_cache['great'] = self.ui_manager.load_sprite_integer_scaling(name="Great", prefix="Training")
+        self._sprite_cache['excellent'] = self.ui_manager.load_sprite_integer_scaling(name="Excellent", prefix="Training")
+        self._sprite_cache['trophy'] = self.ui_manager.load_sprite_integer_scaling(name="Trophies", prefix="Status")
+
+        self.background_color = (0, 0, 0)
+        self.flash_color = (255, 216, 0)
 
         self.attack_jump = 0
         self.attack_forward = 0
@@ -240,8 +242,15 @@ class Training:
             blit_with_shadow(surface, pet_sprite, (x, y))
 
     def draw_alert(self, screen):
-        center_y = constants.SCREEN_HEIGHT // 2 - self.get_sprite('ready').get_height() // 2
-        blit_with_shadow(screen, self.get_sprite('ready'), (0, center_y))
+        # Fill the screen with the configured background color
+        screen.fill(self.background_color)
+
+        sprite = self.get_sprite('ready')
+        if sprite:
+            sx, sy = sprite.get_width(), sprite.get_height()
+            center_x = constants.SCREEN_WIDTH // 2 - sx // 2
+            center_y = constants.SCREEN_HEIGHT // 2 - sy // 2
+            blit_with_shadow(screen, sprite, (center_x, center_y))
 
     def draw_attack_ready(self, surface):
         self.draw_pets(surface, PetFrame.ATK1)
@@ -253,9 +262,26 @@ class Training:
         pass
 
     def draw_impact(self, screen):
-        flash = self.get_sprite('battle1') if (self.flash_frame // int(2 * (constants.FRAME_RATE / 30))) % 2 == 0 else self.get_sprite('battle2')
-        flash = pygame.transform.scale(flash, (constants.SCREEN_WIDTH, constants.SCREEN_HEIGHT))
-        screen.blit(flash, (0, 0))
+        # Reduce flashing frequency for accessibility (target <= 3 Hz)
+        target_hz = 3
+        toggle_interval = max(1, int(constants.FRAME_RATE / target_hz))
+
+        use_first = ((self.flash_frame // toggle_interval) % 2) == 0
+
+        if use_first:
+            # battle1: normal background color
+            screen.fill(self.background_color)
+            sprite = self.get_sprite('battle1')
+        else:
+            # battle2: use flash color as background
+            screen.fill(self.flash_color)
+            sprite = self.get_sprite('battle2')
+
+        if sprite:
+            sx, sy = sprite.get_width(), sprite.get_height()
+            center_x = constants.SCREEN_WIDTH // 2 - sx // 2
+            center_y = constants.SCREEN_HEIGHT // 2 - sy // 2
+            screen.blit(sprite, (center_x, center_y))
 
     def draw_result(self, surface):
         pass

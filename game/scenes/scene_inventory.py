@@ -137,9 +137,9 @@ class SceneInventory:
             
             # Create and add the pet selector at bottom (150x46 size)
             selector_width = 145
-            selector_height = 46
+            selector_height = 40
             selector_x = 5  # Center horizontally
-            selector_y = 194  # Near bottom with margin
+            selector_y = 200  # Near bottom with margin
             
             self.pet_selector = PetSelector(selector_x, selector_y, selector_width, selector_height)
             # Set pets and make it static for now
@@ -154,7 +154,7 @@ class SceneInventory:
             text_panel_height = 106
             
             self.text_panel = TextPanel(text_panel_x, text_panel_y, text_panel_width, text_panel_height)
-            self.text_panel.set_text("Select an item to view its description")
+            self.text_panel.set_text("")
             self.ui_manager.add_component(self.text_panel)
             
             # Create buttons positioned at 135x160 and below
@@ -178,10 +178,11 @@ class SceneInventory:
             )
             self.ui_manager.add_component(self.discard_button)
             
-            # SELECTION button
+            # SELECTION button - starts with appropriate icon based on current strategy
+            #strategy_icon = "All" if runtime_globals.strategy_index == 0 else "Need"
             self.selection_button = Button(
                 button_x, button_y + ((button_height + button_spacing) * 2), button_width, button_height,
-                "SELECTION", self.on_selection_button
+                f"SEL-{'ALL' if runtime_globals.strategy_index == 0 else 'NEED'}", self.on_selection_button, #icon_name=strategy_icon, icon_prefix="Inventory"
             )
             self.ui_manager.add_component(self.selection_button)
             
@@ -193,6 +194,17 @@ class SceneInventory:
             self.ui_manager.add_component(self.exit_button)
             
             runtime_globals.game_console.log("[SceneInventory] UI setup completed successfully")
+
+            if runtime_globals.food_index >= len(inventory_items):
+                runtime_globals.food_index = 0
+            self.item_list.set_selected_index(runtime_globals.food_index)
+            if inventory_items:
+                # Set initial item description and update pet selector
+                initial_item = inventory_items[runtime_globals.food_index]
+                self.text_panel.set_text(initial_item.game_item.description)
+                self._update_pet_selector_for_item(initial_item)
+            else:
+                self.text_panel.set_text("No items")
             
         except Exception as e:
             runtime_globals.game_console.log(f"[SceneInventory] ERROR in setup_ui: {e}")
@@ -234,7 +246,16 @@ class SceneInventory:
         elif isinstance(event, str):
             if event == "B":
                 runtime_globals.game_sound.play("cancel")
+                # Preserve the currently selected food index before leaving the scene
+                if self.item_list:
+                    runtime_globals.food_index = self.item_list.selected_index
+                else:
+                    runtime_globals.food_index = 0
                 change_scene("game")
+                return
+            elif event == "SELECT":
+                # Handle SELECT key same as SELECTION button
+                self.on_selection_button()
                 return
 
             # Let UI manager handle navigation and other input actions
@@ -245,6 +266,9 @@ class SceneInventory:
         """Called when an item is activated - use immediately for keyboard, just select for mouse"""
         # Update text panel with item description
         self._update_item_description(item)
+        
+        # Update pet selector based on current selection strategy and item requirements
+        self._update_pet_selector_for_item(item)
         
         if use_immediately:
             # For keyboard activation (A button), directly use the item
@@ -263,6 +287,41 @@ class SceneInventory:
         description = item.game_item.description
             
         self.text_panel.set_text(description)
+            
+    def _update_pet_selector_for_item(self, item):
+        """Update pet selector enable/disable flags based on selection strategy and item requirements"""
+        if not self.pet_selector:
+            return
+            
+        all_pets = get_selected_pets()
+        
+        if runtime_globals.strategy_index == 0:
+            # Strategy 0: All pets enabled
+            self.pet_selector.set_pets(all_pets)
+            # Enable all pets (pass indices list)
+            enabled_indices = list(range(len(all_pets)))
+            self.pet_selector.set_enabled_pets(enabled_indices)
+        else:
+            # Strategy 1: Only pets that need this item
+            self.pet_selector.set_pets(all_pets)
+
+            item_status = item.game_item.status
+            enabled_indices = []
+            for i, pet in enumerate(all_pets):
+                pet_needs_item = False
+
+                if item_status == "hunger":
+                    pet_needs_item = pet.hunger < 4
+                elif item_status == "strength":
+                    pet_needs_item = pet.strength < 4
+                else:
+                    # For any other status, check if pet can battle
+                    pet_needs_item = pet.can_battle()
+
+                if pet_needs_item:
+                    enabled_indices.append(i)
+
+            self.pet_selector.set_enabled_pets(enabled_indices)
             
     def _use_item(self, item, index):
         """Internal method to use an item - handles the actual usage logic"""
@@ -296,7 +355,11 @@ class SceneInventory:
                 runtime_globals.game_console.log(f"[SceneInventory] Crafted {component_item.name} from {item.name}")
             else:
                 runtime_globals.game_console.log(f"[SceneInventory] Component item not found for {item.name}")
-            
+            # Save selected index so inventory selection persists when returning to game
+            if self.item_list:
+                runtime_globals.food_index = self.item_list.selected_index
+            else:
+                runtime_globals.food_index = 0
             change_scene("game")
             runtime_globals.game_sound.play("happy2")
             return
@@ -352,6 +415,11 @@ class SceneInventory:
                     remove_from_inventory(item.id)
                     
         runtime_globals.game_console.log(f"[SceneInventory] Fed {len(runtime_globals.game_pet_eating)} pets with {item.game_item.name}")
+        # Preserve selection for next time the inventory is opened
+        if self.item_list:
+            runtime_globals.food_index = self.item_list.selected_index
+        else:
+            runtime_globals.food_index = 0
         change_scene("game")
         
     # Button callback methods
@@ -412,15 +480,33 @@ class SceneInventory:
         runtime_globals.game_sound.play("menu")
         # Cycle through pet selection strategies
         runtime_globals.strategy_index = (runtime_globals.strategy_index + 1) % 2
-        strategy_names = ["All Pets", "Active Pet"]
+        strategy_names = ["All Pets", "Need Only"]
         current_strategy = strategy_names[runtime_globals.strategy_index]
         runtime_globals.game_console.log(f"[SceneInventory] Switched to strategy: {current_strategy}")
         
-        # Update pet selector if needed
-        if self.pet_selector:
-            self.pet_selector.set_pets(get_selected_pets())
+        # Update button icon based on new strategy
+        #strategy_icon = "All" if runtime_globals.strategy_index == 0 else "Need"
+        #if self.selection_button:
+        #    self.selection_button.icon_name = strategy_icon
+        #    self.selection_button.needs_redraw = True
+        
+        self.selection_button.text = f"SEL-{'ALL' if runtime_globals.strategy_index == 0 else 'NEED'}"
+        self.selection_button.needs_redraw = True
+        # Update pet selector based on current item and new strategy
+        if self.item_list and self.item_list.items and self.item_list.selected_index >= 0:
+            current_item = self.item_list.items[self.item_list.selected_index]
+            self._update_pet_selector_for_item(current_item)
+        else:
+            # No item selected, just update with basic strategy
+            if self.pet_selector:
+                self.pet_selector.set_pets(get_selected_pets())
         
     def on_exit_button(self):
         """Handle EXIT button press."""
         runtime_globals.game_sound.play("cancel")
+        # Preserve the currently selected food index before leaving the scene
+        if self.item_list:
+            runtime_globals.food_index = self.item_list.selected_index
+        else:
+            runtime_globals.food_index = 0
         change_scene("game")
