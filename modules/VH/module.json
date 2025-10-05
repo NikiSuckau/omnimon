@@ -53,6 +53,236 @@
   "visible_stats": "Age,Weight,Hunger,Strength,Trophies,Vital Values,Injuries,Effort,Power,DP,Battles,Win Rate,Total Win Rate",
   "unlocks": [
     {
+      "name": "ver1",
+      "type": "egg",
+      "version": 1,
+      "label": "Ver.1",
+      "area": 0,
+      "to": [],
+      "amount": 1,
+      "list": []
+    },
+    {
+      "name": "ver2",
+      "type": "egg",
+      "version": 2,
+      "label": "Ver.2",
+      "area": 0,
+      "to": [],
+      "amount": 1,
+      "list": []
+    },
+    {
+      "name": "ver3",
+      "type": "egg",
+      "version": 3,
+      "label": "Ver.3",
+      "area": 0,
+      "to": [],
+      "amount": 1,
+      "list": []
+    },
+    {
+      "name": "ver4",
+      "type": "egg",
+      "version": 4,
+      "label": "Ver.4",
+      "area": 0,
+      "to": [],
+      "amount": 1,
+      "list": []
+    },
+    {
+      "name": "ver5",
+      "type": "egg",
+      "version": 5,
+      "label": "Ver.5",
+      "area": 0,
+      "to": [],
+      "amount": 1,
+      "list": []
+    },
+    {
+      "name": "ver6",
+      "type": "egg",
+      "version": 6,
+      "label": "Ver.6",
+      "area": 0,
+      "to": [],
+      "amount": 1,
+      "list": []
+    },
+    {
+      "name": "ver7",
+      "type": "egg",
+      "version": 7,
+      "label": "Ver.7",
+      "area": 0,
+      "to": [],
+      "amount": 1,
+      "list": []
+    },
+    {
+      "name": "ver8",
+      "type": "egg",
+      "version": 8,
+      "label": "Ver.8",
+      "area": 0,
+      "to": [],
+      "amount": 1,
+      "list": []
+    },
+    {
+      "name": "ver9",
+      "type": "egg",
+      "version": 9,
+      "label": "Ver.9",
+      "area": 0,
+      "to": [],
+      "amount": 1,
+      "list": []
+    },
+    {
+      "name": "ver10",
+      "type": "egg",
+      "version": 10,
+      "label": "Ver.10",
+      "area": 0,
+      "to": [],
+      "amount": 1,
+      "list": []
+    },
+    {
+      "name": "ver11",
+      "type": "egg",
+      "version": 11,
+      "label": "Ver.11",
+      "area": 0,
+      "to": [],
+      "amount": 1,
+      "list": []
+    },
+    {
+      "name": "ver12",
+      "type": "egg",
+      "version": 12,
+      "label": "Ver.12",
+      "area": 0,
+      "to": [],
+      "amount": 1,
+      "list": []
+    },
+    {
+      "name": "ver13",
+      "type": "egg",
+      "version": 13,
+      "label": "Ver.13",
+      "area": 0,
+      "to": [],
+      "amount": 1,
+      "list": []
+    },
+    {
+      "name": "ver14",
+      "type": "egg",
+      "version": 14,
+      "label": "Ver.14",
+      "area": 0,
+      "to": [],
+      "amount": 1,
+      "list": []
+    },
+    {
+      "name": "ver15",
+      "type": "egg",
+      "version": 15,
+      "label": "Ver.15",
+      "area": 0,
+      "to": [],
+      "amount": 1,
+      "list": []
+    },
+    {
+      "name": "ver16",
+      "type": "egg",
+      "version": 16,
+      "label": "Ver.16",
+      "area": 0,
+      "to": [],
+      "amount": 1,
+      "list": []
+    },
+    {
+      "name": "ver17",
+      "type": "egg",
+      "version": 17,
+      "label": "Ver.17",
+      "area": 0,
+      "to": [],
+      "amount": 1,
+      "list": []
+    },
+    {
+      "name": "ver18",
+      "type": "egg",
+      "version": 18,
+      "label": "Ver.18",
+      "area": 0,
+      "to": [],
+      "amount": 1,
+      "list": []
+    },
+    {
+      "name": "ver19",
+      "type": "egg",
+      "version": 19,
+      "label": "Ver.19",
+      "area": 0,
+      "to": [],
+      "amount": 1,
+      "list": []
+    },
+    {
+      "name": "ver20",
+      "type": "egg",
+      "version": 20,
+      "label": "Ver.20",
+      "area": 0,
+      "to": [],
+      "amount": 1,
+      "list": []
+    },
+    {
+      "name": "ver21",
+      "type": "egg",
+      "version": 21,
+      "label": "Ver.21",
+      "area": 0,
+      "to": [],
+      "amount": 1,
+      "list": []
+    },
+    {
+      "name": "ver22",
+      "type": "egg",
+      "version": 22,
+      "label": "Ver.22",
+      "area": 0,
+      "to": [],
+      "amount": 1,
+      "list": []
+    },
+    {
+      "name": "ver23",
+      "type": "egg",
+      "version": 23,
+      "label": "Ver.23",
+      "area": 0,
+      "to": [],
+      "amount": 1,
+      "list": []
+    },
+    {
       "name": "area_15_6",
       "type": "adventure",
       "version": 6,
@@ -83,5 +313,121 @@
       "list": []
     }
   ],
-  "backgrounds": []
+  "backgrounds": [
+    {
+      "name": "ver1",
+      "day_night": false,
+      "label": "ver1"
+    },
+    {
+      "name": "ver2",
+      "day_night": false,
+      "label": "ver2"
+    },
+    {
+      "name": "ver3",
+      "day_night": false,
+      "label": "ver3"
+    },
+    {
+      "name": "ver4",
+      "day_night": false,
+      "label": "ver4"
+    },
+    {
+      "name": "ver5",
+      "day_night": false,
+      "label": "ver5"
+    },
+    {
+      "name": "ver6",
+      "day_night": false,
+      "label": "ver6"
+    },
+    {
+      "name": "ver7",
+      "day_night": false,
+      "label": "ver7"
+    },
+    {
+      "name": "ver8",
+      "day_night": false,
+      "label": "ver8"
+    },
+    {
+      "name": "ver9",
+      "day_night": false,
+      "label": "ver9"
+    },
+    {
+      "name": "ver10",
+      "day_night": false,
+      "label": "ver10"
+    },
+    {
+      "name": "ver11",
+      "day_night": false,
+      "label": "ver11"
+    },
+    {
+      "name": "ver12",
+      "day_night": false,
+      "label": "ver12"
+    },
+    {
+      "name": "ver13",
+      "day_night": false,
+      "label": "ver13"
+    },
+    {
+      "name": "ver14",
+      "day_night": false,
+      "label": "ver14"
+    },
+    {
+      "name": "ver15",
+      "day_night": false,
+      "label": "ver15"
+    },
+    {
+      "name": "ver16",
+      "day_night": false,
+      "label": "ver16"
+    },
+    {
+      "name": "ver17",
+      "day_night": false,
+      "label": "ver17"
+    },
+    {
+      "name": "ver18",
+      "day_night": false,
+      "label": "ver18"
+    },
+    {
+      "name": "ver19",
+      "day_night": false,
+      "label": "ver19"
+    },
+    {
+      "name": "ver20",
+      "day_night": false,
+      "label": "ver20"
+    },
+    {
+      "name": "ver21",
+      "day_night": false,
+      "label": "ver21"
+    },
+    {
+      "name": "ver22",
+      "day_night": false,
+      "label": "ver22"
+    },
+    {
+      "name": "ver23",
+      "day_night": false,
+      "label": "ver23"
+    }
+  ]
 }
