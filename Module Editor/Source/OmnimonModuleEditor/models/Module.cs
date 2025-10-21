@@ -17,6 +17,9 @@ namespace OmnimonModuleEditor.Models
         [JsonPropertyName("author")]
         public string Author { get; set; }
 
+        [JsonPropertyName("category")]
+        public string Category { get; set; } = "Custom";
+
         [JsonPropertyName("name_format")]
         public string NameFormat { get; set; }
 
@@ -120,6 +123,14 @@ namespace OmnimonModuleEditor.Models
         [JsonPropertyName("battle_base_sick_chance_lose")]
         public int BattleBaseSickChanceLose { get; set; }
 
+        // Add alias property for compatibility
+        [JsonPropertyName("battle_base_sick_chance_loose")]
+        public int BattleBaseSickChanceLoose 
+        { 
+            get { return BattleBaseSickChanceLose; } 
+            set { BattleBaseSickChanceLose = value; } 
+        }
+
         [JsonPropertyName("battle_atribute_advantage")]
         public int BattleAtributeAdvantage { get; set; }
 
@@ -170,6 +181,44 @@ namespace OmnimonModuleEditor.Models
 
         [JsonPropertyName("vital_value_loss")]
         public int VitalValueLoss { get; set; }
+
+        // Item Boost Settings - NEW
+        [JsonPropertyName("hp_max_item_boost")]
+        public int HpMaxItemBoost { get; set; } = 0;
+
+        [JsonPropertyName("atk_max_item_boost")]
+        public int AtkMaxItemBoost { get; set; } = 0;
+
+        [JsonPropertyName("power_max_item_boost")]
+        public int PowerMaxItemBoost { get; set; } = 0;
+
+        // G-Cell Settings - NEW
+        [JsonPropertyName("use_gcells")]
+        public bool UseGCells { get; set; } = false;
+
+        [JsonPropertyName("gcell_random_encounter_win")]
+        public int GCellRandomEncounterWin { get; set; } = 0;
+
+        [JsonPropertyName("gcell_random_encounter_loose")]
+        public int GCellRandomEncounterLoose { get; set; } = 0;
+
+        [JsonPropertyName("gcell_battle_win")]
+        public int GCellBattleWin { get; set; } = 0;
+
+        [JsonPropertyName("gcell_battle_loose")]
+        public int GCellBattleLoose { get; set; } = 0;
+
+        [JsonPropertyName("gcell_training_phase2_failure")]
+        public int GCellTrainingPhase2Failure { get; set; } = 0;
+
+        [JsonPropertyName("gcell_training_phase1_failure")]
+        public int GCellTrainingPhase1Failure { get; set; } = 0;
+
+        [JsonPropertyName("gcell_protein")]
+        public int GCellProtein { get; set; } = 0;
+
+        [JsonPropertyName("gcell_care_mistake")]
+        public int GCellCareMistake { get; set; } = 0;
 
         [JsonPropertyName("unlocks")]
         public List<Unlock> Unlocks { get; set; }

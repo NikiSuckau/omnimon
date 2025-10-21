@@ -170,11 +170,11 @@
     <Compile Include="tabs\BattleTab.cs">
       <SubType>UserControl</SubType>
     </Compile>
-    <Compile Include="tabs\PetTab.cs">
+    <Compile Include="tabs\ModuleTab.cs">
       <SubType>UserControl</SubType>
     </Compile>
-    <Compile Include="tabs\ModuleTab.cs">
-      <SubType>Form</SubType>
+    <Compile Include="tabs\PetTab.cs">
+      <SubType>UserControl</SubType>
     </Compile>
     <Compile Include="tabs\QuestEventTab.cs">
       <SubType>UserControl</SubType>
@@ -200,9 +200,6 @@
       <DependentUpon>Resources.resx</DependentUpon>
       <DesignTime>True</DesignTime>
     </Compile>
-    <EmbeddedResource Include="tabs\ModuleTab.resx">
-      <DependentUpon>ModuleTab.cs</DependentUpon>
-    </EmbeddedResource>
     <EmbeddedResource Include="tabs\PetTab.resx">
       <DependentUpon>PetTab.cs</DependentUpon>
     </EmbeddedResource>

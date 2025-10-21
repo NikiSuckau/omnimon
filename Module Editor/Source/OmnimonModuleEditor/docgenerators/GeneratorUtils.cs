@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using System.Reflection;
 using OmnimonModuleEditor.Utils;
 
@@ -11,12 +12,29 @@ namespace OmnimonModuleEditor.docgenerators
             var assembly = Assembly.GetExecutingAssembly();
             string templatePath = Path.Combine(Path.GetDirectoryName(assembly.Location), "template", fileName);
 
+            System.Diagnostics.Debug.WriteLine($"GeneratorUtils: Looking for template at: {templatePath}");
+
             if (File.Exists(templatePath))
             {
-                return File.ReadAllText(templatePath);
+                try
+                {
+                    var content = File.ReadAllText(templatePath);
+                    System.Diagnostics.Debug.WriteLine($"GeneratorUtils: Successfully loaded {fileName}, size: {content.Length} characters");
+                    return content;
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"GeneratorUtils: Error reading {fileName}: {ex.Message}");
+                }
+            }
+            else
+            {
+                System.Diagnostics.Debug.WriteLine($"GeneratorUtils: Template file {fileName} not found, using basic template");
             }
 
-            return GetBasicTemplate(fileName);
+            var basicTemplate = GetBasicTemplate(fileName);
+            System.Diagnostics.Debug.WriteLine($"GeneratorUtils: Using basic template for {fileName}, size: {basicTemplate.Length} characters");
+            return basicTemplate;
         }
 
         public static string GetBasicTemplate(string fileName)

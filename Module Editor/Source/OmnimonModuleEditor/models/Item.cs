@@ -52,7 +52,11 @@ namespace OmnimonModuleEditor.Models
         xai_roll,
         skip_to_boss,
         exp_multiplier,
-        armor
+        armor,
+        power,
+        vital_values,
+        timer,
+        dp
     }
 
 }

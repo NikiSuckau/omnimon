@@ -91,7 +91,9 @@ namespace OmnimonModuleEditor.docgenerators
             {
                 try
                 {
-                    var sprite = SpriteUtils.LoadSingleSprite(enemyName, modulePath, nameFormat);
+                    // Use new sprite loading system with high definition support
+                    bool moduleHighDefinitionSprites = module?.HighDefinitionSprites ?? false;
+                    var sprite = SpriteUtils.LoadSingleSprite(enemyName, modulePath, nameFormat, moduleHighDefinitionSprites);
                     if (sprite != null)
                     {
                         string safeFileName = GetSafeFileName(enemyName) + ".png";
