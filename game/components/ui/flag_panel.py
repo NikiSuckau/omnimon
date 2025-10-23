@@ -40,7 +40,7 @@ class FlagPanel(UIComponent):
         return sprite
         
                 
-    def set_pet_flags(self, pet):
+    def set_pet_flags(self, pet, additional_flags=None):
         """Update the flags based on pet attributes and status"""
         if not pet:
             self.flags = []
@@ -77,6 +77,12 @@ class FlagPanel(UIComponent):
             
         if getattr(pet, 'traited', False):
             flags.append(('Traited', 'This pet started with traits'))
+            
+        # Add any additional flags provided
+        if additional_flags:
+            for flag in additional_flags:
+                if flag == 'GCellFragment':
+                    flags.append(('GCellFragment', 'This pet was hatched from a G-Cell fragment'))
             
         self.flags = flags
         self.needs_redraw = True
@@ -115,6 +121,12 @@ class FlagPanel(UIComponent):
             flag_y = (self.rect.height - sprite.get_height()) // 2  # Center vertically
             blit_with_cache(surface, sprite, (current_x, flag_y))
             current_x += sprite.get_width() + self.flag_spacing
+        
+        # Draw highlight if focused and has tooltip
+        if self.focused and hasattr(self, 'tooltip_text') and self.tooltip_text:
+            colors = self.manager.get_theme_colors()
+            highlight_color = colors.get("highlight", colors["fg"])  # Safe fallback
+            pygame.draw.rect(surface, highlight_color, surface.get_rect(), 2)
             
         return surface
         

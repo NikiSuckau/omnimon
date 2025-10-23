@@ -2,7 +2,7 @@
   "events": [
     {
       "id": "e7a20208-d384-4500-8217-35093289b5b6",
-      "name": "Hunter 1",
+      "name": "AREA1",
       "global": false,
       "type": 0,
       "chance_percent": 10,
@@ -13,20 +13,9 @@
     },
     {
       "id": "b50bb487-037b-4bd7-9580-dedf0f45656e",
-      "name": "Hunter 2",
+      "name": "AREA2",
       "global": false,
       "type": 0,
-      "chance_percent": 10,
-      "area": 7,
-      "round": 1,
-      "item": "",
-      "item_quantity": 1
-    },
-    {
-      "id": "8df88766-ba8d-47e7-b8b4-0d1f58004226",
-      "name": "Makomo",
-      "global": false,
-      "type": 1,
       "chance_percent": 10,
       "area": 2,
       "round": 1,
@@ -34,12 +23,23 @@
       "item_quantity": 1
     },
     {
-      "id": "3513e108-5d5f-4fd3-9e89-2338ec6f54b7",
-      "name": "Sabito",
+      "id": "8df88766-ba8d-47e7-b8b4-0d1f58004226",
+      "name": "AREA3",
       "global": false,
-      "type": 1,
+      "type": 0,
       "chance_percent": 10,
       "area": 3,
+      "round": 1,
+      "item": "",
+      "item_quantity": 1
+    },
+    {
+      "id": "3513e108-5d5f-4fd3-9e89-2338ec6f54b7",
+      "name": "AREA4",
+      "global": false,
+      "type": 0,
+      "chance_percent": 10,
+      "area": 4,
       "round": 1,
       "item": "",
       "item_quantity": 1

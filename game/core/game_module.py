@@ -45,6 +45,7 @@ class GameModule:
                     self.ruleset = data.get("ruleset", "dmc")
                     self.author = data.get("author", "Unknown")
                     self.version = data.get("version", "1.0")
+                    self.category = data.get("category", "Custom")
                     self.description = data.get("description", "No description available.")
 
                     self.adventure_mode = data.get("adventure_mode", False)
@@ -105,6 +106,18 @@ class GameModule:
 
                     self.vital_value_base = int(data.get("vital_value_base", 50))
                     self.vital_value_loss = int(data.get("vital_value_loss", 50))
+
+                    # G-Cell system configuration
+                    self.use_gcells = bool(data.get("use_gcells", False))
+                    self.gcell_random_encounter_win = int(data.get("gcell_random_encounter_win", 0))
+                    self.gcell_random_encounter_loose = int(data.get("gcell_random_encounter_loose", 0))
+                    self.gcell_battle_win = int(data.get("gcell_battle_win", 0))
+                    self.gcell_battle_loose = int(data.get("gcell_battle_loose", 0))
+                    self.gcell_training_success = int(data.get("gcell_training_success", 0))
+                    self.gcell_training_phase2_failure = int(data.get("gcell_training_phase2_failure", 0))
+                    self.gcell_training_phase1_failure = int(data.get("gcell_training_phase1_failure", 0))
+                    self.gcell_protein = int(data.get("gcell_protein", 0))
+                    self.gcell_care_mistake = int(data.get("gcell_care_mistake", 0))
 
                     if self.battle_global_hit_points > 0:
                         self.battle_damage_limit = 1 + (self.battle_global_hit_points // 2)

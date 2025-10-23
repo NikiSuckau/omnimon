@@ -98,23 +98,43 @@ class ExciteTraining(Training):
                         blit_with_shadow(surface, sprite, (x - (40 * constants.UI_SCALE), y + (10 * constants.UI_SCALE)))
 
     def draw_result(self, surface):
+        # Composition for result screen:
+        # 1) black background
+        surface.fill(self.background_color)
+
         # Use cached result sprites from base class
         bad_sprite = self._sprite_cache['bad']
         good_sprite = self._sprite_cache['good']
         great_sprite = self._sprite_cache['great']
         excellent_sprite = self._sprite_cache['excellent']
 
-        y = constants.SCREEN_HEIGHT // 2 - bad_sprite.get_height() // 2
         strength = self.xaibar.selected_strength
+        
+        # Choose which result sprite to display
         if strength == 0:
-            blit_with_shadow(surface, bad_sprite, (0, y))
+            selected_sprite = bad_sprite
+            cache_key = 'excite_result_bad'
         elif strength == 1:
-            blit_with_shadow(surface, good_sprite, (0, y))
+            selected_sprite = good_sprite
+            cache_key = 'excite_result_good'
         elif strength == 2:
-            blit_with_shadow(surface, great_sprite, (0, y))
-        elif strength == 3:
-            blit_with_shadow(surface, excellent_sprite, (0, y))
-            # Draw trophy notification if maximum score achieved
+            selected_sprite = great_sprite
+            cache_key = 'excite_result_great'
+        else:
+            selected_sprite = excellent_sprite
+            cache_key = 'excite_result_excellent'
+
+        # 2) semi-transparent full-screen proportional overlay when ui scale >= 2
+        self._draw_overlay_background(surface, selected_sprite, cache_key)
+
+        # 3) integer-scaled sprite centered
+        sx, sy = selected_sprite.get_width(), selected_sprite.get_height()
+        center_x = constants.SCREEN_WIDTH // 2 - sx // 2
+        center_y = constants.SCREEN_HEIGHT // 2 - sy // 2
+        blit_with_shadow(surface, selected_sprite, (center_x, center_y))
+
+        # Trophy notification on max
+        if strength == 3:
             self.draw_trophy_notification(surface)
 
     def prepare_attacks(self):
@@ -163,7 +183,7 @@ class ExciteTraining(Training):
             return 3
 
     def handle_event(self, input_action):
-        if self.phase == "charge" and input_action == "A":
+        if self.phase == "charge" and input_action in ["A", "LCLICK"]:
             runtime_globals.game_sound.play("menu")
             self.xaibar.stop()
             runtime_globals.game_console.log(f"XaiBar phase ended strength {self.xaibar.selected_strength}.")

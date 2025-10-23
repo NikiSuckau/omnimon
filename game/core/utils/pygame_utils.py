@@ -41,6 +41,9 @@ def blit_with_shadow(surface, sprite, pos, offset=(2, 2)):
     shadow = get_shadow(sprite)
     surface.blit(shadow, (pos[0] + offset[0], pos[1] + offset[1]))
     surface.blit(sprite, pos)
+    shadow = get_shadow(sprite)
+    surface.blit(shadow, (pos[0] + offset[0], pos[1] + offset[1]))
+    surface.blit(sprite, pos)
 
 def get_font(size=24):
     return pygame.font.Font(constants.FONT_TTF_PATH, size)

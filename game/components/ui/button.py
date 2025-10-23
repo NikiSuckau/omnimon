@@ -4,13 +4,15 @@ Button Component - Clickable button with text and optional icon
 import pygame
 from components.ui.component import UIComponent
 from core import runtime_globals
+from core.utils.pygame_utils import blit_with_shadow
 
 
 class Button(UIComponent):
-    def __init__(self, x, y, width, height, text, callback=None, icon_name=None, icon_prefix="Sleep", cut_corners=None, decorators=None):
+    def __init__(self, x, y, width, height, text, callback=None, icon_name=None, icon_prefix="Sleep", cut_corners=None, decorators=None, enabled=True, shadow_mode="disabled"):
         super().__init__(x, y, width, height)
         self.text = text
         self.focusable = True
+        self.enabled = enabled  # New enabled property
         self.on_click_callback = callback
         self.icon_name = icon_name
         self.icon_prefix = icon_prefix
@@ -24,6 +26,9 @@ class Button(UIComponent):
         self.click_hold_frames = 8  # Number of frames to hold clicked state
         self.click_frame_counter = 0
         self.was_activated = False
+        
+        # Set shadow mode for this button
+        self.shadow_mode = shadow_mode
         
     def on_manager_set(self):
         """Called when UI manager is set - load icon and decorators if specified"""
@@ -41,14 +46,22 @@ class Button(UIComponent):
             runtime_globals.game_console.log(f"[Button] Loading decorators for {self.decorators} at sprite_scale {sprite_scale}")
             for decorator in self.decorators:
                 try:
+                    # Determine prefix based on decorator type
+                    if decorator.startswith("Selection_"):
+                        prefix = ""  # Selection_ decorators don't need additional prefix
+                        decorator_path = decorator
+                    else:
+                        prefix = "Training_"  # Traditional training decorators
+                        decorator_path = decorator
+                    
                     # Load standard decorator sprite
-                    standard_path = f"assets/ui/Training_{decorator}_{sprite_scale}.png"
+                    standard_path = f"assets/ui/{prefix}{decorator_path}_{sprite_scale}.png"
                     standard_sprite = pygame.image.load(standard_path).convert_alpha()
                     
                     # Try to load highlight decorator sprite, fall back to standard if not found
                     highlight_sprite = standard_sprite  # Default fallback
                     try:
-                        highlight_path = f"assets/ui/Training_{decorator}_Highlight_{sprite_scale}.png"
+                        highlight_path = f"assets/ui/{prefix}{decorator_path}_Highlight_{sprite_scale}.png"
                         highlight_sprite = pygame.image.load(highlight_path).convert_alpha()
                         runtime_globals.game_console.log(f"[Button] Loaded highlight decorator: {highlight_path}")
                     except (pygame.error, FileNotFoundError):
@@ -74,6 +87,107 @@ class Button(UIComponent):
         if self.manager:
             self.on_manager_set()  # Reload decorator sprites
             self.needs_redraw = True
+    
+    def get_colors(self):
+        """Get colors for button based on current state, including disabled state"""
+        if not self.enabled:
+            # Disabled state: muted colors
+            if not self.manager:
+                return {"bg": (64, 64, 64), "fg": (128, 128, 128), "line": (96, 96, 96)}
+            
+            theme_colors = self.manager.get_theme_colors()
+            # Use muted versions of the theme colors
+            return {
+                "bg": tuple(c // 3 for c in theme_colors["bg"]),  # Much darker background
+                "fg": tuple(c // 2 for c in theme_colors["fg"]),  # Darker foreground  
+                "line": tuple(c // 2 for c in theme_colors["fg"])  # Darker line
+            }
+        else:
+            # Use normal color logic from base class
+            return super().get_colors()
+    
+    def set_enabled(self, enabled):
+        """Enable or disable the button"""
+        if self.enabled != enabled:
+            self.enabled = enabled
+            self.needs_redraw = True
+    
+    def get_highlight_shape(self):
+        """Return custom highlight shape for buttons with cut corners"""
+        # Check if we need cut corners
+        has_cuts = any(self.cut_corners.values())
+        
+        if not has_cuts:
+            # Use default rectangular highlight
+            return None
+            
+        # Calculate cut corner polygon points for highlight that exactly match the button's border polygon
+        # The button renders its border polygon using these exact calculations, so we need to match them
+        
+        # Get the button's dimensions and border calculations (same as render method)
+        w, h = self.rect.width, self.rect.height
+        border_size = self.manager.get_border_size() if self.manager else 2
+        cut = int(12 * self.manager.ui_scale) if self.manager else 12
+        
+        # The button's border polygon uses border_inset = border_size from the edges
+        # We want the highlight to be slightly outside this border polygon
+        highlight_outset = border_size // 2  # Expand outward by half border size
+        
+        # Calculate the button's actual border polygon points (in button surface coordinates)
+        border_inset = border_size
+        button_border_points = []
+        
+        # Top-left corner (same logic as button's render method)
+        if self.cut_corners.get('tl'):
+            button_border_points.extend([(cut, border_inset), (border_inset, cut)])
+        else:
+            button_border_points.append((border_inset, border_inset))
+        
+        # Bottom-left corner  
+        if self.cut_corners.get('bl'):
+            button_border_points.extend([(border_inset, h - cut - border_inset), (cut, h - border_inset)])
+        else:
+            button_border_points.append((border_inset, h - border_inset))
+        
+        # Bottom-right corner
+        if self.cut_corners.get('br'):
+            button_border_points.extend([(w - cut - border_inset, h - border_inset), (w - border_inset, h - cut - border_inset)])
+        else:
+            button_border_points.append((w - border_inset, h - border_inset))
+        
+        # Top-right corner
+        if self.cut_corners.get('tr'):
+            button_border_points.extend([(w - border_inset, cut), (w - cut - border_inset, border_inset)])
+        else:
+            button_border_points.append((w - border_inset, border_inset))
+        
+        # Convert button surface coordinates to screen coordinates and expand outward
+        screen_points = []
+        for point in button_border_points:
+            # Convert from button surface coords to screen coords
+            screen_x = self.rect.x + point[0]
+            screen_y = self.rect.y + point[1]
+            
+            # Expand outward from button center
+            button_center_x = self.rect.x + w // 2
+            button_center_y = self.rect.y + h // 2
+            
+            # Calculate direction from center to point
+            dx = screen_x - button_center_x
+            dy = screen_y - button_center_y
+            
+            # Normalize and expand
+            if dx != 0 or dy != 0:
+                length = (dx*dx + dy*dy) ** 0.5
+                if length > 0:
+                    dx_norm = dx / length
+                    dy_norm = dy / length
+                    screen_x += dx_norm * highlight_outset
+                    screen_y += dy_norm * highlight_outset
+            
+            screen_points.append((screen_x, screen_y))
+        
+        return screen_points
     
     def update(self):
         """Update button state, including visual click feedback"""
@@ -258,16 +372,25 @@ class Button(UIComponent):
             layout = 'text_only'
 
         # Render according to chosen layout
+        use_shadow = self.manager and self.manager.should_render_shadow(self, "text")
+        icon_use_shadow = self.manager and self.manager.should_render_shadow(self, "icon")
+        
         if layout == 'above':
             # Icon centered above text
             start_y = (self.rect.height - (icon_h + padding + total_height)) // 2
             if self.icon_sprite:
                 icon_x = (self.rect.width - icon_w) // 2
-                surface.blit(self.icon_sprite, (icon_x, start_y))
+                if icon_use_shadow:
+                    blit_with_shadow(surface, self.icon_sprite, (icon_x, start_y))
+                else:
+                    surface.blit(self.icon_sprite, (icon_x, start_y))
             text_y = start_y + icon_h + padding
             for s in line_surfaces:
                 text_x = (self.rect.width - s.get_width()) // 2
-                surface.blit(s, (text_x, text_y))
+                if use_shadow:
+                    blit_with_shadow(surface, s, (text_x, text_y))
+                else:
+                    surface.blit(s, (text_x, text_y))
                 text_y += s.get_height() + line_spacing
 
         elif layout == 'left':
@@ -275,31 +398,44 @@ class Button(UIComponent):
             icon_x = border_size + padding
             icon_y = (self.rect.height - icon_h) // 2
             if self.icon_sprite:
-                surface.blit(self.icon_sprite, (icon_x, icon_y))
+                if icon_use_shadow:
+                    blit_with_shadow(surface, self.icon_sprite, (icon_x, icon_y))
+                else:
+                    surface.blit(self.icon_sprite, (icon_x, icon_y))
 
             text_area_x = icon_x + icon_w + padding
             text_area_width = self.rect.width - text_area_x - border_size
             text_y = (self.rect.height - total_height) // 2
             for s in line_surfaces:
                 text_x = text_area_x + (text_area_width - s.get_width()) // 2
-                surface.blit(s, (text_x, text_y))
+                if use_shadow:
+                    blit_with_shadow(surface, s, (text_x, text_y))
+                else:
+                    surface.blit(s, (text_x, text_y))
                 text_y += s.get_height() + line_spacing
 
         elif layout == 'center':
             # Icon only, center it
             icon_x = (self.rect.width - icon_w) // 2
             icon_y = (self.rect.height - icon_h) // 2
-            surface.blit(self.icon_sprite, (icon_x, icon_y))
+            if icon_use_shadow:
+                blit_with_shadow(surface, self.icon_sprite, (icon_x, icon_y))
+            else:
+                surface.blit(self.icon_sprite, (icon_x, icon_y))
 
         elif layout == 'text_only':
             # Only text, center vertically and horizontally
             y = (self.rect.height - total_height) // 2
             for s in line_surfaces:
                 text_x = (self.rect.width - s.get_width()) // 2
-                surface.blit(s, (text_x, y))
+                if use_shadow:
+                    blit_with_shadow(surface, s, (text_x, y))
+                else:
+                    surface.blit(s, (text_x, y))
                 y += s.get_height() + line_spacing
         
         # Draw decorators on top of everything
+        decorator_use_shadow = self.manager and self.manager.should_render_shadow(self, "decorator")
         for decorator in self.decorators:
             if decorator in self.decorator_sprites:
                 # Use highlight version if button is focused or clicked, standard otherwise
@@ -321,24 +457,38 @@ class Button(UIComponent):
                         new_size = (int(original_size[0] * scale_factor), int(original_size[1] * scale_factor))
                         scaled_sprite = pygame.transform.scale(decorator_sprite, new_size)
                         runtime_globals.game_console.log(f"[Button] Scaled decorator {decorator}: {original_size} -> {new_size}")
-                        surface.blit(scaled_sprite, (0, 0))
+                        if decorator_use_shadow:
+                            blit_with_shadow(surface, scaled_sprite, (0, 0))
+                        else:
+                            surface.blit(scaled_sprite, (0, 0))
                     else:
                         runtime_globals.game_console.log(f"[Button] No scaling needed for decorator {decorator}")
-                        surface.blit(decorator_sprite, (0, 0))
+                        if decorator_use_shadow:
+                            blit_with_shadow(surface, decorator_sprite, (0, 0))
+                        else:
+                            surface.blit(decorator_sprite, (0, 0))
                 else:
                     # Fallback if no manager
-                    surface.blit(decorator_sprite, (0, 0))
+                    if decorator_use_shadow:
+                        blit_with_shadow(surface, decorator_sprite, (0, 0))
+                    else:
+                        surface.blit(decorator_sprite, (0, 0))
         
         return surface
     
     def handle_event(self, action):
         """Handle input events for the button"""
+        if not self.enabled:
+            return False
         if action == "A":
             return self.activate()
         return False
     
     def activate(self):
         """Activate the button (call callback)"""
+        if not self.enabled:
+            return False
+            
         # Set visual feedback state
         self.clicked = True
         self.was_activated = True

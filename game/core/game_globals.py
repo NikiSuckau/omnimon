@@ -20,6 +20,7 @@ background_high_res = False
 pet_list = []
 poop_list = []
 traited = []
+gcell_fragments = []
 unlocks = {}
 showClock = True
 sound = 3
@@ -139,6 +140,7 @@ def save() -> None:
         "pet_list": pet_list,
         "poop_list": poop_list,
         "traited": traited,
+        "gcell_fragments": gcell_fragments,
         "game_background": game_background,
         "battle_area": battle_area,
         "battle_round": battle_round,
@@ -182,7 +184,7 @@ def load() -> None:
     """
     Loads the global game state from the most recent save file, with fallback to previous saves.
     """
-    global pet_list, poop_list, traited, unlocks, battle_area, battle_round, xai, xai_date, background_high_res
+    global pet_list, poop_list, traited, gcell_fragments, unlocks, battle_area, battle_round, xai, xai_date, background_high_res
     global game_background, background_module_name, showClock, sound, inventory, battle_effects
     global wake_time, sleep_time, screen_timeout, sprite_resolution_preference
     global quests, event, event_time
@@ -273,6 +275,7 @@ def load() -> None:
                     poop.patch()  # Ensure all poops have necessary attributes
 
                 traited = data.get("traited", [])
+                gcell_fragments = data.get("gcell_fragments", [])
                 game_background = data.get("game_background", None)
                 battle_area = data.get("battle_area", {})
                 battle_round = data.get("battle_round", {})
@@ -306,6 +309,7 @@ def load() -> None:
     pet_list = []
     poop_list = []
     traited = []
+    gcell_fragments = []
     game_background = None
     battle_area = {}
     battle_round = {}

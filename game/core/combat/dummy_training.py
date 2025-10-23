@@ -8,12 +8,13 @@ import pygame
 from core import runtime_globals
 from core.animation import PetFrame
 from core.combat.training import Training
-from game.components.ui.ui_manager import UIManager
-from game.core.combat import combat_constants
-import game.core.constants as constants
+from components.ui.ui_manager import UIManager
+from core.combat import combat_constants
+import core.constants as constants
 from core.game_module import sprite_load
 from core.utils.pygame_utils import blit_with_shadow
-from game.components.minigames.dummy_charge import DummyCharge
+from components.minigames.dummy_charge import DummyCharge
+from core.utils.scene_utils import change_scene
 
 class DummyTraining(Training):
     """
@@ -114,7 +115,16 @@ class DummyTraining(Training):
 
     def handle_event(self, event):
         """Forward input events to the bar component."""
-        self.minigame.handle_event(event)
+        if self.minigame.handle_event(event):
+            return
+        
+        if isinstance(event, str):
+            if event in ("START", "B") and self.phase in ("charge", "alert"):
+                runtime_globals.game_sound.play("cancel")
+                change_scene("game")
+            elif event in ("A", "B") and self.phase != "result":
+                runtime_globals.game_sound.play("cancel")
+                self.phase = "result"
 
     def draw_attack_move(self, surface):
         if self.attack_phase == 1:
@@ -149,19 +159,32 @@ class DummyTraining(Training):
                 y = constants.SCREEN_HEIGHT // 2 - result_img.get_height() // 2
                 blit_with_shadow(surface, result_img, (x, y))
         else:
+            # Composition for result screen:
+            # 1) black background
             surface.fill((0, 0, 0))
-            sx, sy = bad_sprite.get_width(), bad_sprite.get_height()
+
+            # Choose which result sprite to display
+            if self.strength < 10:
+                selected_sprite = bad_sprite
+                cache_key = 'result_bad'
+            elif self.strength < 14:
+                selected_sprite = great_sprite
+                cache_key = 'result_great'
+            else:
+                selected_sprite = excellent_sprite
+                cache_key = 'result_excellent'
+
+            # 2) semi-transparent full-screen proportional overlay when ui scale >= 2
+            self._draw_overlay_background(surface, selected_sprite, cache_key)
+
+            # 3) integer-scaled sprite centered
+            sx, sy = selected_sprite.get_width(), selected_sprite.get_height()
             center_x = constants.SCREEN_WIDTH // 2 - sx // 2
             center_y = constants.SCREEN_HEIGHT // 2 - sy // 2
+            blit_with_shadow(surface, selected_sprite, (center_x, center_y))
 
-            y = constants.SCREEN_HEIGHT // 2 - bad_sprite.get_height() // 2
-            if self.strength < 10:
-                blit_with_shadow(surface, bad_sprite, (center_x, center_y))
-            elif self.strength < 14:
-                blit_with_shadow(surface, great_sprite, (center_x, center_y))
-            elif self.strength >= 14:
-                blit_with_shadow(surface, excellent_sprite, (center_x, center_y))
-                # Draw trophy notification if maximum score achieved
+            # Trophy notification on max
+            if self.strength >= 14:
                 self.draw_trophy_notification(surface)
 
     def prepare_attacks(self):

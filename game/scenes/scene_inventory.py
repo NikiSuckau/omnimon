@@ -143,7 +143,7 @@ class SceneInventory:
             
             self.pet_selector = PetSelector(selector_x, selector_y, selector_width, selector_height)
             # Set pets and make it static for now
-            self.pet_selector.set_pets(get_selected_pets())
+            self.pet_selector.set_pets(game_globals.pet_list)
             self.pet_selector.set_interactive(False)  # Static display for now
             self.ui_manager.add_component(self.pet_selector)
             
@@ -212,10 +212,12 @@ class SceneInventory:
             runtime_globals.game_console.log(f"[SceneInventory] Traceback: {traceback.format_exc()}")
             raise
         
-        # Set mouse mode and focus on the item list initially
-        self.ui_manager.set_mouse_mode()
+        # Focus on the item list initially and ensure keyboard navigation is ready
         if self.item_list:
             self.ui_manager.set_focused_component(self.item_list)
+            # Enable keyboard navigation mode immediately for responsiveness
+            self.ui_manager.keyboard_navigation_mode = True
+            self.ui_manager.last_keyboard_action_time = pygame.time.get_ticks()
 
                 
     def update(self) -> None:
@@ -264,6 +266,11 @@ class SceneInventory:
 
     def on_item_activated(self, item, index, use_immediately=False):
         """Called when an item is activated - use immediately for keyboard, just select for mouse"""
+        # Validate that we have a valid item and index
+        if not item or index < 0 or not self.item_list or index >= len(self.item_list.items):
+            runtime_globals.game_console.log(f"[SceneInventory] Invalid item activation: item={item}, index={index}")
+            return
+        
         # Update text panel with item description
         self._update_item_description(item)
         
@@ -271,11 +278,11 @@ class SceneInventory:
         self._update_pet_selector_for_item(item)
         
         if use_immediately:
-            # For keyboard activation (A button), directly use the item
+            # For keyboard activation (A button) or second click on same item, directly use the item
             runtime_globals.game_console.log(f"[SceneInventory] Using item immediately: {item.game_item.name}")
             self._use_item(item, index)
         else:
-            # For mouse clicks, just select the item (no focus change)
+            # For first mouse click on new item, just select the item (no focus change)
             runtime_globals.game_console.log(f"[SceneInventory] Item '{item.game_item.name}' selected")
             
     def _update_item_description(self, item):
@@ -293,23 +300,34 @@ class SceneInventory:
         if not self.pet_selector:
             return
             
-        all_pets = get_selected_pets()
+        # Pet selector should always show ALL pets from game_globals.pet_list
+        all_pets = game_globals.pet_list
+        selected_pets = get_selected_pets()  # Pets that can interact with items
+        
+        # Only set pets if the list has changed (to avoid unnecessary redraws)
+        if not hasattr(self, '_last_pet_count') or self._last_pet_count != len(all_pets):
+            self.pet_selector.set_pets(all_pets)
+            self._last_pet_count = len(all_pets)
+        
+        # Create a mapping of selected pets for quick lookup
+        selected_pet_set = set(selected_pets)
         
         if runtime_globals.strategy_index == 0:
-            # Strategy 0: All pets enabled
-            self.pet_selector.set_pets(all_pets)
-            # Enable all pets (pass indices list)
-            enabled_indices = list(range(len(all_pets)))
+            # Strategy 0: Enable all pets that are in selected_pets list
+            enabled_indices = []
+            for i, pet in enumerate(all_pets):
+                if pet in selected_pet_set:
+                    enabled_indices.append(i)
             self.pet_selector.set_enabled_pets(enabled_indices)
         else:
-            # Strategy 1: Only pets that need this item
-            self.pet_selector.set_pets(all_pets)
-
+            # Strategy 1: Only pets that need this item AND are in selected_pets
             item_status = item.game_item.status
             enabled_indices = []
             for i, pet in enumerate(all_pets):
+                if pet not in selected_pet_set:
+                    continue  # Skip pets not in selected_pets
+                    
                 pet_needs_item = False
-
                 if item_status == "hunger":
                     pet_needs_item = pet.hunger < 4
                 elif item_status == "strength":
@@ -325,8 +343,7 @@ class SceneInventory:
             
     def _use_item(self, item, index):
         """Internal method to use an item - handles the actual usage logic"""
-        runtime_globals.game_sound.play("menu")
-        
+       
         # Get targets (selected pets)
         targets = get_selected_pets()
         if not targets:
@@ -334,6 +351,7 @@ class SceneInventory:
             runtime_globals.game_console.log("[SceneInventory] No pets selected for feeding")
             return
             
+        runtime_globals.game_sound.play("menu")
         # Handle different item effects
         if item.game_item.effect == "component":
             # Component crafting
@@ -463,15 +481,29 @@ class SceneInventory:
         # Remove 1 from inventory
         if hasattr(item, 'id'):
             remove_from_inventory(item.id, 1)
-            runtime_globals.game_console.log(f"[SceneInventory] Discarded 1x {item.name}")
+            runtime_globals.game_console.log(f"[SceneInventory] Discarded 1x {item.game_item.name}")
             
             # Refresh the inventory items list
             inventory_items = self.load_inventory_items()
             self.item_list.set_items(inventory_items)
             
-            # If no items left, focus back to item list
-            if not inventory_items:
-                self.ui_manager.set_focused_component(self.item_list)
+            # Ensure selection index is valid after item removal
+            if inventory_items:
+                # Keep the same index if possible, otherwise clamp to valid range
+                if selected_index >= len(inventory_items):
+                    selected_index = len(inventory_items) - 1
+                self.item_list.set_selected_index(selected_index)
+                
+                # Update description and pet selector for new selection
+                current_item = inventory_items[selected_index]
+                self._update_item_description(current_item)
+                self._update_pet_selector_for_item(current_item)
+            else:
+                # No items left
+                self.text_panel.set_text("No items")
+                
+            # Ensure focus returns to item list for continued navigation
+            self.ui_manager.set_focused_component(self.item_list)
         else:
             runtime_globals.game_console.log(f"[SceneInventory] Could not discard item - no ID found")
         
@@ -497,9 +529,21 @@ class SceneInventory:
             current_item = self.item_list.items[self.item_list.selected_index]
             self._update_pet_selector_for_item(current_item)
         else:
-            # No item selected, just update with basic strategy
+            # No item selected, enable pets based on strategy and selected_pets
             if self.pet_selector:
-                self.pet_selector.set_pets(get_selected_pets())
+                all_pets = game_globals.pet_list
+                selected_pets = get_selected_pets()
+                selected_pet_set = set(selected_pets)
+                
+                if runtime_globals.strategy_index == 0:
+                    # Enable all pets that are in selected_pets
+                    enabled_indices = []
+                    for i, pet in enumerate(all_pets):
+                        if pet in selected_pet_set:
+                            enabled_indices.append(i)
+                else:
+                    enabled_indices = []  # No item selected, so no pets need anything
+                self.pet_selector.set_enabled_pets(enabled_indices)
         
     def on_exit_button(self):
         """Handle EXIT button press."""

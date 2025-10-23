@@ -22,6 +22,46 @@ RED_DARK = (77, 39, 46)
 RED = (204, 82, 82) 
 RED_LIGHT = (255, 217, 217)
 
+# New color schemes for different scenes
+GRAY_DARK = (64, 64, 64)
+GRAY = (162, 173, 193)
+GRAY_LIGHT = (209, 223, 248)
+
+YELLOW_BRIGHT_DARK = (153, 138, 46)
+YELLOW_BRIGHT = (255, 235, 59)
+YELLOW_BRIGHT_LIGHT = (255, 253, 217)
+
+RED_DARK_VARIANT_DARK = (102, 31, 31)
+RED_DARK_VARIANT = (153, 46, 46)
+RED_DARK_VARIANT_LIGHT = (255, 204, 204)
+
+CYAN_DARK = (46, 77, 77)
+CYAN = (82, 204, 204)
+CYAN_LIGHT = (217, 255, 255)
+
+LIME_DARK = (69, 77, 46)
+LIME = (139, 195, 74)
+LIME_LIGHT = (230, 255, 217)
+
+# ===============================
+# Scene Color Theme Mapping
+# ===============================
+# Suggested color themes for each scene to provide visual distinction:
+#
+# Welcome screen: GRAY (neutral, welcoming)
+# SceneBattle: RED (intense, combat)
+# SceneBattlePvP: RED_DARK_VARIANT (darker red for PvP intensity)
+# SceneDigidex: CYAN (cool, informational like a digital database)
+# SceneEggSelection: LIME (fresh, nature-like for egg selection)
+# SceneFreezer: CYAN (cold, icy blue theme)
+# SceneInventory: BLUE (current - organized, structured)
+# SceneLibrary: YELLOW_BRIGHT (bright, knowledge-focused yellow)
+# SceneSettings: GRAY (neutral, functional)
+# SceneSleep: BLUE/YELLOW (current - alternating themes)
+# SceneStatus: PURPLE (current - main character theme)
+# SceneTraining: GREEN (current - growth, development)
+# Main game scene: No theme (uses icon sprites only)
+
 # Base sizes for 240x240 resolution (1x scale)
 BASE_RESOLUTION = 240
 TITLE_FONT = "assets/DigimonBasic.ttf"

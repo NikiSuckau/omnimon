@@ -212,24 +212,58 @@ class BaseList(UIComponent):
         self.target_scroll_offset = max(0, min(self.target_scroll_offset, max_scroll_offset))
         
     def select_previous(self):
-        """Select the previous item"""
+        """Select the previous item (immediately sets both navigation and selection)"""
         if self.items and self.selected_index > 0:
+            old_active = self.active_index
             self.selected_index -= 1
+            self.active_index = self.selected_index  # Immediately set selection for keyboard navigation
+            
+            # Notify UI manager about keyboard navigation
+            if self.manager:
+                self.manager.keyboard_navigation_mode = True
+                self.manager.last_keyboard_action_time = pygame.time.get_ticks()
             self.ensure_visible(self.selected_index)
             self.prev_arrow_pressed = True
             self.arrow_press_time = pygame.time.get_ticks()
             self.needs_redraw = True
-            self._on_selection_changed()
+            
+            # Notify subclasses of selection change
+            if old_active != self.active_index:
+                self._on_selection_changed(old_active, self.active_index)
             
     def select_next(self):
-        """Select the next item"""
+        """Select the next item (immediately sets both navigation and selection)"""
         if self.items and self.selected_index < len(self.items) - 1:
+            old_active = self.active_index
             self.selected_index += 1
+            self.active_index = self.selected_index  # Immediately set selection for keyboard navigation
+            
+            # Notify UI manager about keyboard navigation
+            if self.manager:
+                self.manager.keyboard_navigation_mode = True
+                self.manager.last_keyboard_action_time = pygame.time.get_ticks()
             self.ensure_visible(self.selected_index)
             self.next_arrow_pressed = True
             self.arrow_press_time = pygame.time.get_ticks()
             self.needs_redraw = True
-            self._on_selection_changed()
+            
+            # Notify subclasses of selection change
+            if old_active != self.active_index:
+                self._on_selection_changed(old_active, self.active_index)
+            
+    def activate_current_item(self):
+        """Activate the currently focused item (sets selection and calls activation callback)"""
+        if 0 <= self.selected_index < len(self.items):
+            old_active = self.active_index
+            self.active_index = self.selected_index  # Set selection state
+            
+            # Notify subclasses of selection change
+            if old_active != self.active_index:
+                self._on_selection_changed(old_active, self.active_index)
+                
+            # Notify subclasses of activation
+            self._on_item_activated(self.selected_index, "keyboard")
+            self.needs_redraw = True
             
     def scroll_by_items(self, count):
         """Scroll by a specific number of items (positive = forward, negative = backward)"""
@@ -248,7 +282,7 @@ class BaseList(UIComponent):
             self.arrow_press_time = pygame.time.get_ticks()
             self.needs_redraw = True
             
-    def _on_selection_changed(self):
+    def _on_selection_changed(self, old_index, new_index):
         """Called when selection changes - override in subclasses"""
         pass
         
@@ -365,7 +399,7 @@ class BaseList(UIComponent):
                 return True
                 
         if action in ["A", "ENTER"]:
-            # Activate current item via keyboard
+            # For keyboard, just activate the already-selected item
             current_time = pygame.time.get_ticks()
             
             # Prevent activation if it's immediately after a mouse click (within 500ms)
@@ -373,8 +407,8 @@ class BaseList(UIComponent):
                 return False
                 
             if 0 <= self.selected_index < len(self.items):
-                self.active_index = self.selected_index
-                self._on_item_activated(self.selected_index, interaction_type="keyboard")
+                # Just notify activation since selection already happened in select_previous/next
+                self._on_item_activated(self.selected_index, "keyboard")
                 runtime_globals.game_sound.play("menu")
                 return True
                 
@@ -452,9 +486,17 @@ class BaseList(UIComponent):
             item_index = int(item_pos // (self.item_size + self.item_spacing))
             
             if 0 <= item_index < len(self.items):
-                self.selected_index = item_index
+                # Mouse click sets SELECTION (active_index) and NAVIGATION (selected_index)
+                old_active = self.active_index
+                self.active_index = item_index  # Set selection state (persistent)
+                self.selected_index = item_index  # Set navigation state (for keyboard)
                 self.last_mouse_click_time = pygame.time.get_ticks()  # Record mouse click time
-                # For mouse clicks, just select the item but don't activate it
+                
+                # Notify subclasses of selection change
+                if old_active != self.active_index:
+                    self._on_selection_changed(old_active, self.active_index)
+                    
+                # Notify subclasses of click
                 self._on_item_clicked(item_index)
                 runtime_globals.game_sound.play("menu")
                 self.needs_redraw = True

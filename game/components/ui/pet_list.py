@@ -158,6 +158,11 @@ class PetList(UIComponent):
         self.highlight_start_rect = None
         self.highlight_target_rect = None
         self.highlight_current_rect = None
+        
+        # Mouse hover state tracking (separate from keyboard selection)
+        self.hover_index = -1  # Which element is being hovered (-1 = none, len(pets) = exit button)
+        self.hover_left_arrow = False   # Left arrow hover state
+        self.hover_right_arrow = False  # Right arrow hover state
         self.last_selected_index = 0  # Track previous selection for animation
         
         # Load pet sprites
@@ -448,16 +453,40 @@ class PetList(UIComponent):
         self.handle_mouse_hover()
     
     def handle_mouse_hover(self):
-        """Handle mouse hover for selection changes, including arrow button highlight animation"""
-        if not runtime_globals.game_input.is_mouse_enabled() or not self.focused:
+        """Handle mouse hover for highlighting (separate from selection)"""
+        if not runtime_globals.game_input.is_mouse_enabled():
+            old_hover_index = getattr(self, 'hover_index', -1)
+            old_hover_left = getattr(self, 'hover_left_arrow', False)
+            old_hover_right = getattr(self, 'hover_right_arrow', False)
+            self.hover_index = -1
+            self.hover_left_arrow = False
+            self.hover_right_arrow = False
+            if old_hover_left or old_hover_right or old_hover_index != -1:
+                self.needs_redraw = True
             return
         
         # Disable mouse hover during drag to prevent focus changes
         if hasattr(self, '_is_dragging') and self._is_dragging:
+            old_hover_index = getattr(self, 'hover_index', -1)
+            old_hover_left = getattr(self, 'hover_left_arrow', False)
+            old_hover_right = getattr(self, 'hover_right_arrow', False)
+            self.hover_index = -1
+            self.hover_left_arrow = False
+            self.hover_right_arrow = False
+            if old_hover_left or old_hover_right or old_hover_index != -1:
+                self.needs_redraw = True
             return
         
         # Also check if InputManager is currently dragging
         if hasattr(runtime_globals.game_input, 'is_dragging') and runtime_globals.game_input.is_dragging():
+            old_hover_index = getattr(self, 'hover_index', -1)
+            old_hover_left = getattr(self, 'hover_left_arrow', False)
+            old_hover_right = getattr(self, 'hover_right_arrow', False)
+            self.hover_index = -1
+            self.hover_left_arrow = False
+            self.hover_right_arrow = False
+            if old_hover_left or old_hover_right or old_hover_index != -1:
+                self.needs_redraw = True
             return
 
         mouse_pos = runtime_globals.game_input.get_mouse_position()
@@ -466,40 +495,67 @@ class PetList(UIComponent):
         relative_x = mouse_pos[0] - self.rect.x
         relative_y = mouse_pos[1] - self.rect.y
 
+        # Store old states before any changes
+        old_hover_index = getattr(self, 'hover_index', -1)
+        old_hover_left = getattr(self, 'hover_left_arrow', False)
+        old_hover_right = getattr(self, 'hover_right_arrow', False)
+
         # Check if mouse is within component bounds
         if not (0 <= relative_x < self.rect.width and 0 <= relative_y < self.rect.height):
+            self.hover_index = -1
+            self.hover_left_arrow = False
+            self.hover_right_arrow = False
+            if old_hover_left or old_hover_right or old_hover_index != -1:
+                self.needs_redraw = True
             return
 
         # Get scaled dimensions for proper hit detection
         scaled_arrow_width = self.manager.scale_value(self.base_arrow_width)
         scaled_exit_width = self.manager.scale_value(self.base_exit_width)
         scaled_margin = self.manager.scale_value(self.base_margin)
-
-        # Check left arrow hover (always show if there are pets to the left)
-        if relative_x < scaled_arrow_width and self.selected_index > 0:
-            return  # Don't change focus during mouse hover, let keyboard control it
-
-        # Check right arrow hover (always show if there are pets to the right or EXIT)
-        if relative_x >= self.rect.width - scaled_arrow_width and self.selected_index < len(self.pets):
-            return  # Don't change focus during mouse hover, let keyboard control it
-
-        # Check if hovering over pet slots
-        pets_area_start = scaled_arrow_width + scaled_margin
-        scaled_item_width = self.manager.scale_value(self.item_width)
         
-        for i in range(self.visible_pets):
-            pet_index = self.first_visible_pet + i
-            if pet_index < len(self.pets):
-                x_pos = pets_area_start + i * scaled_item_width - self.current_scroll_offset
-                if x_pos <= relative_x < x_pos + scaled_item_width:
-                    # Only change selection if mouse click, not hover
-                    return
+        # Reset hover states
+        self.hover_index = -1
+        self.hover_left_arrow = False
+        self.hover_right_arrow = False
 
-        # Check if hovering over EXIT button  
-        exit_area_x = self.rect.width - scaled_arrow_width - scaled_exit_width - scaled_margin
-        if exit_area_x <= relative_x < exit_area_x + scaled_exit_width:
-            # Only change selection if mouse click, not hover
-            return
+        # Check left arrow hover
+        if relative_x < scaled_arrow_width:
+            self.hover_left_arrow = True
+        # Check right arrow hover  
+        elif relative_x >= self.rect.width - scaled_arrow_width:
+            self.hover_right_arrow = True
+        else:
+            # Check if hovering over pet slots or EXIT button
+            pets_area_start = scaled_arrow_width + scaled_margin
+            pets_area_end = self.rect.width - scaled_arrow_width - scaled_exit_width - scaled_margin
+            scaled_item_width = self.manager.scale_value(self.item_width)
+            
+            # Only check pet slots if we're in the pets area
+            if pets_area_start <= relative_x < pets_area_end:
+                for i in range(self.visible_pets):
+                    pet_index = self.first_visible_pet + i
+                    if pet_index < len(self.pets):
+                        x_pos = pets_area_start + i * scaled_item_width - self.current_scroll_offset
+                        if x_pos <= relative_x < x_pos + scaled_item_width:
+                            self.hover_index = pet_index
+                            break
+
+            # Check if hovering over EXIT button (separate check)
+            if self.hover_index == -1:
+                exit_area_x = self.rect.width - scaled_arrow_width - scaled_exit_width - scaled_margin
+                if exit_area_x <= relative_x < exit_area_x + scaled_exit_width:
+                    self.hover_index = len(self.pets)  # Exit button index
+        
+        # Trigger redraw if any hover state changed
+        if (old_hover_index != self.hover_index or 
+            old_hover_left != self.hover_left_arrow or 
+            old_hover_right != self.hover_right_arrow):
+            self.needs_redraw = True
+            # If arrow or EXIT hover state changed, rebuild static layer since they are drawn there
+            exit_hover_changed = ((old_hover_index == len(self.pets)) != (self.hover_index == len(self.pets)))
+            if exit_hover_changed or (old_hover_left != self.hover_left_arrow) or (old_hover_right != self.hover_right_arrow):
+                self.static_layer = None
 
     def render_static_layer(self):
         """Render the static layer with arrows, exit button, and non-selected pets"""
@@ -537,9 +593,8 @@ class PetList(UIComponent):
                 x_pos = scaled_pets_start_x + i * scaled_item_width - self.current_scroll_offset
                 is_focused = (pet_index == self.selected_index)
                 is_active = (pet_index == self.active_index)
-                # Only draw in static layer if it's not focused AND not active (to avoid double rendering)
-                if not is_focused and not is_active:
-                    self.draw_pet_slot(surface, x_pos, pet_index, scaled_item_width, is_focused=False)
+                # Draw all pets in static layer - dynamic layer will overdraw focused/active ones with special effects
+                self.draw_pet_slot(surface, x_pos, pet_index, scaled_item_width, is_focused=False)
                 
         return surface
         
@@ -552,30 +607,25 @@ class PetList(UIComponent):
         # Use the rect as-is since it's already relative to the surface
         relative_rect = rect
         
-        # Consistent color logic with pet slots
-        is_focused = False  # Arrows don't get focus directly
-        is_active = False   # Arrows are never "active"
+        # Check if this arrow is being hovered
+        is_hovered = ((direction == "left" and self.hover_left_arrow) or 
+                     (direction == "right" and self.hover_right_arrow))
         
+        # Arrows are never selected (selection state), only have focus highlighting
+        bg_color = colors["bg"]
+        fg_color = colors["fg"]
+        line_color = colors.get("black", colors["fg"])  # Use black for borders, fallback to fg
+        
+        # Focus state: highlight border when hovered
+        if is_hovered:
+            line_color = colors["highlight"]
+            fg_color = colors["highlight"]
+        
+        # Pressed state: brief visual feedback
         if pressed and self.clicked:
-            # Clicked state
             bg_color = colors["highlight"]
             fg_color = colors["bg"]
-            line_color = fg_color
-        elif is_active:
-            # Selected state - use PURPLE background
-            bg_color = PURPLE
-            fg_color = colors["bg"]
             line_color = colors["bg"]
-        elif is_focused:
-            # Focused/Mouse Over state
-            bg_color = colors["bg"]
-            fg_color = colors["highlight"]
-            line_color = colors["highlight"]
-        else:
-            # Unselected/Unfocused state
-            bg_color = colors["bg"]
-            fg_color = colors["fg"]
-            line_color = colors["black"]
         
         # Draw background using relative coordinates
         pygame.draw.rect(surface, bg_color, relative_rect, border_radius=self.manager.get_border_size())
@@ -607,33 +657,29 @@ class PetList(UIComponent):
         from components.ui.ui_constants import PURPLE  # Import here to avoid circular imports
         
         colors = self.manager.get_theme_colors()
-        is_focused = self.selected_index == len(self.pets)
-        is_active = False  # EXIT button is never "active" (selected for stats)
+        is_selected = self.selected_index == len(self.pets)  # EXIT is selected for navigation
+        is_hovered = self.hover_index == len(self.pets)  # Check hover state
         
         # Use the rect as-is since it's already relative to the surface
         relative_rect = rect
         
-        # Consistent color logic with pet slots
-        if is_focused and self.clicked:
-            # Clicked state
-            bg_color = colors["highlight"]
-            fg_color = colors["fg"]
-            line_color = fg_color
-        elif is_focused:
-            # Focused/Mouse Over state
-            bg_color = colors["bg"]
-            fg_color = colors["highlight"]
+        # EXIT button can be selected (for keyboard navigation) but has no persistent selection state
+        # Color logic: normal bg/fg, with focus highlighting
+        bg_color = colors["bg"]
+        fg_color = colors["fg"]
+        line_color = colors["fg"]
+        
+        # Focus state: highlight border and text when hovered or keyboard focused
+        if is_hovered or (is_selected and self.focused):
             line_color = colors["highlight"]
-        else:
-            # Unselected/Unfocused state
-            bg_color = colors["bg"]
-            fg_color = colors["fg"]
-            line_color = colors["black"]
+            fg_color = colors["highlight"]
+        
+        # Pressed state: brief visual feedback
+        if is_selected and self.clicked:
+            bg_color = colors["highlight"]
+            fg_color = colors["bg"]
+            line_color = colors["bg"]
 
-        if is_active:
-            fg_color = colors["fg"]
-            bg_color = colors["fg"]
-            
         # Draw using relative coordinates
         pygame.draw.rect(surface, bg_color, relative_rect, border_radius=self.manager.get_border_size())
         pygame.draw.rect(surface, line_color, relative_rect, width=self.manager.get_border_size(),
@@ -651,24 +697,30 @@ class PetList(UIComponent):
         colors = self.manager.get_theme_colors()
         slot_rect = pygame.Rect(x_pos, 0, slot_width, self.rect.height)
         
-        is_active = (pet_index == self.active_index)  # Currently selected for stats
+        is_selected = (pet_index == self.active_index)  # Currently selected for stats (persistent selection)
+        is_hovered = (pet_index == self.hover_index)  # Mouse hover state
+        # Focus: keyboard focus OR mouse hover
+        is_focus_highlighted = is_focused or is_hovered
         
-        if is_focused and self.clicked:
-            # Clicked state
-            bg_color = colors["highlight"]
+        # Color logic according to specifications:
+        # Selection: swap bg/fg colors (persistent state)
+        # Focus: highlight border and text (temporary highlight)
+        
+        if is_selected:
+            # Selected state: swap bg and fg colors
+            bg_color = colors["fg"]
             fg_color = colors["bg"]
-            line_color = fg_color
+            line_color = colors["black"]
         else:
-            # Unselected/Unfocused state
+            # Unselected state: normal bg and fg colors
             bg_color = colors["bg"]
             fg_color = colors["fg"]
             line_color = colors["black"]
-
-        if is_active:
-            fg_color = colors["fg"]
-            bg_color = colors["fg"]
-        #if is_focused:
-            #line_color = colors["highlight"]
+            
+        # Focus state: override border and text color with highlight
+        if is_focus_highlighted:
+            line_color = colors["highlight"]
+            # Don't change text color to highlight for pets, keep it readable
             
         pygame.draw.rect(surface, bg_color, slot_rect, border_radius=self.manager.get_border_size())
         pygame.draw.rect(surface, line_color, slot_rect, width=self.manager.get_border_size(),
@@ -746,7 +798,9 @@ class PetList(UIComponent):
         # Draw selected/focused pet with animation on dynamic layer
         if self.selected_index < len(self.pets):
             x_pos = scaled_pets_start_x + (self.selected_index - self.first_visible_pet) * scaled_item_width - self.current_scroll_offset
-            self.draw_pet_slot(surface, x_pos, self.selected_index, scaled_item_width, is_focused=True)
+            # Only show keyboard focus highlight when the component actually has focus
+            is_keyboard_focused = self.focused
+            self.draw_pet_slot(surface, x_pos, self.selected_index, scaled_item_width, is_focused=is_keyboard_focused)
         
         # Also draw active pet if it's different from selected (to ensure animation)
         if self.active_index != self.selected_index and self.active_index < len(self.pets):
@@ -754,6 +808,13 @@ class PetList(UIComponent):
             if self.first_visible_pet <= self.active_index < self.first_visible_pet + self.visible_pets:
                 x_pos = scaled_pets_start_x + (self.active_index - self.first_visible_pet) * scaled_item_width - self.current_scroll_offset
                 self.draw_pet_slot(surface, x_pos, self.active_index, scaled_item_width, is_focused=False)
+
+        # Draw hover highlight for pet under mouse (independent of keyboard focus)
+        if 0 <= self.hover_index < len(self.pets):
+            if self.first_visible_pet <= self.hover_index < self.first_visible_pet + self.visible_pets:
+                x_pos = scaled_pets_start_x + (self.hover_index - self.first_visible_pet) * scaled_item_width - self.current_scroll_offset
+                # Force focus highlight for hovered pet
+                self.draw_pet_slot(surface, x_pos, self.hover_index, scaled_item_width, is_focused=True)
         
         if self.selected_index == len(self.pets):
             # EXIT button is selected, redraw it with selection/click state
@@ -791,7 +852,7 @@ class PetList(UIComponent):
             self.select_previous()
             # Play sound only once for navigation
             runtime_globals.game_sound.play("menu")
-            # Activate the newly selected pet if it's a pet (not EXIT)
+            # For keyboard navigation, immediately activate the newly selected pet (original behavior)
             if self.selected_index < len(self.pets):
                 self.set_active_pet(self.selected_index)
                 if self.on_item_click:
@@ -801,7 +862,7 @@ class PetList(UIComponent):
         elif event == "RIGHT":
             self.select_next()
             runtime_globals.game_sound.play("menu")
-            # Activate the newly selected pet if it's a pet (not EXIT)
+            # For keyboard navigation, immediately activate the newly selected pet (original behavior)
             if self.selected_index < len(self.pets):
                 self.set_active_pet(self.selected_index)
                 if self.on_item_click:
@@ -818,7 +879,16 @@ class PetList(UIComponent):
             self.clicked = True
             self.click_time = pygame.time.get_ticks()
             runtime_globals.game_sound.play("menu")
-            self.handle_action_button()
+            
+            # For keyboard activation (A/Enter), set the selection to the focused item
+            if self.selected_index < len(self.pets):
+                self.set_active_pet(self.selected_index)
+                if self.on_item_click:
+                    self.on_item_click(self.pets[self.selected_index])
+            else:
+                # Handle EXIT button activation
+                self.handle_action_button()
+                
             self.needs_redraw = True
             return True
         elif event == "B" or event == "RCLICK":
@@ -853,7 +923,7 @@ class PetList(UIComponent):
         scaled_exit_width = self.manager.scale_value(self.base_exit_width)
         scaled_margin = self.manager.scale_value(self.base_margin)
         
-        # Check arrow clicks - behave like LEFT/RIGHT keys
+        # Check arrow clicks - behave like LEFT/RIGHT keys but also set selection for mouse
         if relative_x < scaled_arrow_width:  # Left arrow
             self.select_previous()
             self.left_arrow_pressed = True
@@ -861,7 +931,7 @@ class PetList(UIComponent):
             self.static_layer = None
             self.needs_redraw = True
             runtime_globals.game_sound.play("menu")
-            # Activate the newly selected pet if it's a pet (not EXIT)
+            # For mouse clicks on arrows, also set selection to the newly focused item
             if self.selected_index < len(self.pets):
                 self.set_active_pet(self.selected_index)
                 if self.on_item_click:
@@ -875,7 +945,7 @@ class PetList(UIComponent):
             self.static_layer = None
             self.needs_redraw = True
             runtime_globals.game_sound.play("menu")
-            # Activate the newly selected pet if it's a pet (not EXIT)
+            # For mouse clicks on arrows, also set selection to the newly focused item
             if self.selected_index < len(self.pets):
                 self.set_active_pet(self.selected_index)
                 if self.on_item_click:
@@ -1064,8 +1134,8 @@ class PetList(UIComponent):
             # Don't auto-activate pets, just navigate
             self.ensure_visible(self.selected_index)
             self.static_layer = None  # Refresh static layer
-            # Update global highlight if component is focused
-            self.update_global_highlight(old_index, self.selected_index)
+            # Individual component highlighting - trigger redraw
+            self.needs_redraw = True
             
     def select_next(self):
         """Select next item (navigation only, no activation)"""
@@ -1079,39 +1149,13 @@ class PetList(UIComponent):
             if self.selected_index < len(self.pets):
                 self.ensure_visible(self.selected_index)
             self.static_layer = None  # Refresh static layer
-            # Update global highlight if component is focused
-            self.update_global_highlight(old_index, self.selected_index)
+            # Individual component highlighting - no global highlight system
+            self.needs_redraw = True
     
-    def update_global_highlight(self, from_index, to_index):
-        """Update global highlight animation when selection changes"""
-        if self.focused and self.manager and hasattr(self.manager, 'start_global_highlight_animation'):
-            from_rect = self.get_element_rect(from_index)
-            to_rect = self.get_element_rect(to_index)
-            
-            if from_rect and to_rect:
-                # Convert to screen coordinates for global highlight
-                from_screen_rect = pygame.Rect(
-                    self.rect.x + from_rect.x,
-                    self.rect.y + from_rect.y,
-                    from_rect.width,
-                    from_rect.height
-                )
-                to_screen_rect = pygame.Rect(
-                    self.rect.x + to_rect.x,
-                    self.rect.y + to_rect.y,
-                    to_rect.width,
-                    to_rect.height
-                )
-                self.manager.start_global_highlight_animation(from_screen_rect, to_screen_rect)
-            elif to_rect:
-                # Just move to new position
-                to_screen_rect = pygame.Rect(
-                    self.rect.x + to_rect.x,
-                    self.rect.y + to_rect.y,
-                    to_rect.width,
-                    to_rect.height
-                )
-                self.manager.start_global_highlight_animation(None, to_screen_rect)
+    def update_component_highlight(self, from_index, to_index):
+        """Update component highlighting when selection changes - individual component system"""
+        # Individual component highlighting - just trigger redraw
+        self.needs_redraw = True
             
     def ensure_visible(self, index):
         """Ensure the specified index is visible"""
@@ -1153,18 +1197,7 @@ class PetList(UIComponent):
         """Called when component gains focus"""
         self.focused = True
         self.needs_redraw = True
-        # Update global highlight to show current selection
-        if self.manager and hasattr(self.manager, 'start_global_highlight_animation'):
-            current_rect = self.get_element_rect(self.selected_index)
-            if current_rect:
-                # Convert to screen coordinates for global highlight
-                screen_rect = pygame.Rect(
-                    self.rect.x + current_rect.x,
-                    self.rect.y + current_rect.y,
-                    current_rect.width,
-                    current_rect.height
-                )
-                self.manager.start_global_highlight_animation(None, screen_rect)
+        # Individual component highlighting - no global system
     
     def on_focus_lost(self):
         """Called when component loses focus"""

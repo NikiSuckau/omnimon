@@ -247,6 +247,18 @@ BATTLE_LEVEL_SPRITE_PATH = "assets/BattleLevel.png"
 BAR_BACK_PATH = "assets/StrengthBarBack.png"
 BAR_PIECE_PATH = "assets/StrengthBar.png"
 TRAINING_MAX_PATH = "assets/TrainingMax.png"
+
+# Themed dummy charge bar sprites
+BAR_PIECE_GREEN_PATH = "assets/DummyBar_Green.png"
+BAR_PIECE_YELLOW_PATH = "assets/DummyBar_Yellow.png"
+BAR_PIECE_RED_MAX_PATH = "assets/DummyBarMax_Red.png"
+BAR_BACK_GREEN_PATH = "assets/DummyBarBack_Green.png"
+BAR_BACK_RED_PATH = "assets/DummyBarBack_Red.png"
+
+# Head training specific sprites
+HEADTRAINING_BACK_PATH = "assets/HeadTraining_Back.png"
+HEADTRAINING_STRIKE_PATH = "assets/HeadTraining_Strike.png"
+
 ALERT_SPRITE_PATH = "assets/Alert.png"
 GO_SPRITE_PATH = "assets/Go.png"
 BAD_SPRITE_PATH = "assets/Bad.png"
@@ -264,7 +276,6 @@ ROCK1_PATH = "assets/Rock1.png"
 ROCK2_PATH = "assets/Rock2.png"
 TREE1_PATH = "assets/Tree1.png"
 TREE2_PATH = "assets/Tree2.png"
-
 
 #=====================================================================
 # Paths: Training Sprites

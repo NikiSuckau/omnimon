@@ -1,6 +1,6 @@
 {
-    "SCREEN_WIDTH": 1024,
-    "SCREEN_HEIGHT": 768,
+    "SCREEN_WIDTH": 700,
+    "SCREEN_HEIGHT": 700,
     "FRAME_RATE": 30,
     "MAX_PETS": 6,
     "FULLSCREEN": false,

@@ -782,6 +782,24 @@ namespace OmnimonModuleEditor.docgenerators
                     var formatRange = string.Join(",", evo.Pvp.Select(v => v == 999999 ? "+" : v.ToString()));
                     lines.Add($"PVP: {formatRange}");
                 }
+
+                // Add G-Cell criteria
+                if (evo.GCellHatch != null) lines.Add($"G-Cell Hatch: {(evo.GCellHatch.Value ? "Required" : "No")}");
+                if (evo.BlueGCells != null)
+                {
+                    var formatRange = string.Join(",", evo.BlueGCells.Select(v => v == 999999 ? "+" : v.ToString()));
+                    lines.Add($"Blue G-Cells: {formatRange}");
+                }
+                if (evo.YellowGCells != null)
+                {
+                    var formatRange = string.Join(",", evo.YellowGCells.Select(v => v == 999999 ? "+" : v.ToString()));
+                    lines.Add($"Yellow G-Cells: {formatRange}");
+                }
+                if (evo.RedGCells != null)
+                {
+                    var formatRange = string.Join(",", evo.RedGCells.Select(v => v == 999999 ? "+" : v.ToString()));
+                    lines.Add($"Red G-Cells: {formatRange}");
+                }
             }
             if (lines.Count == 0)
                 return "no criteria";

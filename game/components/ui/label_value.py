@@ -4,7 +4,7 @@ Label Value Component - A combined component that shows a label and value togeth
 import pygame
 from components.ui.component import UIComponent
 from components.ui.ui_constants import PURPLE, BLACK, GREY, YELLOW
-from core.utils.pygame_utils import blit_with_cache
+from core.utils.pygame_utils import blit_with_cache, blit_with_shadow
 
 
 class LabelValue(UIComponent):
@@ -67,8 +67,19 @@ class LabelValue(UIComponent):
         value_x = self.rect.width - value_surface.get_width()
         value_y = (self.rect.height - value_surface.get_height()) // 2
         
-        # Draw texts
-        blit_with_cache(surface, label_surface, (label_x, label_y))
-        blit_with_cache(surface, value_surface, (value_x, value_y))
+        # Draw texts with shadow support
+        use_shadow = self.manager and self.manager.should_render_shadow(self, "text")
+        if use_shadow:
+            blit_with_shadow(surface, label_surface, (label_x, label_y))
+            blit_with_shadow(surface, value_surface, (value_x, value_y))
+        else:
+            blit_with_cache(surface, label_surface, (label_x, label_y))
+            blit_with_cache(surface, value_surface, (value_x, value_y))
+        
+        # Draw highlight if focused and has tooltip
+        if self.focused and self.tooltip_text:
+            colors = self.get_colors()
+            highlight_color = colors.get("highlight", colors["fg"])  # Safe fallback
+            pygame.draw.rect(surface, highlight_color, surface.get_rect(), 2)
         
         return surface

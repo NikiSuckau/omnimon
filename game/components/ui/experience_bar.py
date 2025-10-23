@@ -8,7 +8,7 @@ from core.utils.pygame_utils import blit_with_cache
 
 
 class ExperienceBar(UIComponent):
-    def __init__(self, x, y, width, height, current_exp=0, pet_level=0, pet_stage=0):
+    def __init__(self, x, y, width, height, current_exp=0, pet_level=0, pet_stage=0, color_theme="purple"):
         super().__init__(x, y, width, height)
         self.current_exp = current_exp
         self.pet_level = pet_level
@@ -17,11 +17,39 @@ class ExperienceBar(UIComponent):
         self.exp_bar_bg = None
         self.bar_surface = None
         self.surface_needs_rebuild = True
+        self.color_theme = color_theme
         
-        # Bar colors
-        self.shadow_color = (0x4d, 0x2e, 0x3c)  # #4d2e3c
-        self.primary_color = (0x99, 0x2e, 0x69)  # #992e69  
-        self.highlight_color = (0xb3, 0x2d, 0xac)  # #b32dac
+        # Set bar colors based on theme
+        self.set_color_theme(color_theme)
+        
+    def set_color_theme(self, theme):
+        """Set the color theme for the experience bar"""
+        self.color_theme = theme
+        
+        if theme == "red":
+            self.shadow_color = (0x4d, 0x1e, 0x1e)     # Dark red shadow
+            self.primary_color = (0xcc, 0x33, 0x33)    # Red primary  
+            self.highlight_color = (0xff, 0x55, 0x55)  # Light red highlight
+        elif theme == "yellow":
+            self.shadow_color = (0x4d, 0x4d, 0x1e)     # Dark yellow shadow
+            self.primary_color = (0xcc, 0xcc, 0x33)    # Yellow primary
+            self.highlight_color = (0xff, 0xff, 0x55)  # Light yellow highlight
+        elif theme == "green":
+            self.shadow_color = (0x1e, 0x4d, 0x1e)     # Dark green shadow
+            self.primary_color = (0x33, 0xcc, 0x33)    # Green primary
+            self.highlight_color = (0x55, 0xff, 0x55)  # Light green highlight
+        elif theme == "blue":
+            self.shadow_color = (0x1e, 0x1e, 0x4d)     # Dark blue shadow
+            self.primary_color = (0x33, 0x33, 0xcc)    # Blue primary
+            self.highlight_color = (0x55, 0x55, 0xff)  # Light blue highlight
+        else:  # Default purple theme
+            self.shadow_color = (0x4d, 0x2e, 0x3c)     # #4d2e3c
+            self.primary_color = (0x99, 0x2e, 0x69)    # #992e69  
+            self.highlight_color = (0xb3, 0x2d, 0xac)  # #b32dac
+            
+        # Mark for redraw if theme changed
+        self.surface_needs_rebuild = True
+        self.needs_redraw = True
         
     def load_images(self):
         """Load experience bar background image"""
@@ -46,9 +74,26 @@ class ExperienceBar(UIComponent):
             self.pet_stage = pet_stage
             self.surface_needs_rebuild = True
             self.needs_redraw = True
+    
+    def set_progress(self, progress):
+        """Set progress directly (0.0 to 1.0) for use as a general progress bar"""
+        if not self.exp_bar_bg:
+            self.load_images()
             
+        # Store progress as fake experience values
+        self.current_exp = int(progress * 100)
+        self.pet_level = 1  # Use level 1 so progress calculation works
+        self.pet_stage = 1  # Use stage 1 so progress calculation works
+        self.surface_needs_rebuild = True
+        self.needs_redraw = True
+        
     def calculate_progress(self):
         """Calculate experience progress as a percentage (0.0 to 1.0)"""
+        # If we're using this as a general progress bar (set_progress was called)
+        # then current_exp represents the percentage directly
+        if hasattr(self, '_direct_progress'):
+            return self._direct_progress
+            
         # Stage 0 (Egg) don't get experience at all
         if self.pet_stage == 0:
             return 0.0
@@ -56,6 +101,10 @@ class ExperienceBar(UIComponent):
         # Level 10 is at max, so it's full
         if self.pet_level >= 10:
             return 1.0
+            
+        # For direct progress usage, return current_exp as percentage
+        if self.pet_level == 1 and self.pet_stage == 1:
+            return max(0.0, min(1.0, self.current_exp / 100.0))
             
         # Get experience needed for next level
         next_level_exp = constants.EXPERIENCE_LEVEL.get(self.pet_level + 1, None)
@@ -237,5 +286,11 @@ class ExperienceBar(UIComponent):
             fill_x = (self.rect.width - self.bar_surface.get_width()) // 2
             fill_y = (self.rect.height - self.bar_surface.get_height()) // 2
             blit_with_cache(surface, self.bar_surface, (fill_x, fill_y))
+        
+        # Draw highlight if focused and has tooltip
+        if self.focused and hasattr(self, 'tooltip_text') and self.tooltip_text:
+            colors = self.manager.get_theme_colors()
+            highlight_color = colors.get("highlight", colors["fg"])  # Safe fallback
+            pygame.draw.rect(surface, highlight_color, surface.get_rect(), 2)
         
         return surface

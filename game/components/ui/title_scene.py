@@ -44,6 +44,7 @@ class TitleScene(UIComponent):
         self.yellow_background_sprite = self.manager.load_sprite_integer_scaling("Sleep", "Title", "Yellow")
         self.blue_background_sprite = self.manager.load_sprite_integer_scaling("Sleep", "Title", "Blue")
         self.green_background_sprite = self.manager.load_sprite_integer_scaling("Sleep", "Title", "Green")
+        self.gray_background_sprite = self.manager.load_sprite_integer_scaling("Sleep", "Title", "Gray")
 
         # Get title font using centralized method with proper scaling
         # Manager already handles scaling through get_title_font_size()
@@ -69,16 +70,26 @@ class TitleScene(UIComponent):
         """Render the title scene component"""
         surface = pygame.Surface((self.rect.width, self.rect.height), pygame.SRCALPHA)
         
-        # Draw appropriate background sprite based on current mode
-        if self.current_mode == "wake":
-            surface.blit(self.yellow_background_sprite, (0, 0))
-        elif self.current_mode == "sleep":
-            surface.blit(self.blue_background_sprite, (0, 0))
+        # Draw appropriate background sprite based on current mode and theme
+        if self.manager and hasattr(self.manager, 'theme'):
+            theme = self.manager.theme
+            if theme == "GRAY":
+                surface.blit(self.gray_background_sprite, (0, 0))
+            elif self.current_mode == "wake":
+                surface.blit(self.yellow_background_sprite, (0, 0))
+            elif self.current_mode == "sleep":
+                surface.blit(self.blue_background_sprite, (0, 0))
+        else:
+            # Fallback to original behavior
+            if self.current_mode == "wake":
+                surface.blit(self.yellow_background_sprite, (0, 0))
+            elif self.current_mode == "sleep":
+                surface.blit(self.blue_background_sprite, (0, 0))
         
         # Draw title text with left margin and proper theme color
         if self.font and self.title_text:
             colors = self.manager.get_theme_colors()
-            text_color = colors["highlight"]  # Use highlight color as requested
+            text_color = colors["black"]  # Use black color for text
             text_surface = self.font.render(self.title_text, True, text_color)
             
             # Position text with left margin and in the upper portion of the sprite

@@ -5,14 +5,14 @@ import pygame
 
 from core import runtime_globals
 from core.animation import PetFrame
-from game.components.ui.ui_manager import UIManager
-from game.core.combat import combat_constants
-import game.core.constants as constants
+from components.ui.ui_manager import UIManager
+from core.combat import combat_constants
+import core.constants as constants
 from core.utils.pet_utils import distribute_pets_evenly, get_training_targets
-from core.utils.pygame_utils import blit_with_shadow, load_attack_sprites, module_attack_sprites, sprite_load_percent
+from core.utils.pygame_utils import blit_with_shadow, load_attack_sprites, module_attack_sprites
 from core.utils.scene_utils import change_scene
-from game.core.game_quest import QuestType
-from game.core.utils.quest_event_utils import update_quest_progress
+from core.game_quest import QuestType
+from core.utils.quest_event_utils import update_quest_progress
 
 class Training:
     """
@@ -59,7 +59,10 @@ class Training:
         self.pets = get_training_targets()
         self.module_attack_sprites = {}
         for pet in self.pets:
-             self.module_attack_sprites[pet.module] = module_attack_sprites(pet.module)
+            self.module_attack_sprites[pet.module] = module_attack_sprites(pet.module)
+
+        # Cache for scaled semi-transparent overlay sprites
+        self._overlay_cache = {}
 
     def get_sprite(self, key):
         return self._sprite_cache[key]
@@ -76,6 +79,48 @@ class Training:
         
         # Fall back to default attack sprites
         return self.attack_sprites.get(str(attack_id))
+
+    def _draw_overlay_background(self, surface: pygame.Surface, base_sprite: pygame.Surface, cache_key: str):
+        """Draw a semi-transparent, proportionally scaled overlay of the given sprite to cover the screen.
+        - Only active when ui scale >= 2
+        - Cached per (cache_key, screen size)
+        - Applies blur effect for atmospheric background
+        """
+        try:
+            if not base_sprite or not self.ui_manager or getattr(self.ui_manager, 'ui_scale', 1) < 2:
+                return
+
+            key = (cache_key, constants.SCREEN_WIDTH, constants.SCREEN_HEIGHT)
+            overlay = self._overlay_cache.get(key)
+            if overlay is None:
+                sw, sh = base_sprite.get_width(), base_sprite.get_height()
+                if sw <= 0 or sh <= 0:
+                    return
+                scale = max(constants.SCREEN_WIDTH / sw, constants.SCREEN_HEIGHT / sh)
+                new_size = (int(sw * scale), int(sh * scale))
+                overlay = pygame.transform.smoothscale(base_sprite, new_size)
+                
+                # Apply blur effect by downscaling and upscaling multiple times
+                blur_iterations = 4
+                blur_factor = 0.15  # Scale down to 15% for blur effect
+                
+                for _ in range(blur_iterations):
+                    # Downscale for blur
+                    blur_w = max(1, int(overlay.get_width() * blur_factor))
+                    blur_h = max(1, int(overlay.get_height() * blur_factor))
+                    overlay = pygame.transform.smoothscale(overlay, (blur_w, blur_h))
+                    # Upscale back to original size
+                    overlay = pygame.transform.smoothscale(overlay, new_size)
+                
+                # Set 50% opacity
+                overlay = overlay.convert_alpha()
+                overlay.set_alpha(128)
+                self._overlay_cache[key] = overlay
+
+            rect = overlay.get_rect(center=(constants.SCREEN_WIDTH // 2, constants.SCREEN_HEIGHT // 2))
+            surface.blit(overlay, rect)
+        except Exception as e:
+            runtime_globals.game_console.log(f"[Training] Overlay draw error for {cache_key}: {e}")
 
     def update(self):
         if self.phase == "alert":
@@ -247,6 +292,8 @@ class Training:
 
         sprite = self.get_sprite('ready')
         if sprite:
+            # Draw semi-transparent background overlay at high UI scales
+            self._draw_overlay_background(screen, sprite, 'ready')
             sx, sy = sprite.get_width(), sprite.get_height()
             center_x = constants.SCREEN_WIDTH // 2 - sx // 2
             center_y = constants.SCREEN_HEIGHT // 2 - sy // 2

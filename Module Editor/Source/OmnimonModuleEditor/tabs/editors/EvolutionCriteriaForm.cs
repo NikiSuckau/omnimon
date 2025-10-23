@@ -35,6 +35,12 @@ public class EvolutionCriteriaForm : Form
     private NumericUpDown[] numQuestsCompleted = new NumericUpDown[2]; // New field
     private NumericUpDown[] numPvp = new NumericUpDown[2]; // New field
 
+    // G-Cell evolution criteria fields
+    private CheckBox chkGCellHatch;
+    private NumericUpDown[] numBlueGCells = new NumericUpDown[2];
+    private NumericUpDown[] numYellowGCells = new NumericUpDown[2];
+    private NumericUpDown[] numRedGCells = new NumericUpDown[2];
+
     private NumericUpDown numArea;
     private NumericUpDown numStage;
     private NumericUpDown numVersion;
@@ -82,7 +88,7 @@ public class EvolutionCriteriaForm : Form
     private void InitializeComponent()
     {
         this.Text = Resources.EvolutionCriteriaForm_Title;
-        this.Size = new Size(440, 720); // Increased height for new fields
+        this.Size = new Size(440, 800); // Increased height for new G-Cell fields
         this.FormBorderStyle = FormBorderStyle.FixedDialog;
         this.MaximizeBox = false;
         this.MinimizeBox = false;
@@ -198,6 +204,15 @@ public class EvolutionCriteriaForm : Form
         AddRange("Weight:", numWeigth, -1, 100); // New field
         AddRange("Quests Completed:", numQuestsCompleted, -1, 100); // New field
         AddRange("PVP:", numPvp, -1, 999999); // New field
+
+        // G-Cell evolution criteria
+        AddLabel("G-Cell Hatch:");
+        chkGCellHatch = new CheckBox();
+        AddControl(chkGCellHatch);
+
+        AddRange("Blue G-Cells:", numBlueGCells, -1, 999999);
+        AddRange("Yellow G-Cells:", numYellowGCells, -1, 999999);
+        AddRange("Red G-Cells:", numRedGCells, -1, 999999);
 
         AddLabel(Resources.EvolutionCriteriaForm_LabelItem);
         cmbItem = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, Width = 150 };
@@ -328,6 +343,12 @@ public class EvolutionCriteriaForm : Form
         dest.Weigth = src.Weigth != null ? (int[])src.Weigth.Clone() : null; // New field
         dest.QuestsCompleted = src.QuestsCompleted != null ? (int[])src.QuestsCompleted.Clone() : null; // New field
         dest.Pvp = src.Pvp != null ? (int[])src.Pvp.Clone() : null; // New field
+
+        // G-Cell evolution criteria
+        dest.GCellHatch = src.GCellHatch;
+        dest.BlueGCells = src.BlueGCells != null ? (int[])src.BlueGCells.Clone() : null;
+        dest.YellowGCells = src.YellowGCells != null ? (int[])src.YellowGCells.Clone() : null;
+        dest.RedGCells = src.RedGCells != null ? (int[])src.RedGCells.Clone() : null;
     }
 
     /// <summary>
@@ -359,6 +380,11 @@ public class EvolutionCriteriaForm : Form
         SetRange(numQuestsCompleted, evolution.QuestsCompleted); // New field
         SetRange(numPvp, evolution.Pvp); // New field
 
+        // G-Cell evolution criteria
+        SetRange(numBlueGCells, evolution.BlueGCells);
+        SetRange(numYellowGCells, evolution.YellowGCells);
+        SetRange(numRedGCells, evolution.RedGCells);
+
         numArea.Value = evolution.Area ?? 0;
         numStage.Value = evolution.Stage ?? 0;
         numVersion.Value = evolution.Version ?? 0;
@@ -366,6 +392,9 @@ public class EvolutionCriteriaForm : Form
         txtJogress.Text = evolution.Jogress ?? "";
         chkSpecialEncounter.Checked = evolution.SpecialEncounter ?? false;
         cmbItem.SelectedItem = evolution.Item ?? "";
+
+        // G-Cell Hatch
+        chkGCellHatch.Checked = evolution.GCellHatch ?? false;
 
         // Carregue o valor:
         if (evolution.JogressPrefix == null)
@@ -415,6 +444,11 @@ public class EvolutionCriteriaForm : Form
         evolution.QuestsCompleted = GetRange(numQuestsCompleted, 100); // New field
         evolution.Pvp = GetRange(numPvp, 999999); // New field
 
+        // G-Cell evolution criteria
+        evolution.BlueGCells = GetRange(numBlueGCells, 999999);
+        evolution.YellowGCells = GetRange(numYellowGCells, 999999);
+        evolution.RedGCells = GetRange(numRedGCells, 999999);
+
         evolution.Area = numArea.Value == 0 ? (int?)null : (int)numArea.Value;
         evolution.Stage = numStage.Value == 0 ? (int?)null : (int)numStage.Value;
         evolution.Version = numVersion.Value == 0 ? (int?)null : (int)numVersion.Value;
@@ -422,6 +456,9 @@ public class EvolutionCriteriaForm : Form
         evolution.Jogress = string.IsNullOrWhiteSpace(txtJogress.Text) ? null : txtJogress.Text;
         evolution.SpecialEncounter = chkSpecialEncounter.Checked ? true : (bool?)null;
         evolution.Item = string.IsNullOrEmpty(cmbItem.Text) ? null : cmbItem.Text;
+
+        // G-Cell Hatch
+        evolution.GCellHatch = chkGCellHatch.Checked ? true : (bool?)null;
 
         evolution.JogressPrefix = chkJogressPrefix.Checked ? true : (bool?)null;
 

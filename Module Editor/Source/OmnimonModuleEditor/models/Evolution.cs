@@ -76,5 +76,18 @@ namespace OmnimonModuleEditor.Models
         public int[] QuestsCompleted { get; set; }
         [JsonPropertyName("pvp")]
         public int[] Pvp { get; set; }
+
+        // New G-Cell evolution criteria
+        [JsonPropertyName("gcell_hatch")]
+        public bool? GCellHatch { get; set; }
+
+        [JsonPropertyName("blue_gcells")]
+        public int[] BlueGCells { get; set; }
+
+        [JsonPropertyName("yellow_gcells")]
+        public int[] YellowGCells { get; set; }
+
+        [JsonPropertyName("red_gcells")]
+        public int[] RedGCells { get; set; }
     }
 }

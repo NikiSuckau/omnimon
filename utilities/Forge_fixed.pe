@@ -38,6 +38,7 @@ SelectMore(0u2022)  # • Bullet
 SelectMore(0u266A)  # ♪ Musical note
 SelectMore(0u2713)  # ✓ Check mark
 SelectMore(0u2717)  # ✗ X mark
+SelectMore(0u2200, 0u22FF)   # Mathematical Operators (∞, ∑, ∏, etc.)
 
 # Copy selected characters from donor font
 Copy()

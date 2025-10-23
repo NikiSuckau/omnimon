@@ -6,9 +6,9 @@ def get_selected_pets():
     Returns the list of currently selected pets, or all alive pets if none are selected.
     """
     if runtime_globals.selected_pets:
-        pet_list = [pet for pet in runtime_globals.selected_pets if pet.state != "dead"]
+        pet_list = [pet for pet in runtime_globals.selected_pets if pet.state != "dead" and pet.stomach > 0 and pet.stage > 0]
     else:
-        pet_list = [pet for pet in game_globals.pet_list if pet.state != "dead"]
+        pet_list = [pet for pet in game_globals.pet_list if pet.state != "dead" and pet.stomach > 0 and pet.stage > 0]
     return pet_list
 
 def get_training_targets():

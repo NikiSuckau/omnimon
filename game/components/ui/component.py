@@ -4,6 +4,7 @@ Base UI Component - Foundation for all UI elements
 import pygame
 
 from core import runtime_globals
+from game.core.utils.pygame_utils import blit_with_cache, blit_with_shadow
 
 
 class UIComponent:
@@ -22,6 +23,16 @@ class UIComponent:
         self.on_click_callback = None
         self.tooltip_text = None
         self.tooltip_active = False
+        
+        # Shadow configuration for this component
+        # "disabled": No shadows
+        # "component": Shadows on component background/border only
+        # "full": Shadows on everything (text, decorators, etc.)
+        self.shadow_mode = "disabled"  # Default: no shadows
+        
+        # Screen-wide positioning - when True, component bypasses UI area constraints
+        # and can be positioned anywhere on the screen using screen coordinates
+        self.use_screen_coordinates = False  # Default: use UI area coordinates
         
         runtime_globals.game_console.log(f"[{self.__class__.__name__}] Created with base rect: {self.rect}")
         
@@ -49,6 +60,39 @@ class UIComponent:
         else:
             self.rect.width = width
             self.rect.height = height
+        self.needs_redraw = True
+        
+    def set_shadow_mode(self, mode):
+        """Set shadow mode for this component
+        
+        Args:
+            mode: "disabled", "component", or "full"
+        """
+        if mode in ["disabled", "component", "full"]:
+            self.shadow_mode = mode
+            self.needs_redraw = True
+        else:
+            runtime_globals.game_console.log(f"[{self.__class__.__name__}] Invalid shadow mode: {mode}")
+    
+    def set_screen_coordinates(self, use_screen_coords=True, screen_x=None, screen_y=None):
+        """Enable screen-wide positioning for this component
+        
+        Args:
+            use_screen_coords: True to use screen coordinates, False for UI area coordinates
+            screen_x: Screen X position (if not provided, keeps current position)
+            screen_y: Screen Y position (if not provided, keeps current position)
+        """
+        self.use_screen_coordinates = use_screen_coords
+        
+        if use_screen_coords and (screen_x is not None or screen_y is not None):
+            # Set screen position directly
+            if screen_x is not None:
+                self.rect.x = screen_x
+            if screen_y is not None:
+                self.rect.y = screen_y
+            # Clear base_rect when using screen coordinates
+            self.base_rect = None
+        
         self.needs_redraw = True
         
     def update(self):
@@ -87,9 +131,16 @@ class UIComponent:
             self.cached_surface = self.render()
             self.needs_redraw = False
             
-        # Blit at screen coordinates
-        surface.blit(self.cached_surface, self.rect)
+        # Check if component-level shadows should be applied
+        should_shadow = self.manager and self.manager.should_render_shadow(self, "component")
         
+        if should_shadow:
+            # Blit the entire component surface with shadow
+            blit_with_shadow(surface, self.cached_surface, self.rect)
+        else:
+            # Blit normally without shadow
+            surface.blit(self.cached_surface, self.rect)
+
     def render(self):
         """Create and return the component surface at proper scale - to be implemented by subclasses"""
         # Use screen dimensions for surface creation
@@ -162,7 +213,7 @@ class UIComponent:
         """
         if not self.manager:
             # Fallback colors if no manager is available
-            return {"bg": (0, 0, 0), "fg": (255, 255, 255), "line": (255, 255, 255)}
+            return {"bg": (0, 0, 0), "fg": (255, 255, 255), "line": (255, 255, 255), "highlight": (255, 255, 255)}
         
         # Get base theme colors from manager
         theme_colors = self.manager.get_theme_colors()

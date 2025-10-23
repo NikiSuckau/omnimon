@@ -208,6 +208,9 @@ namespace OmnimonModuleEditor.Models
         [JsonPropertyName("gcell_battle_loose")]
         public int GCellBattleLoose { get; set; } = 0;
 
+        [JsonPropertyName("gcell_training_success")]
+        public int GCellTrainingSuccess { get; set; } = 0;
+
         [JsonPropertyName("gcell_training_phase2_failure")]
         public int GCellTrainingPhase2Failure { get; set; } = 0;
 

@@ -22,6 +22,7 @@ SelectMore(0u25A0)  # ■ Black square
 SelectMore(0u25CF)  # ● Black circle
 SelectMore(0u25B2)  # ▲ Triangle up
 SelectMore(0u25BC)  # ▼ Triangle down
+SelectMore(0u2200, 0u22FF)   # Mathematical Operators (∞, ∑, ∏, etc.)
 
 # Invert selection to get everything we DON'T want
 SelectInvert()

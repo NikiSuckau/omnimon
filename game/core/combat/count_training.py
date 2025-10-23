@@ -5,6 +5,7 @@ from core import runtime_globals
 from core.animation import PetFrame
 from core.combat.training import Training
 from game.components.ui.ui_manager import UIManager
+from game.components.minigames.count_match import CountMatch
 from game.core.combat import combat_constants
 import game.core.constants as constants
 from core.utils.pygame_utils import blit_with_cache, blit_with_shadow, sprite_load_percent
@@ -22,31 +23,35 @@ class CountMatchTraining(Training):
         self.result_text = None
         self.flash_frame = 0
         self.anim_counter = -1
-        self.cached_ready_sprites = None
-        self.cached_count_sprites = None
-        self.cached_mega_hit = None
+        
+        # Initialize the count match minigame early so it's available during alert phase
+        self.count_match = None
+        if self.pets:
+            pet = self.pets[0]
+            self.count_match = CountMatch(self.ui_manager, pet)
+        
         self.load_sprites()
 
     def load_sprites(self):
-        """Loads and caches sprites only once."""
-        if self.cached_ready_sprites is None:
-            self.cached_ready_sprites = {key: sprite_load_percent(path, 100, keep_proportion=True, base_on="width", alpha=False) for key, path in constants.READY_SPRITES_PATHS.items()}
-        if self.cached_count_sprites is None:
-            self.cached_count_sprites = {key: sprite_load_percent(path, 100, keep_proportion=True, base_on="width", alpha=False) for key, path in constants.COUNT_SPRITES_PATHS.items()}
-        if self.cached_mega_hit is None:
-            self.cached_mega_hit = sprite_load_percent(constants.MEGA_HIT_PATH, 100, keep_proportion=True, base_on="width", alpha=False)
-
-    @property
-    def ready_sprites(self):
-        return self.cached_ready_sprites
-
-    @property
-    def count_sprites(self):
-        return self.cached_count_sprites
+        """Load mega hit sprite using UI manager for integer scaling."""
+        # Load mega hit sprite using UI manager
+        self._mega_hit = self.ui_manager.load_sprite_integer_scaling(name="MegaHit", prefix="Training")
 
     @property
     def mega_hit(self):
-        return self.cached_mega_hit
+        return self._mega_hit
+
+    def update(self):
+        """Override base update to include minigame updates."""
+        # Call parent update
+        super().update()
+        
+        # Update minigame and sync counters
+        if self.count_match:
+            self.count_match.update()
+            # Always sync our counters with the minigame in case it processed shake events internally
+            self.press_counter = self.count_match.get_press_counter()
+            self.rotation_index = self.count_match.get_rotation_index()
 
     def update_charge_phase(self):
         if self.frame_counter == 1:
@@ -61,32 +66,43 @@ class CountMatchTraining(Training):
         self.phase = "charge"
         self.press_counter = 0
         self.rotation_index = 3
+        
+        # Set minigame to count phase
+        if self.count_match:
+            self.count_match.set_phase("count")
 
     def handle_event(self, input_action):
-        if self.phase == "charge" and input_action in ("Y", "SHAKE"):
-            if self.phase == "alert":
-                self.phase = "charge"
-            elif self.phase == "charge":
-                self.press_counter += 1
-                if self.press_counter % 2 == 0:
-                    self.rotation_index -= 1
-                    if self.rotation_index < 1:
-                        self.rotation_index = 3
+        if self.phase in "charge" and input_action in ("Y", "SHAKE"):
+            # Let the minigame handle the input
+            if self.count_match and self.count_match.handle_event(input_action):
+                # Update our counters from the minigame
+                self.press_counter = self.count_match.get_press_counter()
+                self.rotation_index = self.count_match.get_rotation_index()
         elif self.phase in ["wait_attack", "attack_move", "impact", "result"] and input_action in ["B", "START"]:
             self.finish_training()
         elif self.phase in ("alert", "charge") and input_action == "B":
             runtime_globals.game_sound.play("cancel")
             change_scene("game")
+            
+    def handle_pygame_event(self, event):
+        """Handle pygame events for shake detection during count phase."""
+        if self.count_match:
+            shake_event = self.count_match.handle_pygame_event(event)
+            if shake_event == "SHAKE":
+                # Trigger the same logic as keyboard/hardware shake input
+                self.handle_event("SHAKE")
+                return True
+        return False
 
     def get_first_pet_attribute(self):
         pet = self.pets[0]
         attr = getattr(pet, "attribute", "")
         if attr in ["", "Va"]:
-            return 1
+            return 1  # Default/Vaccine -> Ready1
         elif attr == "Da":
-            return 2
+            return 2  # Data -> Ready2
         elif attr == "Vi":
-            return 3
+            return 3  # Virus -> Ready3
         return 1
 
     def calculate_results(self):
@@ -104,12 +120,16 @@ class CountMatchTraining(Training):
             hits = 0
         else:
             color = self.final_color
+            # Note: rotation_index uses 1-3, but we need to map to 0-2 for comparison
+            color_mapped = color if color > 0 else 0
+            correct_color = self.correct_color
+            
             if attr_type in ("", "Va"):
-                hits = 5 if color == 1 else random.choice([3, 4]) if color == 2 else 2 if color == 3 else 1
+                hits = 5 if correct_color == color_mapped else random.choice([3, 4]) if abs(correct_color - color_mapped) == 1 else 2 if abs(correct_color - color_mapped) == 2 else 1
             elif attr_type == "Da":
-                hits = 5 if color == 2 else random.choice([3, 4]) if color == 1 else 2 if color == 3 else 1
+                hits = 5 if correct_color == color_mapped else random.choice([3, 4]) if abs(correct_color - color_mapped) == 1 else 2 if abs(correct_color - color_mapped) == 2 else 1
             elif attr_type == "Vi":
-                hits = 5 if color == 3 else random.choice([3, 4]) if color == 2 else 2 if color == 1 else 1
+                hits = 5 if correct_color == color_mapped else random.choice([3, 4]) if abs(correct_color - color_mapped) == 1 else 2 if abs(correct_color - color_mapped) == 2 else 1
             else:
                 hits = 1
 
@@ -173,15 +193,21 @@ class CountMatchTraining(Training):
         super().draw_pets(surface, frame_enum)
 
     def draw_alert(self, surface):
-        attr = self.get_first_pet_attribute()
-        sprite = self.ready_sprites[attr]
-        y = (constants.SCREEN_HEIGHT - sprite.get_height()) // 2
-        blit_with_cache(surface, sprite, (0, y))
+        # Fill the screen with black background
+        surface.fill(self.background_color)
+
+        # Use the count match minigame to handle ready sprite drawing with overlay
+        if self.count_match:
+            self.count_match.set_phase("ready")
+            self.count_match.draw(surface)
 
     def draw_charge(self, surface):
-        sprite = self.count_sprites[4 if self.press_counter == 0 else self.rotation_index]
-        y = (constants.SCREEN_HEIGHT - sprite.get_height()) // 2
-        blit_with_cache(surface, sprite, (0, y))
+        # Fill the screen with black background
+        surface.fill(self.background_color)
+
+        # Use the count match minigame to handle count sprite drawing with overlay
+        if self.count_match:
+            self.count_match.draw(surface)
 
     def draw_attack_move(self, surface):
         self.draw_pets(surface)
@@ -195,18 +221,29 @@ class CountMatchTraining(Training):
                         blit_with_shadow(surface, sprite, (x - (40 * constants.UI_SCALE), y + (10 * constants.UI_SCALE)))
 
     def draw_result(self, screen):
+        
+        
         pets = self.pets
         pet = pets[0]
         hits = self.super_hits.get(pet, 0)
         if hits == 5:
-            sprite = self.mega_hit
+            sprite = self._mega_hit
+
+            # Fill the screen with black background
+            screen.fill(self.background_color)
+            # Draw semi-transparent background overlay at high UI scales
+            self._draw_overlay_background(screen, sprite, 'megahit')
+            
+            # Center the sprite on screen
             x = constants.SCREEN_WIDTH // 2 - sprite.get_width() // 2
             y = constants.SCREEN_HEIGHT // 2 - sprite.get_height() // 2
             blit_with_shadow(screen, sprite, (x, y))
             # Draw trophy notification if maximum score achieved
             self.draw_trophy_notification(screen, quantity=1)
         else:
-            font = pygame.font.Font(None, constants.FONT_SIZE_LARGE)
+            # Use UI manager's standard title font and size for consistency
+            font_size = self.ui_manager.get_title_font_size()
+            font = pygame.font.Font("assets/DigimonBasic.ttf", font_size)
             text = font.render(f"{hits} Super-Hits", True, (255, 255, 255))
             x = constants.SCREEN_WIDTH // 2 - text.get_width() // 2
             y = int(100 * constants.UI_SCALE)

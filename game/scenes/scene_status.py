@@ -14,6 +14,7 @@ from components.ui.label_value import LabelValue
 from components.ui.ui_constants import YELLOW
 from components.ui.heart import HeartMeter
 from components.ui.dp_bar import DPBar
+from game.components.ui.gcell_bar import GCellBar
 from game.components.ui.status_carousel import StatusCarousel
 from components.ui.experience_bar import ExperienceBar
 from components.ui.numeric_meter import NumericMeter
@@ -67,6 +68,7 @@ class SceneStatus:
             self.hunger_meter = None
             self.strength_meter = None  # Changed from vitamin_meter
             self.effort_meter = None
+            self.gcell_bar = None
             self.dp_bar = None
             self.experience_bar = None
             self.status_carousel = None
@@ -107,6 +109,7 @@ class SceneStatus:
             from components.ui.ui_constants import BASE_RESOLUTION
             ui_width = ui_height = BASE_RESOLUTION
             scale = self.ui_manager.ui_scale
+              # Enable full shadows for the entire UI
             
             # Pet list height (fixed component size)
             pet_list_height = 44
@@ -264,6 +267,12 @@ class SceneStatus:
             self.effort_meter.set_tooltip("Effort - gained through training, can increase power")
             self.effort_meter.visible = False  # Hidden by default, shown based on visible_stats
             self.ui_manager.add_component(self.effort_meter)
+
+            # G-Cell Bar (alternative to effort meter)
+            self.gcell_bar = GCellBar(margin, heart_y, heart_width, heart_height)
+            self.gcell_bar.set_tooltip("G-Cells - evolution requirement indicator with different colored levels")
+            self.gcell_bar.visible = False  # Hidden by default, shown based on visible_stats
+            self.ui_manager.add_component(self.gcell_bar)
 
             # Add DP Bar in second column, aligned with hunger meter
             dp_start_y = current_y + 13
@@ -432,8 +441,11 @@ class SceneStatus:
         stage_text = f"Stage: {constants.STAGES[pet.stage]}"
         self.stage_label.set_text(stage_text)
 
-        # Update flag panel
-        self.flag_panel.set_pet_flags(pet)
+        # Update flag panel (including G-Cell fragment flag if applicable)
+        flags = []
+        if hasattr(pet, 'gcell_fragment') and pet.gcell_fragment:
+            flags.append('GCellFragment')
+        self.flag_panel.set_pet_flags(pet, additional_flags=flags)
 
         # Get module to check visible stats
         module = get_module(pet.module)
@@ -512,11 +524,18 @@ class SceneStatus:
         else:
             self.strength_meter.visible = False
             
-        if "Effort" in visible_stats:
+        # Show G-Cell bar if G-Cell is in visible stats and Effort is not
+        if "G-Cells" in visible_stats and "Effort" not in visible_stats:
+            self.gcell_bar.set_pet(pet)
+            self.gcell_bar.visible = True
+            self.effort_meter.visible = False
+        elif "Effort" in visible_stats:
             self.effort_meter.set_value(pet.effort)
             self.effort_meter.visible = True
+            self.gcell_bar.visible = False
         else:
             self.effort_meter.visible = False
+            self.gcell_bar.visible = False
             
         # Update DP bar and stats based on visible_stats
         if "DP" in visible_stats:

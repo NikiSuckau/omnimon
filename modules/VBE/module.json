@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "A reimplementation of the Virtual Bracelet BE Memories, you can find more at https://humulos.com/digimon/vbbe/.",
   "author": "Sundeth",
+  "category": "Conversions",
   "name_format": "$_dmc",
   "ruleset": "vb",
   "adventure_mode": true,
@@ -51,6 +52,9 @@
   "death_old_age": 0,
   "vital_value_base": 50,
   "vital_value_loss": 50,
+  "hp_max_item_boost": 10,
+  "atk_max_item_boost": 5,
+  "power_max_item_boost": 20,
   "unlocks": [
     {
       "name": "ver22",

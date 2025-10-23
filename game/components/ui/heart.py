@@ -22,7 +22,7 @@ class HeartMeter(UIComponent):
         self.value = value
         self.max_value = max_value
         self.factor = factor  # How many points equal one heart (e.g., 1 for hunger/vitamin, 4 for effort)
-        self.focusable = False
+        self.focusable = True  # Make HeartMeter focusable for highlighting
         self.icon = None
         self.heart_images = {}
         
@@ -119,5 +119,11 @@ class HeartMeter(UIComponent):
                 heart = self.heart_images["empty"]
                 
             blit_with_cache(surface, heart, (heart_x, heart_y))
+        
+        # Draw highlight if focused (mouse hover or keyboard focus)
+        if self.focused:
+            colors = self.manager.get_theme_colors()
+            highlight_color = colors.get("highlight", colors["fg"])  # Safe fallback
+            pygame.draw.rect(surface, highlight_color, surface.get_rect(), 2)
             
         return surface

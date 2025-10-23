@@ -3,7 +3,8 @@ Label Component - Text display with optional color override
 """
 import pygame
 from components.ui.component import UIComponent
-from core.utils.pygame_utils import blit_with_cache
+from core.utils.pygame_utils import blit_with_cache, blit_with_shadow
+from core import runtime_globals
 
 
 class Label(UIComponent):
@@ -128,15 +129,31 @@ class Label(UIComponent):
             if text_surface.get_width() > scaled_width:
                 # Create a subsurface or blit with offset
                 text_rect = pygame.Rect(-self.scroll_offset, 0, text_surface.get_width(), text_surface.get_height())
-                blit_with_cache(scroll_surface, text_surface, text_rect)
+                # Use shadow-aware blitting
+                if self.manager and self.manager.should_render_shadow(self, "text"):
+                    blit_with_shadow(scroll_surface, text_surface, text_rect)
+                else:
+                    blit_with_cache(scroll_surface, text_surface, text_rect)
             else:
                 # Text fits, center it or align as normal
                 if self.align_right:
                     text_rect = text_surface.get_rect()
                     text_rect.right = scaled_width
-                    blit_with_cache(scroll_surface, text_surface, text_rect)
+                    if self.manager and self.manager.should_render_shadow(self, "text"):
+                        blit_with_shadow(scroll_surface, text_surface, text_rect)
+                    else:
+                        blit_with_cache(scroll_surface, text_surface, text_rect)
                 else:
-                    blit_with_cache(scroll_surface, text_surface, (0, 0))
+                    if self.manager and self.manager.should_render_shadow(self, "text"):
+                        blit_with_shadow(scroll_surface, text_surface, (0, 0))
+                    else:
+                        blit_with_cache(scroll_surface, text_surface, (0, 0))
+            
+            # Draw highlight if focused and has tooltip
+            if self.focused and self.tooltip_text:
+                colors = self.get_colors()
+                highlight_color = colors.get("highlight", colors["fg"])  # Safe fallback
+                pygame.draw.rect(scroll_surface, highlight_color, scroll_surface.get_rect(), 2)
             
             # Update component screen size
             self.rect.width = scaled_width
@@ -153,13 +170,25 @@ class Label(UIComponent):
             if text_surface.get_width() > scaled_width:
                 # Create truncated version
                 truncated_surface = pygame.Surface((scaled_width, text_surface.get_height()), pygame.SRCALPHA)
-                blit_with_cache(truncated_surface, text_surface, (0, 0))
+                if self.manager and self.manager.should_render_shadow(self, "text"):
+                    blit_with_shadow(truncated_surface, text_surface, (0, 0))
+                else:
+                    blit_with_cache(truncated_surface, text_surface, (0, 0))
                 text_surface = truncated_surface
             
             # Blit text surface to the right side
             text_rect = text_surface.get_rect()
             text_rect.right = scaled_width
-            blit_with_cache(aligned_surface, text_surface, text_rect)
+            if self.manager and self.manager.should_render_shadow(self, "text"):
+                blit_with_shadow(aligned_surface, text_surface, text_rect)
+            else:
+                blit_with_cache(aligned_surface, text_surface, text_rect)
+            
+            # Draw highlight if focused and has tooltip
+            if self.focused and self.tooltip_text:
+                colors = self.get_colors()
+                highlight_color = colors.get("highlight", colors["fg"])  # Safe fallback
+                pygame.draw.rect(aligned_surface, highlight_color, aligned_surface.get_rect(), 2)
             
             # Update component screen size (don't modify base_rect)
             self.rect.width = scaled_width
@@ -172,7 +201,10 @@ class Label(UIComponent):
                 if text_surface.get_width() > scaled_width:
                     # Truncate the text
                     truncated_surface = pygame.Surface((scaled_width, text_surface.get_height()), pygame.SRCALPHA)
-                    blit_with_cache(truncated_surface, text_surface, (0, 0))
+                    if self.manager and self.manager.should_render_shadow(self, "text"):
+                        blit_with_shadow(truncated_surface, text_surface, (0, 0))
+                    else:
+                        blit_with_cache(truncated_surface, text_surface, (0, 0))
                     text_surface = truncated_surface
                 
                 # Update component screen size
@@ -182,5 +214,24 @@ class Label(UIComponent):
                 # Update component screen size (don't modify base_rect)
                 self.rect.width = text_surface.get_width()
                 self.rect.height = text_surface.get_height()
+            
+            # Draw highlight if focused and has tooltip
+            if self.focused and self.tooltip_text:
+                # Create a new surface to include the highlight border
+                highlight_surface = pygame.Surface((text_surface.get_width() + 4, text_surface.get_height() + 4), pygame.SRCALPHA)
+                colors = self.get_colors()
+                highlight_color = colors.get("highlight", colors["fg"])  # Safe fallback
+                
+                # Draw highlight border
+                pygame.draw.rect(highlight_surface, highlight_color, highlight_surface.get_rect(), 2)
+                
+                # Blit text centered in the highlight surface
+                highlight_surface.blit(text_surface, (2, 2))
+                
+                # Update component screen size
+                self.rect.width = highlight_surface.get_width()
+                self.rect.height = highlight_surface.get_height()
+                
+                return highlight_surface
             
             return text_surface

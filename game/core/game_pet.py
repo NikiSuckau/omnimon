@@ -4,7 +4,7 @@ import random
 
 from core import game_globals, runtime_globals
 from core.animation import Animation, PetFrame
-import game.core.constants as constants
+import core.constants as constants
 from core.game_digidex import register_digidex_entry
 from core.utils.sprite_utils import load_pet_sprites, convert_sprites_to_list
 from core.game_poop import GamePoop
@@ -45,6 +45,7 @@ class GamePet:
 
         self.level = 1
         self.experience = 0
+        self.gcell_fragment = False
         self.vital_activities = []
 
     def set_data(self, data):
@@ -129,6 +130,8 @@ class GamePet:
         if self.use_condition_hearts:
             self.condition_hearts = self.condition_hearts_max
         self.mistakes = 0
+
+        self.gcell_points = 0
 
     def begin_position(self):
         self.subpixel_x = float(constants.SCREEN_WIDTH - constants.PET_WIDTH) / 2
@@ -554,6 +557,13 @@ class GamePet:
                 if self.dp < self.energy:
                     self.dp = min(self.energy, self.dp + module.protein_dp_gain)
             self.care_strength_mistake_timer = 0
+            
+            # Remove G-Cell points for protein feeding if module uses G-Cells
+            if getattr(module, 'use_gcells', False):
+                gcell_points = getattr(module, 'gcell_protein', 0)
+                if gcell_points != 0:
+                    self.add_gcell_points(gcell_points)
+            
             accepted = True
             runtime_globals.game_console.log(f"{self.name} ate food (strength). Strength {self.strength}")
         else:
@@ -606,6 +616,11 @@ class GamePet:
                 ("weight" in evo and not in_range(self.weight, evo["weight"])) or
                 ("trophies" in evo and not in_range(self.trophies, evo["trophies"])) or
                 ("vital_values" in evo and not in_range(self.vital_values, evo["vital_values"])) or
+                ("blue_gcells" in evo and not in_range(self.get_blue_gcells(), evo["blue_gcells"])) or
+                ("yellow_gcells" in evo and not in_range(self.get_yellow_gcells(), evo["yellow_gcells"])) or
+                ("red_gcells" in evo and not in_range(self.get_red_gcells(), evo["red_gcells"])) or
+                ("gcell_level" in evo and not in_range(self.get_gcell_level(), evo["gcell_level"])) or
+                ("gcell_hatch" in evo and not self.gcell_fragment) or
                 ("stage-5" in evo and not in_range(self.enemy_kills[5], evo["stage-5"])) or
                 ("stage-6" in evo and not in_range(self.enemy_kills[6], evo["stage-6"])) or
                 ("stage-7" in evo and not in_range(self.enemy_kills[7], evo["stage-7"])) or
@@ -756,6 +771,8 @@ class GamePet:
             runtime_globals.game_console.log(f"[Vital] {self.name} lost {vital_loss} vital values (poor condition). Total: {self.vital_values}")
     
     def add_care_mistake(self, mistake_type):
+        module = get_module(self.module)
+        
         if self.use_condition_hearts:
             if self.condition_hearts > 0:
                 self.condition_hearts -= 1
@@ -763,6 +780,12 @@ class GamePet:
         else:
             self.mistakes += 1
             runtime_globals.game_console.log(f"[!] Care mistake ({mistake_type})! Total: {self.mistakes}")
+        
+        # Remove G-Cell points for care mistake if module uses G-Cells
+        if getattr(module, 'use_gcells', False):
+            gcell_points = getattr(module, 'gcell_care_mistake', 0)
+            if gcell_points != 0:
+                self.add_gcell_points(gcell_points)
 
     def need_care(self):
         return self.stage != 0 and self.state not in ("dead","nap") and (self.hunger == 0 or self.strength == 0 or self.sick > 0 or self.should_sleep()) 
@@ -935,7 +958,7 @@ class GamePet:
             attack += 1
         return attack
     
-    def finish_training(self, won = False, grade=0):
+    def finish_training(self, won = False, grade=0, phase2=False):
         module = get_module(self.module)
         if won:
             self.set_state("happy2")
@@ -956,6 +979,19 @@ class GamePet:
 
         weight_loss = module.training_weight_win if won else module.training_weight_lose
         self.weight = max(self.min_weight, self.weight - weight_loss)
+        
+        # Add/Remove G-Cell points for training if module uses G-Cells
+        if getattr(module, 'use_gcells', False):
+            if won:
+                gcell_points = getattr(module, 'gcell_training_success', 0)
+            else:
+                # Training failure - different points based on phase
+                if phase2:
+                    gcell_points = getattr(module, 'gcell_training_phase2_failure', 0)
+                else:
+                    gcell_points = getattr(module, 'gcell_training_phase1_failure', 0)
+
+            self.add_gcell_points(gcell_points)
 
     def finish_versus(self, won=False):
         self.battles += 1
@@ -964,8 +1000,22 @@ class GamePet:
             self.set_state("happy3")
             self.win += 1
             self.totalWin += 1
+            
+            # Add G-Cell points for PvP win if module uses G-Cells
+            module = get_module(self.module)
+            if getattr(module, 'use_gcells', False):
+                gcell_points = getattr(module, 'gcell_battle_win', 0)
+                if gcell_points != 0:
+                    self.add_gcell_points(gcell_points)
+        else:
+            # Remove G-Cell points for PvP loss if module uses G-Cells
+            module = get_module(self.module)
+            if getattr(module, 'use_gcells', False):
+                gcell_points = getattr(module, 'gcell_battle_loose', 0)
+                if gcell_points != 0:
+                    self.add_gcell_points(gcell_points)
 
-    def finish_battle(self, won, enemy, area, final = False):
+    def finish_battle(self, won, enemy, area, final = False, random=False):
         self.battles += 1
         self.dp -= 1
         self.totalBattles += 1
@@ -991,10 +1041,44 @@ class GamePet:
                 self.enemy_kills = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 
             self.enemy_kills[enemy.stage] += 1
+            
+            # Check for G-Cell fragment from Godzilla enemies (15% chance) for modules that use G-Cells
+            module = get_module(self.module)
+            if getattr(module, 'use_gcells', False) and "Godzilla" in enemy.name and random.random() < 0.15:
+                fragment_key = f"{self.module}@{self.version}"
+                if not hasattr(game_globals, 'gcell_fragments'):
+                    game_globals.gcell_fragments = []
+                if fragment_key not in game_globals.gcell_fragments:
+                    game_globals.gcell_fragments.append(fragment_key)
+                    runtime_globals.game_console.log(f"[G-Cell] {self.name} obtained a G-Cell fragment for {self.module} v{self.version} from {enemy.name}!")
+            
+            # Add G-Cell points for battle win if module uses G-Cells
+            module = get_module(self.module)
+            if getattr(module, 'use_gcells', False):
+                if random:
+                    # Random encounter win
+                    gcell_points = getattr(module, 'gcell_random_encounter_win', 0)
+                else:
+                    # Regular battle win
+                    gcell_points = getattr(module, 'gcell_battle_win', 0)
+                if gcell_points != 0:
+                    self.add_gcell_points(gcell_points)
         else:
             if final:
                 self.set_state("lose")
             sick_chance = get_module(self.module).battle_base_sick_chance_lose
+            
+            # Remove G-Cell points for battle loss if module uses G-Cells
+            module = get_module(self.module)
+            if getattr(module, 'use_gcells', False):
+                if random:
+                    # Random encounter loss
+                    gcell_points = getattr(module, 'gcell_random_encounter_loose', 0)
+                else:
+                    # Regular battle loss
+                    gcell_points = getattr(module, 'gcell_battle_loose', 0)
+                if gcell_points != 0:
+                    self.add_gcell_points(gcell_points)
             if self.protein_overdose > get_module(self.module).protein_overdose_max:
                 self.protein_overdose = get_module(self.module).protein_overdose_max
             sick_chance += self.protein_overdose * get_module(self.module).protein_penalty
@@ -1134,3 +1218,69 @@ class GamePet:
             self.protein_feedings = 0
         if not hasattr(self, "edited"):
             self.edited = False
+        if not hasattr(self, "gcell_points"):
+            self.gcell_points = 0
+        if not hasattr(self, "gcell_fragment"):
+            self.gcell_fragment = False
+
+    def get_blue_gcells(self):
+        """
+        Returns the number of blue G-Cells based on gcell_points.
+        Blue G-Cells: 1 every 8 points, max 14 at 112+ points.
+        """
+        if self.gcell_points >= 112:
+            return 14
+        return min(14, self.gcell_points // 8)
+
+    def get_yellow_gcells(self):
+        """
+        Returns the number of yellow G-Cells based on gcell_points.
+        Yellow G-Cells: 1 every 12 points between 113-232, max 10.
+        """
+        if self.gcell_points < 113:
+            return 0
+        if self.gcell_points >= 232:
+            return 10
+        return min(10, (self.gcell_points - 112) // 12)
+
+    def get_red_gcells(self):
+        """
+        Returns the number of red G-Cells based on gcell_points.
+        Red G-Cells: 1 every 12 points between 233-472, max 20.
+        """
+        if self.gcell_points < 233:
+            return 0
+        if self.gcell_points >= 472:
+            return 20
+        return min(20, (self.gcell_points - 232) // 12)
+
+    def get_gcell_level(self):
+        """
+        Returns the current G-Cell meter level (1-4) based on gcell_points.
+        Level 1: 0-112 points (Blue)
+        Level 2: 113-232 points (Yellow)
+        Level 3: 233-352 points (Red)
+        Level 4: 353-472 points (Red)
+        """
+        if self.gcell_points <= 112:
+            return 1
+        elif self.gcell_points <= 232:
+            return 2
+        elif self.gcell_points <= 352:
+            return 3
+        else:
+            return 4
+
+    def add_gcell_points(self, points):
+        """
+        Adds G-Cell points with proper capping (0 minimum, 472 maximum).
+        Returns the actual amount added/subtracted.
+        """
+        old_points = self.gcell_points
+        self.gcell_points = max(0, min(472, self.gcell_points + points))
+        actual_change = self.gcell_points - old_points
+        
+        if actual_change != 0:
+            runtime_globals.game_console.log(f"[G-Cell] {self.name} {'+' if actual_change > 0 else ''}{actual_change} points. Total: {self.gcell_points}")
+        
+        return actual_change

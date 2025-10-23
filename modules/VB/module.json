@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "A reimplementation of the Virtual Bracelet DIMs, you can find more at https://humulos.com/digimon/vbdm/.",
   "author": "Sundeth",
+  "category": "Conversions",
   "name_format": "$_dmc",
   "ruleset": "vb",
   "adventure_mode": true,

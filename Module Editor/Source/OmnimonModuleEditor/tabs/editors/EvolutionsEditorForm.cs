@@ -761,6 +761,12 @@ namespace OmnimonModuleEditor
                 if (evo.Weigth != null) lines.Add($"Weight: {formatRange(evo.Weigth)}"); // New field
                 if (evo.QuestsCompleted != null) lines.Add($"Quests Completed: {formatRange(evo.QuestsCompleted)}"); // New field
                 if (evo.Pvp != null) lines.Add($"PVP: {formatRange(evo.Pvp)}"); // New field
+
+                // G-Cell evolution criteria
+                if (evo.GCellHatch != null) lines.Add($"G-Cell Hatch: {(evo.GCellHatch.Value ? "Yes" : "No")}");
+                if (evo.BlueGCells != null) lines.Add($"Blue G-Cells: {formatRange(evo.BlueGCells)}");
+                if (evo.YellowGCells != null) lines.Add($"Yellow G-Cells: {formatRange(evo.YellowGCells)}");
+                if (evo.RedGCells != null) lines.Add($"Red G-Cells: {formatRange(evo.RedGCells)}");
             }
 
             // Define the click event handler that opens the EvolutionCriteriaForm
@@ -1030,7 +1036,13 @@ namespace OmnimonModuleEditor
                 VitalValues = evo.VitalValues != null ? (int[])evo.VitalValues.Clone() : null, // New field
                 Weigth = evo.Weigth != null ? (int[])evo.Weigth.Clone() : null, // New field
                 QuestsCompleted = evo.QuestsCompleted != null ? (int[])evo.QuestsCompleted.Clone() : null, // New field
-                Pvp = evo.Pvp != null ? (int[])evo.Pvp.Clone() : null // New field
+                Pvp = evo.Pvp != null ? (int[])evo.Pvp.Clone() : null, // New field
+
+                // G-Cell evolution criteria
+                GCellHatch = evo.GCellHatch,
+                BlueGCells = evo.BlueGCells != null ? (int[])evo.BlueGCells.Clone() : null,
+                YellowGCells = evo.YellowGCells != null ? (int[])evo.YellowGCells.Clone() : null,
+                RedGCells = evo.RedGCells != null ? (int[])evo.RedGCells.Clone() : null
             };
         }
 

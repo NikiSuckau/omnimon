@@ -21,18 +21,19 @@ class UIManager:
         self.animation_components = []
         self.cached_background = None
         
+        # Shadow system configuration
+        # Global shadow mode: None (disabled), "component", "background", "full"
+        # None: Use component-specific shadow settings
+        # "component": Force shadows only on component backgrounds/borders
+        # "background": Force shadows only on component backgrounds/borders
+        # "full": Force shadows everywhere including text and decorators
+        self.global_shadow_mode = None  # Default: disabled, use component settings
+        
         # Calculate actual UI dimensions and offset
         self.ui_width, self.ui_height = self.get_scaled_resolution()
         self.ui_offset_x, self.ui_offset_y = self.get_ui_offset()
         
-        # Global highlight system
-        self.highlight_anim_start = 0
-        self.highlight_anim_duration = 150  # ms - fast animation
-        self.highlight_animating = False
-        self.highlight_start_rect = None
-        self.highlight_target_rect = None
-        self.highlight_current_rect = None
-        self.highlight_visible = True  # Can be hidden during drag
+        # Global highlight system removed - components handle their own highlighting
         
         # Mouse tracking
         self.last_mouse_pos = (0, 0)
@@ -165,16 +166,34 @@ class UIManager:
             return self.current_animated_colors
             
         if self.theme == "PURPLE":
-            return {"bg": PURPLE_DARK, "fg": PURPLE, "highlight": PURPLE_LIGHT, "black": BLACK, "grey": GREY}
+            colors = {"bg": PURPLE_DARK, "fg": PURPLE, "highlight": PURPLE_LIGHT, "black": BLACK, "grey": GREY}
         elif self.theme == "GREEN":
-            return {"bg": GREEN_DARK, "fg": GREEN, "highlight": GREEN_LIGHT, "black": BLACK, "grey": GREY}
+            colors = {"bg": GREEN_DARK, "fg": GREEN, "highlight": GREEN_LIGHT, "black": BLACK, "grey": GREY}
         elif self.theme == "BLUE":
-            return {"bg": BLUE_DARK, "fg": BLUE, "highlight": BLUE_LIGHT, "black": BLACK, "grey": GREY}
+            colors = {"bg": BLUE_DARK, "fg": BLUE, "highlight": BLUE_LIGHT, "black": BLACK, "grey": GREY}
         elif self.theme == "YELLOW":
-            return {"bg": YELLOW_DARK, "fg": YELLOW, "highlight": YELLOW_LIGHT, "black": BLACK, "grey": GREY}
+            colors = {"bg": YELLOW_DARK, "fg": YELLOW, "highlight": YELLOW_LIGHT, "black": BLACK, "grey": GREY}
         elif self.theme == "RED":
-            return {"bg": RED_DARK, "fg": RED, "highlight": RED_LIGHT, "black": BLACK, "grey": GREY}
-        return {"bg": BLACK, "fg": GREY, "highlight": GREY, "black": BLACK, "grey": GREY}
+            colors = {"bg": RED_DARK, "fg": RED, "highlight": RED_LIGHT, "black": BLACK, "grey": GREY}
+        elif self.theme == "GRAY":
+            colors = {"bg": GRAY_DARK, "fg": GRAY, "highlight": GRAY_LIGHT, "black": BLACK, "grey": GREY}
+        elif self.theme == "YELLOW_BRIGHT":
+            colors = {"bg": YELLOW_BRIGHT_DARK, "fg": YELLOW_BRIGHT, "highlight": YELLOW_BRIGHT_LIGHT, "black": BLACK, "grey": GREY}
+        elif self.theme == "RED_DARK_VARIANT":
+            colors = {"bg": RED_DARK_VARIANT_DARK, "fg": RED_DARK_VARIANT, "highlight": RED_DARK_VARIANT_LIGHT, "black": BLACK, "grey": GREY}
+        elif self.theme == "CYAN":
+            colors = {"bg": CYAN_DARK, "fg": CYAN, "highlight": CYAN_LIGHT, "black": BLACK, "grey": GREY}
+        elif self.theme == "LIME":
+            colors = {"bg": LIME_DARK, "fg": LIME, "highlight": LIME_LIGHT, "black": BLACK, "grey": GREY}
+        else:
+            colors = {"bg": BLACK, "fg": GREY, "highlight": GREY, "black": BLACK, "grey": GREY}
+        
+        # Validate that all required keys exist
+        if "highlight" not in colors:
+            print(f"ERROR: Missing highlight key for theme {self.theme}")
+            colors["highlight"] = colors.get("fg", GREY)
+            
+        return colors
     
     def start_color_animation(self, target_theme, callback=None):
         """Start color animation from current theme to target theme"""
@@ -281,20 +300,99 @@ class UIManager:
             return {"bg": YELLOW_DARK, "fg": YELLOW, "highlight": YELLOW_LIGHT, "black": BLACK, "grey": GREY}
         elif theme_name == "RED":
             return {"bg": RED_DARK, "fg": RED, "highlight": RED_LIGHT, "black": BLACK, "grey": GREY}
+        elif theme_name == "GRAY":
+            return {"bg": GRAY_DARK, "fg": GRAY, "highlight": GRAY_LIGHT, "black": BLACK, "grey": GREY}
+        elif theme_name == "YELLOW_BRIGHT":
+            return {"bg": YELLOW_BRIGHT_DARK, "fg": YELLOW_BRIGHT, "highlight": YELLOW_BRIGHT_LIGHT, "black": BLACK, "grey": GREY}
+        elif theme_name == "RED_DARK_VARIANT":
+            return {"bg": RED_DARK_VARIANT_DARK, "fg": RED_DARK_VARIANT, "highlight": RED_DARK_VARIANT_LIGHT, "black": BLACK, "grey": GREY}
+        elif theme_name == "CYAN":
+            return {"bg": CYAN_DARK, "fg": CYAN, "highlight": CYAN_LIGHT, "black": BLACK, "grey": GREY}
+        elif theme_name == "LIME":
+            return {"bg": LIME_DARK, "fg": LIME, "highlight": LIME_LIGHT, "black": BLACK, "grey": GREY}
         return {"bg": BLACK, "fg": GREY, "highlight": GREY, "black": BLACK, "grey": GREY}
+
+    def set_global_shadow_mode(self, mode):
+        """Set the global shadow mode for all components
+        
+        Args:
+            mode: None (use component settings), "disabled" (no shadows), 
+                  "component" (shadows on backgrounds/borders only), 
+                  "full" (shadows on everything)
+        """
+        self.global_shadow_mode = mode
+        # Mark all components for redraw
+        for component in self.components:
+            component.needs_redraw = True
+    
+    def get_shadow_mode_for_component(self, component):
+        """Get the effective shadow mode for a specific component
+        
+        Returns:
+            "disabled": No shadows
+            "component": Shadows on component background/border only  
+            "full": Shadows on everything (text, decorators, etc.)
+        """
+        if self.global_shadow_mode is not None:
+            return self.global_shadow_mode
+        
+        # Use component-specific setting if available
+        if hasattr(component, 'shadow_mode'):
+            return component.shadow_mode
+        
+        # Default to disabled
+        return "disabled"
+    
+    def should_render_shadow(self, component, element_type="component"):
+        """Check if shadows should be rendered for a specific element
+        
+        Args:
+            component: The UI component
+            element_type: "component" (background/border), "text", "decorator", "icon"
+            
+        Returns:
+            bool: True if shadow should be rendered
+        """
+        shadow_mode = self.get_shadow_mode_for_component(component)
+        
+        if shadow_mode == "disabled":
+            return False
+        elif shadow_mode == "component":
+            return element_type == "component"
+        elif shadow_mode == "full":
+            return True
+        
+        return False
 
     def add_component(self, component):
         """Add a component to the UI manager and scale its position/size"""
         self.components.append(component)
         component.manager = self
         
-        # Scale the component's position and size from base coordinates to screen coordinates
-        base_rect = component.rect.copy()
-        component.base_rect = base_rect  # Store original base coordinates
-        component.rect = self.scale_rect(base_rect)  # Scale to screen coordinates
-        
-        if DEBUG_SCALE:
-            runtime_globals.game_console.log(f"[UIManager] Added {component.__class__.__name__}: base={base_rect} -> screen={component.rect}")
+        # Handle screen coordinate components differently
+        if hasattr(component, 'use_screen_coordinates') and component.use_screen_coordinates:
+            # For screen coordinate components, only scale the size (keeping aspect ratio)
+            # but apply integer scaling to maintain consistency
+            base_rect = component.rect.copy()
+            component.base_rect = base_rect  # Store original base coordinates
+            
+            # Scale only the size using UI scale for consistency
+            scaled_width = int(base_rect.width * self.ui_scale)
+            scaled_height = int(base_rect.height * self.ui_scale)
+            
+            # Keep the position as-is (screen coordinates)
+            component.rect = pygame.Rect(base_rect.x, base_rect.y, scaled_width, scaled_height)
+            
+            if DEBUG_SCALE:
+                runtime_globals.game_console.log(f"[UIManager] Added {component.__class__.__name__} (screen coords): base={base_rect} -> screen={component.rect}")
+        else:
+            # Scale the component's position and size from base coordinates to screen coordinates
+            base_rect = component.rect.copy()
+            component.base_rect = base_rect  # Store original base coordinates
+            component.rect = self.scale_rect(base_rect)  # Scale to screen coordinates
+            
+            if DEBUG_SCALE:
+                runtime_globals.game_console.log(f"[UIManager] Added {component.__class__.__name__}: base={base_rect} -> screen={component.rect}")
         
         # Call component's manager set callback if it exists (after base_rect is set)
         if hasattr(component, 'on_manager_set'):
@@ -347,7 +445,6 @@ class UIManager:
         # Enter keyboard navigation mode
         self.keyboard_navigation_mode = True
         self.last_keyboard_action_time = pygame.time.get_ticks()
-        self.highlight_visible = True
         
         # Find next visible focusable component
         current_index = self.focused_index if self.focused_index >= 0 else -1
@@ -356,16 +453,15 @@ class UIManager:
         if next_index == -1:
             return  # No visible components found
             
-        # Get old and new component rects for highlight animation
-        old_rect = None
+        # Unfocus old component
         if self.focused_index >= 0:
             old_component = self.focusable_components[self.focused_index]
             old_component.focused = False
             old_component.needs_redraw = True
             if hasattr(old_component, 'on_focus_lost'):
                 old_component.on_focus_lost()
-            old_rect = old_component.rect
             
+        # Focus new component
         self.focused_index = next_index
         new_component = self.focusable_components[self.focused_index]
         new_component.focused = True
@@ -373,14 +469,9 @@ class UIManager:
         if hasattr(new_component, 'on_focus_gained'):
             new_component.on_focus_gained()
             
-        # Get target rect - use sub-component if available
-        target_rect = new_component.rect
-        if hasattr(new_component, 'get_focused_sub_rect'):
-            sub_rect = new_component.get_focused_sub_rect()
-            target_rect = sub_rect
-            
-        # Start global highlight animation
-        self.start_global_highlight_animation(old_rect, target_rect)
+        # Play navigation sound
+        if hasattr(runtime_globals, 'game_sound') and runtime_globals.game_sound:
+            runtime_globals.game_sound.play("menu")
         
     def focus_prev(self):
         if not self.focusable_components:
@@ -389,7 +480,6 @@ class UIManager:
         # Enter keyboard navigation mode
         self.keyboard_navigation_mode = True
         self.last_keyboard_action_time = pygame.time.get_ticks()
-        self.highlight_visible = True
         
         # Find previous visible focusable component
         current_index = self.focused_index if self.focused_index >= 0 else 0
@@ -398,16 +488,15 @@ class UIManager:
         if prev_index == -1:
             return  # No visible components found
             
-        # Get old and new component rects for highlight animation
-        old_rect = None
+        # Unfocus old component
         if self.focused_index >= 0:
             old_component = self.focusable_components[self.focused_index]
             old_component.focused = False
             old_component.needs_redraw = True
             if hasattr(old_component, 'on_focus_lost'):
                 old_component.on_focus_lost()
-            old_rect = old_component.rect
             
+        # Focus new component
         self.focused_index = prev_index
         new_component = self.focusable_components[self.focused_index]
         new_component.focused = True
@@ -415,14 +504,9 @@ class UIManager:
         if hasattr(new_component, 'on_focus_gained'):
             new_component.on_focus_gained()
             
-        # Get target rect - use sub-component if available
-        target_rect = new_component.rect
-        if hasattr(new_component, 'get_focused_sub_rect'):
-            sub_rect = new_component.get_focused_sub_rect()
-            target_rect = sub_rect
-            
-        # Start global highlight animation
-        self.start_global_highlight_animation(old_rect, target_rect)
+        # Play navigation sound
+        if hasattr(runtime_globals, 'game_sound') and runtime_globals.game_sound:
+            runtime_globals.game_sound.play("menu")
         
     def handle_event(self, event):
         """Handle input events (keyboard, joystick, mouse)"""
@@ -457,13 +541,6 @@ class UIManager:
                 # Don't update focus while in keyboard navigation mode
                 return
         
-        # Hide highlight during drag operations
-        if hasattr(runtime_globals.game_input, 'is_dragging') and runtime_globals.game_input.is_dragging():
-            self.highlight_visible = False
-            return
-        else:
-            self.highlight_visible = True
-        
         self.last_mouse_pos = mouse_pos
         
         # Find which focusable component the mouse is over
@@ -476,6 +553,8 @@ class UIManager:
             if hasattr(component, 'visible') and not component.visible:
                 continue
                 
+            # Check collision - component.rect is always in screen coordinates
+            # Use screen mouse position for collision detection
             if hasattr(component, 'rect') and component.rect.collidepoint(mouse_pos):
                 # Mouse is over this component
                 best_component = component
@@ -483,7 +562,17 @@ class UIManager:
                 
                 # Check if component has sub-component support
                 if hasattr(component, 'get_mouse_sub_rect'):
-                    sub_rect = component.get_mouse_sub_rect(mouse_pos)
+                    # For get_mouse_sub_rect, use appropriate coordinate system
+                    if hasattr(component, 'use_screen_coordinates') and component.use_screen_coordinates:
+                        # Screen coordinate components expect screen coordinates
+                        sub_rect = component.get_mouse_sub_rect(mouse_pos)
+                    else:
+                        # Regular components expect UI coordinates
+                        ui_mouse_x = (mouse_pos[0] - self.ui_offset_x) / self.ui_scale
+                        ui_mouse_y = (mouse_pos[1] - self.ui_offset_y) / self.ui_scale
+                        ui_mouse_pos = (ui_mouse_x, ui_mouse_y)
+                        sub_rect = component.get_mouse_sub_rect(ui_mouse_pos)
+                    
                     if sub_rect:
                         best_sub_rect = sub_rect
                         # Mouse is over a valid sub-component
@@ -497,26 +586,20 @@ class UIManager:
                     best_sub_rect = component.rect
                 break
         
-        # If mouse is not over any valid component, hide highlight
+        # If mouse is not over any valid component, clear focus
         if not best_component:
-            if self.highlight_visible:
-                self.highlight_current_rect = None
-                self.highlight_visible = False
-                # Also clear focus
-                if self.focused_index >= 0:
-                    old_component = self.focusable_components[self.focused_index]
-                    old_component.focused = False
-                    old_component.needs_redraw = True
-                    if hasattr(old_component, 'on_focus_lost'):
-                        old_component.on_focus_lost()
-                    self.focused_index = -1
+            # Clear focus
+            if self.focused_index >= 0:
+                old_component = self.focusable_components[self.focused_index]
+                old_component.focused = False
+                old_component.needs_redraw = True
+                if hasattr(old_component, 'on_focus_lost'):
+                    old_component.on_focus_lost()
+                self.focused_index = -1
             return
         
         # Update focus if needed
         if best_component and self.focused_index != best_component_index:
-            # Store old highlight rect for animation
-            old_rect = self.highlight_current_rect
-            
             # Update focus
             if self.focused_index >= 0:
                 old_component = self.focusable_components[self.focused_index]
@@ -531,19 +614,73 @@ class UIManager:
             if hasattr(best_component, 'on_focus_gained'):
                 best_component.on_focus_gained()
             
-            # Start highlight animation to sub-rect
-            self.start_global_highlight_animation(old_rect, best_sub_rect)
-            
-        elif best_component and best_sub_rect:
-            # Same component, but potentially different sub-rect
-            if not self.highlight_current_rect or not self.rects_equal(self.highlight_current_rect, best_sub_rect):
-                # Move highlight to new sub-rect
-                old_rect = self.highlight_current_rect
-                self.start_global_highlight_animation(old_rect, best_sub_rect)
-        
         # Store current state
         self.mouse_over_component = best_component
         self.mouse_over_sub_rect = best_sub_rect
+    
+    def _rect_to_points(self, rect):
+        """Convert a pygame.Rect to a list of corner points (clockwise from top-left)"""
+        return [
+            (rect.x, rect.y),  # top-left
+            (rect.x + rect.width, rect.y),  # top-right
+            (rect.x + rect.width, rect.y + rect.height),  # bottom-right
+            (rect.x, rect.y + rect.height)  # bottom-left
+        ]
+    
+    def _normalize_polygon_points(self, poly1, poly2):
+        """Ensure both polygons have the same number of points for smooth interpolation
+        
+        If they have different point counts, the polygon with fewer points will be 
+        subdivided by adding intermediate points along its edges.
+        """
+        len1, len2 = len(poly1), len(poly2)
+        
+        if len1 == len2:
+            return poly1, poly2
+        
+        # Determine which polygon needs more points
+        if len1 < len2:
+            poly1 = self._subdivide_polygon(poly1, len2)
+        else:
+            poly2 = self._subdivide_polygon(poly2, len1)
+            
+        return poly1, poly2
+    
+    def _subdivide_polygon(self, polygon, target_points):
+        """Subdivide a polygon to have the target number of points"""
+        current_points = len(polygon)
+        if current_points >= target_points:
+            return polygon
+            
+        # Calculate how many points to add
+        points_to_add = target_points - current_points
+        
+        # Add points by subdividing the longest edges
+        result = list(polygon)
+        
+        for _ in range(points_to_add):
+            # Find the longest edge
+            longest_edge_idx = 0
+            longest_edge_length = 0
+            
+            for i in range(len(result)):
+                p1 = result[i]
+                p2 = result[(i + 1) % len(result)]
+                edge_length = ((p2[0] - p1[0]) ** 2 + (p2[1] - p1[1]) ** 2) ** 0.5
+                
+                if edge_length > longest_edge_length:
+                    longest_edge_length = edge_length
+                    longest_edge_idx = i
+            
+            # Add a midpoint to the longest edge
+            p1 = result[longest_edge_idx]
+            p2 = result[(longest_edge_idx + 1) % len(result)]
+            midpoint = ((p1[0] + p2[0]) / 2, (p1[1] + p2[1]) / 2)
+            
+            # Insert the midpoint
+            result.insert(longest_edge_idx + 1, midpoint)
+        
+        return result
     
     def rects_equal(self, rect1, rect2):
         """Check if two rects are equal (within a small tolerance)"""
@@ -551,6 +688,34 @@ class UIManager:
             return False
         return (abs(rect1.x - rect2.x) < 2 and abs(rect1.y - rect2.y) < 2 and
                 abs(rect1.width - rect2.width) < 2 and abs(rect1.height - rect2.height) < 2)
+    
+    def shapes_equal(self, shape1, shape2):
+        """Check if two shapes are equal (can be rects or polygons)"""
+        if not shape1 or not shape2:
+            return False
+            
+        # Both are rects
+        if isinstance(shape1, pygame.Rect) and isinstance(shape2, pygame.Rect):
+            return self.rects_equal(shape1, shape2)
+        
+        # Both are polygons (lists of points)
+        if isinstance(shape1, list) and isinstance(shape2, list):
+            if len(shape1) != len(shape2):
+                return False
+            
+            for i in range(len(shape1)):
+                p1, p2 = shape1[i], shape2[i]
+                if abs(p1[0] - p2[0]) > 2 or abs(p1[1] - p2[1]) > 2:
+                    return False
+            return True
+        
+        # Mixed types - convert rect to polygon and compare
+        if isinstance(shape1, pygame.Rect):
+            shape1 = self._rect_to_points(shape1)
+        if isinstance(shape2, pygame.Rect):
+            shape2 = self._rect_to_points(shape2)
+            
+        return self.shapes_equal(shape1, shape2)
     
     def find_nearest_component_in_direction(self, direction):
         """Find the nearest focusable component in the given direction"""
@@ -627,10 +792,9 @@ class UIManager:
                     current_component.on_focus_lost()
                 self.focused_index = -1
             
-        # Enter keyboard navigation mode and preserve current focus
+        # Enter keyboard navigation mode
         self.keyboard_navigation_mode = True
         self.last_keyboard_action_time = pygame.time.get_ticks()
-        self.highlight_visible = True
         
         # If no component is currently focused, focus the first visible one
         if self.focused_index < 0:
@@ -645,21 +809,13 @@ class UIManager:
             if hasattr(component, 'on_focus_gained'):
                 component.on_focus_gained()
             
-            # Get target rect - use sub-component if available
-            target_rect = component.rect
-            if hasattr(component, 'get_focused_sub_rect'):
-                sub_rect = component.get_focused_sub_rect()
-                target_rect = sub_rect
-                self.highlight_current_rect = None if not sub_rect else target_rect.copy()
-            
-            self.highlight_current_rect = target_rect.copy() if target_rect else None
+            # Play navigation sound
+            if hasattr(runtime_globals, 'game_sound') and runtime_globals.game_sound:
+                runtime_globals.game_sound.play("menu")
             return True
             
         new_index = self.find_nearest_component_in_direction(direction)
         if new_index >= 0 and new_index != self.focused_index:
-            # Store old highlight rect
-            old_rect = self.highlight_current_rect
-            
             # Update focus
             if self.focused_index >= 0:
                 old_component = self.focusable_components[self.focused_index]
@@ -672,18 +828,12 @@ class UIManager:
             new_component = self.focusable_components[self.focused_index]
             new_component.focused = True
             new_component.needs_redraw = True
-            
-            # Get target rect - use sub-component if available
-            target_rect = new_component.rect
-            if hasattr(new_component, 'get_focused_sub_rect'):
-                sub_rect = new_component.get_focused_sub_rect()
-                target_rect = sub_rect
-            
             if hasattr(new_component, 'on_focus_gained'):
                 new_component.on_focus_gained()
             
-            # Start highlight animation
-            self.start_global_highlight_animation(old_rect, target_rect)
+            # Play navigation sound
+            if hasattr(runtime_globals, 'game_sound') and runtime_globals.game_sound:
+                runtime_globals.game_sound.play("menu")
             return True
         
         return False
@@ -956,43 +1106,6 @@ class UIManager:
         """Set the input manager reference for mouse handling"""
         self._input_manager = input_manager
         
-    def start_global_highlight_animation(self, from_rect, to_rect):
-        """Start global highlight animation from one rect to another"""
-        if from_rect and to_rect:
-            self.highlight_start_rect = from_rect.copy()
-            self.highlight_target_rect = to_rect.copy()
-            self.highlight_current_rect = from_rect.copy()
-            self.highlight_animating = True
-            self.highlight_anim_start = pygame.time.get_ticks()
-        else:
-            self.highlight_current_rect = to_rect.copy() if to_rect else None
-            self.highlight_animating = False
-            
-    def update_highlight_animation(self):
-        """Update the global highlight animation"""
-        if not self.highlight_animating:
-            return
-            
-        elapsed = pygame.time.get_ticks() - self.highlight_anim_start
-        progress = min(1.0, elapsed / self.highlight_anim_duration)
-        
-        # Ease-out animation
-        progress = 1 - (1 - progress) ** 3
-        
-        # Interpolate rectangle
-        start = self.highlight_start_rect
-        target = self.highlight_target_rect
-        
-        self.highlight_current_rect = pygame.Rect(
-            int(start.x + (target.x - start.x) * progress),
-            int(start.y + (target.y - start.y) * progress),
-            int(start.width + (target.width - start.width) * progress),
-            int(start.height + (target.height - start.height) * progress)
-        )
-        
-        if progress >= 1.0:
-            self.highlight_animating = False
-            
     def show_tooltip(self, text):
         """Show a tooltip with the given text (only if activated)"""
         if not text:
@@ -1006,8 +1119,7 @@ class UIManager:
             self.active_tooltip.set_manager(self)  # Use set_manager to trigger scaling
             
             # Play activation sound if available
-            if hasattr(runtime_globals, 'game_audio') and runtime_globals.game_audio:
-                runtime_globals.game_audio.play_sound("click")
+            runtime_globals.game_sound.play("menu")
         except ImportError as e:
             if DEBUG_SCALE:
                 runtime_globals.game_console.log(f"[UIManager] Error importing Tooltip: {e}")
@@ -1015,41 +1127,12 @@ class UIManager:
         
     def hide_tooltip(self):
         """Hide the current tooltip"""
+        if self.active_tooltip:
+            runtime_globals.game_sound.play("cancel")
         self.active_tooltip = None
-        
-    def draw_global_highlight(self, surface):
-        """Draw the global highlight if active"""
-        if not self.highlight_visible or not self.highlight_current_rect:
-            return
-            
-        colors = self.get_theme_colors()
-        highlight_color = colors["highlight"]
-        
-        # Calculate border width and radius based on scale
-        border_width = max(1, self.get_border_size())  # 2px base * scale
-        border_radius = max(2, self.get_border_size())  # 2px base * scale
-        
-        # Draw rounded rectangle highlight
-        highlight_rect = pygame.Rect(
-            int(self.highlight_current_rect.x),
-            int(self.highlight_current_rect.y),
-            int(self.highlight_current_rect.width),
-            int(self.highlight_current_rect.height)
-        )
-        
-        # Draw the rounded border highlight
-        pygame.draw.rect(
-            surface,
-            highlight_color,
-            highlight_rect,
-            width=border_width,
-            border_radius=border_radius
-        )
         
     def update(self):
         """Update all components (animations, etc)"""
-        self.update_highlight_animation()
-        
         # Update color animation
         self.update_color_animation()
         
@@ -1077,9 +1160,6 @@ class UIManager:
                                 self.ui_width + 2 * border_size, self.ui_height + 2 * border_size)
             pygame.draw.rect(surface, border_color, ui_rect, width=border_size)
             
-        # Draw global highlight at scaled position
-        self.draw_global_highlight(surface)
-        
         # Draw tooltip at scaled position
         if self.active_tooltip:
             self.active_tooltip.draw(surface)
@@ -1111,8 +1191,9 @@ class UIManager:
         if hasattr(component, 'get_focused_sub_rect'):
             sub_rect = component.get_focused_sub_rect()
             target_rect = sub_rect
-                
-        self.start_global_highlight_animation(None, target_rect)
+            
+        # Individual component highlighting - no global highlight system
+        component.needs_redraw = True
         return True
     
     def set_mouse_mode(self):
@@ -1187,7 +1268,7 @@ class UIManager:
             pygame.Surface: Scaled sprite surface, or None if file not found
         """
         if scale_factor is None:
-            scale_factor = self.scale
+            scale_factor = self.ui_scale
             
         if DEBUG_SCALE:
             runtime_globals.game_console.log(f"[UIManager] Loading non-integer scaled sprite: {base_path} with scale {scale_factor}")
@@ -1403,6 +1484,41 @@ class UIManager:
         # Draw border if specified
         if border_color and border_width > 0 and len(points) >= 3:
             pygame.draw.polygon(surface, border_color, points, border_width)
+    
+    def draw_hexagon_highlight(self, surface, color, center, radius, border_width=None):
+        """
+        Draw a hexagon highlight (outline only) using scaled values.
+        
+        Args:
+            surface: Pygame surface to draw on
+            color: Outline color (RGB tuple)
+            center: Center point (x, y) in base coordinates
+            radius: Hexagon radius in base pixels (auto-scaled)
+            border_width: Border width in base pixels, optional (auto-scaled)
+        """
+        # Scale center and radius
+        scaled_center = self.scale_position(center[0], center[1])
+        scaled_radius = self.scale_value(radius)
+        
+        if border_width is None:
+            border_width = self.get_border_size()
+        else:
+            border_width = self.scale_value(border_width)
+        
+        if DEBUG_SCALE:
+            runtime_globals.game_console.log(f"[UIManager] Drawing hexagon highlight: center={scaled_center}, radius={scaled_radius}, border_width={border_width}")
+        
+        # Calculate hexagon points
+        points = []
+        for i in range(6):
+            angle = (math.pi / 3 * i) + (math.pi / 6)  # 60 degrees * i + 30 degrees rotation
+            x = scaled_center[0] + scaled_radius * math.cos(angle)
+            y = scaled_center[1] + scaled_radius * math.sin(angle)
+            points.append((int(x), int(y)))
+        
+        # Draw outline only
+        if len(points) >= 3:
+            pygame.draw.polygon(surface, color, points, border_width)
     
     def draw_arrow_polygon(self, surface, color, rect, direction="right", border_color=None, border_width=None):
         """

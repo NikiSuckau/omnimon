@@ -43,6 +43,35 @@ class PetSelector(UIComponent):
         # Setup initial layout
         self.update_layout()
         
+    def get_highlight_shape(self):
+        """Return custom hexagonal highlight shape for the focused pet"""
+        if not self.is_interactive or self.focused_cell < 0 or self.focused_cell >= len(self.cell_positions):
+            return None
+            
+        # Get the focused cell position and radius
+        base_center = self.cell_positions[self.focused_cell]
+        radius = (self.calculated_cell_size // 2) if hasattr(self, 'calculated_cell_size') else (self.base_cell_size // 2)
+        
+        # Convert to screen coordinates
+        if self.manager:
+            screen_center = self.manager.scale_position(base_center[0], base_center[1])
+            screen_center = (screen_center[0] + self.rect.x, screen_center[1] + self.rect.y)
+            scaled_radius = self.manager.scale_value(radius)
+        else:
+            screen_center = (base_center[0] + self.rect.x, base_center[1] + self.rect.y)
+            scaled_radius = radius
+        
+        # Calculate hexagon points for highlight (slightly larger than the pet hexagon)
+        highlight_radius = scaled_radius + self.manager.scale_value(4) if self.manager else radius + 4
+        points = []
+        for i in range(6):
+            angle = (math.pi / 3 * i) + (math.pi / 6)  # 60 degrees * i + 30 degrees rotation
+            x = screen_center[0] + highlight_radius * math.cos(angle)
+            y = screen_center[1] + highlight_radius * math.sin(angle)
+            points.append((int(x), int(y)))
+        
+        return points
+        
     def set_pets(self, pets):
         """Set the list of pets to display"""
         self.pets = pets[:]

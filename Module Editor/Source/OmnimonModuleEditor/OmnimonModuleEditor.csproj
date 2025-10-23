@@ -124,6 +124,7 @@
     <Compile Include="docgenerators\ItemGenerator.cs" />
     <Compile Include="docgenerators\QuestEventGenerator.cs" />
     <Compile Include="docgenerators\UnlockGenerator.cs" />
+    <Compile Include="models\Connection.cs" />
     <Compile Include="models\Event.cs" />
     <Compile Include="models\Quest.cs" />
     <Compile Include="tabs\editors\EnemyFastEditorForm.cs">
@@ -171,7 +172,7 @@
       <SubType>UserControl</SubType>
     </Compile>
     <Compile Include="tabs\ModuleTab.cs">
-      <SubType>UserControl</SubType>
+      <SubType>Form</SubType>
     </Compile>
     <Compile Include="tabs\PetTab.cs">
       <SubType>UserControl</SubType>

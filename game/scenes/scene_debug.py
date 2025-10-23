@@ -64,6 +64,7 @@ class SceneDebug:
             ("POOP", self._force_poop, "Force all pets to poop"),
             ("KILL", self._kill_pets, "Kill selected pets"),
             ("Traited", self._add_traited_egg, "Add random traited egg"),
+            ("G-Fragment", self._add_gcell_fragment, "Add G-Cell fragment for DMGZ v1"),
             ("Quest Reset", self._reset_quests, "Reset daily quests"),
             ("Complete Quests", self._complete_quests, "Complete all available quests"),
             ("Try Event", self._try_event, "Attempt to trigger an event")
@@ -549,6 +550,23 @@ class SceneDebug:
 
         runtime_globals.game_console.log(f"[SceneDebug] Added traited egg: {random_egg['name']} from {random_module_name}")
         return True
+
+    def _add_gcell_fragment(self) -> bool:
+        """Add G-Cell fragment for DMGZ v1."""
+        fragment_key = "DMGZ@1"
+        
+        # Initialize gcell_fragments if it doesn't exist
+        if not hasattr(game_globals, 'gcell_fragments'):
+            game_globals.gcell_fragments = []
+        
+        # Add fragment if not already present
+        if fragment_key not in game_globals.gcell_fragments:
+            game_globals.gcell_fragments.append(fragment_key)
+            runtime_globals.game_console.log(f"[SceneDebug] Added G-Cell fragment: {fragment_key}")
+            return True
+        else:
+            runtime_globals.game_console.log(f"[SceneDebug] G-Cell fragment already exists: {fragment_key}")
+            return False
 
     def _reset_quests(self) -> bool:
         """Reset daily quests."""

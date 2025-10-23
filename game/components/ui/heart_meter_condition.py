@@ -104,5 +104,11 @@ class HeartMeterCondition(UIComponent):
                 heart = self.heart_images["empty"]
                 
             blit_with_cache(surface, heart, (heart_x, heart_y))
+
+        if self.focused:
+            colors = self.manager.get_theme_colors()
+            highlight_color = colors.get("highlight", colors["fg"])  # Safe fallback
+            pygame.draw.rect(surface, highlight_color, surface.get_rect(), 2)
+            
             
         return surface
