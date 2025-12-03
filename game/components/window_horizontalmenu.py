@@ -1,5 +1,5 @@
 import pygame
-import game.core.constants as constants
+import core.constants as constants
 from core import runtime_globals
 from core.utils.pygame_utils import blit_with_cache, blit_with_shadow, get_font, sprite_load_percent
 

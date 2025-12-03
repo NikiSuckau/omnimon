@@ -7,15 +7,15 @@ import pygame
 from core import game_globals, runtime_globals, constants
 from core.utils.module_utils import get_module
 from components.ui.ui_manager import UIManager
-from game.components.ui.pet_list import PetList
+from components.ui.pet_list import PetList
 from components.ui.background import Background
 from components.ui.label import Label
 from components.ui.label_value import LabelValue
 from components.ui.ui_constants import YELLOW
 from components.ui.heart import HeartMeter
 from components.ui.dp_bar import DPBar
-from game.components.ui.gcell_bar import GCellBar
-from game.components.ui.status_carousel import StatusCarousel
+from components.ui.gcell_bar import GCellBar
+from components.ui.status_carousel import StatusCarousel
 from components.ui.experience_bar import ExperienceBar
 from components.ui.numeric_meter import NumericMeter
 from components.ui.heart_meter_condition import HeartMeterCondition
@@ -269,8 +269,8 @@ class SceneStatus:
             self.ui_manager.add_component(self.effort_meter)
 
             # G-Cell Bar (alternative to effort meter)
-            self.gcell_bar = GCellBar(margin, heart_y, heart_width, heart_height)
-            self.gcell_bar.set_tooltip("G-Cells - evolution requirement indicator with different colored levels")
+            self.gcell_bar = GCellBar(margin, heart_y, heart_width + 3, heart_height)
+            self.gcell_bar.set_tooltip("G-Cells - evolution requirement indicator with 4 levels.")
             self.gcell_bar.visible = False  # Hidden by default, shown based on visible_stats
             self.ui_manager.add_component(self.gcell_bar)
 
@@ -412,18 +412,14 @@ class SceneStatus:
         """
         
         # Handle pygame events through UI manager first
-        if hasattr(event, 'type'):
-            if self.ui_manager.handle_event(event):
-                return
+        if self.ui_manager.handle_event(event):
+            return
         
         # Handle string action events (from input manager)
         elif isinstance(event, str):
             if event == "B":
                 runtime_globals.game_sound.play("cancel")
                 change_scene("game")
-                return
-
-            if self.ui_manager.handle_input_action(event):
                 return
 
     def on_pet_selected(self, pet):

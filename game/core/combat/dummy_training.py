@@ -141,11 +141,6 @@ class DummyTraining(Training):
     def draw_result(self, surface):
         self.strength = self.minigame.strength
 
-        # Use cached result sprites
-        bad_sprite = self._sprite_cache['bad']
-        great_sprite = self._sprite_cache['great']
-        excellent_sprite = self._sprite_cache['excellent']
-
         result_img = None
         if 10 <= self.strength < 14:
             result_img = self.bag2
@@ -159,31 +154,22 @@ class DummyTraining(Training):
                 y = constants.SCREEN_HEIGHT // 2 - result_img.get_height() // 2
                 blit_with_shadow(surface, result_img, (x, y))
         else:
-            # Composition for result screen:
-            # 1) black background
-            surface.fill((0, 0, 0))
+            # Use AnimatedSprite component with predefined result animations
+            if not self.animated_sprite.is_animation_playing():
+                duration = combat_constants.RESULT_SCREEN_FRAMES / constants.FRAME_RATE
+                
+                # Choose which result animation to play
+                if self.strength < 10:
+                    self.animated_sprite.play_bad(duration)
+                elif self.strength < 14:
+                    self.animated_sprite.play_great(duration)
+                else:
+                    self.animated_sprite.play_excellent(duration)
+            
+            # Draw the animated sprite
+            self.animated_sprite.draw(surface)
 
-            # Choose which result sprite to display
-            if self.strength < 10:
-                selected_sprite = bad_sprite
-                cache_key = 'result_bad'
-            elif self.strength < 14:
-                selected_sprite = great_sprite
-                cache_key = 'result_great'
-            else:
-                selected_sprite = excellent_sprite
-                cache_key = 'result_excellent'
-
-            # 2) semi-transparent full-screen proportional overlay when ui scale >= 2
-            self._draw_overlay_background(surface, selected_sprite, cache_key)
-
-            # 3) integer-scaled sprite centered
-            sx, sy = selected_sprite.get_width(), selected_sprite.get_height()
-            center_x = constants.SCREEN_WIDTH // 2 - sx // 2
-            center_y = constants.SCREEN_HEIGHT // 2 - sy // 2
-            blit_with_shadow(surface, selected_sprite, (center_x, center_y))
-
-            # Trophy notification on max
+            # Trophy notification on max (draw on top of animated sprite)
             if self.strength >= 14:
                 self.draw_trophy_notification(surface)
 

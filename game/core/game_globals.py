@@ -26,6 +26,7 @@ showClock = True
 sound = 3
 battle_area = {}
 battle_round = {}
+last_adventure_module = None  # Track last played adventure module
 rotated = False
 xai = 1
 xai_date = datetime.date.today()
@@ -144,6 +145,7 @@ def save() -> None:
         "game_background": game_background,
         "battle_area": battle_area,
         "battle_round": battle_round,
+        "last_adventure_module": last_adventure_module,
         "background_module_name": background_module_name,
         "unlocks": unlocks,
         "showClock": showClock,
@@ -184,7 +186,7 @@ def load() -> None:
     """
     Loads the global game state from the most recent save file, with fallback to previous saves.
     """
-    global pet_list, poop_list, traited, gcell_fragments, unlocks, battle_area, battle_round, xai, xai_date, background_high_res
+    global pet_list, poop_list, traited, gcell_fragments, unlocks, battle_area, battle_round, last_adventure_module, xai, xai_date, background_high_res
     global game_background, background_module_name, showClock, sound, inventory, battle_effects
     global wake_time, sleep_time, screen_timeout, sprite_resolution_preference
     global quests, event, event_time
@@ -279,6 +281,7 @@ def load() -> None:
                 game_background = data.get("game_background", None)
                 battle_area = data.get("battle_area", {})
                 battle_round = data.get("battle_round", {})
+                last_adventure_module = data.get("last_adventure_module", None)
                 background_module_name = data.get("background_module_name", None)
                 unlocks = data.get("unlocks", {})
                 showClock = data.get("showClock", True)
@@ -313,6 +316,7 @@ def load() -> None:
     game_background = None
     battle_area = {}
     battle_round = {}
+    last_adventure_module = None
     background_module_name = None
     unlocks = {}
     showClock = True

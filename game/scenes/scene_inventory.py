@@ -15,7 +15,7 @@ from components.ui.item_list import ItemList
 from components.ui.text_panel import TextPanel
 from components.window_background import WindowBackground
 from core import runtime_globals, game_globals
-import game.core.constants as constants
+import core.constants as constants
 from core.utils.pet_utils import get_selected_pets
 from core.utils.scene_utils import change_scene
 from core.utils.inventory_utils import get_inventory_value, remove_from_inventory, add_to_inventory
@@ -212,12 +212,9 @@ class SceneInventory:
             runtime_globals.game_console.log(f"[SceneInventory] Traceback: {traceback.format_exc()}")
             raise
         
-        # Focus on the item list initially and ensure keyboard navigation is ready
+        # Focus on the item list initially
         if self.item_list:
             self.ui_manager.set_focused_component(self.item_list)
-            # Enable keyboard navigation mode immediately for responsiveness
-            self.ui_manager.keyboard_navigation_mode = True
-            self.ui_manager.last_keyboard_action_time = pygame.time.get_ticks()
 
                 
     def update(self) -> None:
@@ -239,10 +236,12 @@ class SceneInventory:
     def handle_event(self, event) -> None:
         """Handle events in the inventory scene."""
         
+        if isinstance(event, str):
+            print(f"[SceneInventory] Received string event: {event}")
+
         # Handle pygame events through UI manager first
-        if hasattr(event, 'type'):
-            if self.ui_manager.handle_event(event):
-                return
+        if self.ui_manager.handle_event(event):
+            return
         
         # Handle string action events (from input manager)
         elif isinstance(event, str):
@@ -258,10 +257,6 @@ class SceneInventory:
             elif event == "SELECT":
                 # Handle SELECT key same as SELECTION button
                 self.on_selection_button()
-                return
-
-            # Let UI manager handle navigation and other input actions
-            if self.ui_manager.handle_input_action(event):
                 return
 
     def on_item_activated(self, item, index, use_immediately=False):
@@ -351,18 +346,27 @@ class SceneInventory:
             runtime_globals.game_console.log("[SceneInventory] No pets selected for feeding")
             return
             
-        runtime_globals.game_sound.play("menu")
+        
         # Handle different item effects
         if item.game_item.effect == "component":
-            # Component crafting
-            remove_from_inventory(item.id, item.game_item.amount)
+            # Component crafting - check if player has enough items
+            current_amount = get_inventory_value(item.id)
+            required_amount = item.game_item.amount
+            
+            if current_amount < required_amount:
+                runtime_globals.game_sound.play("cancel")
+                runtime_globals.game_console.log(f"[SceneInventory] Not enough {item.game_item.name} (have {current_amount}, need {required_amount})")
+                return
+            runtime_globals.game_sound.play("menu")
+            # Remove the required amount
+            remove_from_inventory(item.id, required_amount)
             
             # Find the component item in the same module
             component_item = None
             for module in runtime_globals.game_modules.values():
                 if hasattr(module, "items"):
                     for it in module.items:
-                        if it.name == item.component_item:
+                        if it.name == item.game_item.component_item:
                             component_item = it
                             break
                     if component_item:
@@ -370,9 +374,9 @@ class SceneInventory:
                         
             if component_item:
                 add_to_inventory(component_item.id, 1)
-                runtime_globals.game_console.log(f"[SceneInventory] Crafted {component_item.name} from {item.name}")
+                runtime_globals.game_console.log(f"[SceneInventory] Crafted {component_item.name} from {item.game_item.name}")
             else:
-                runtime_globals.game_console.log(f"[SceneInventory] Component item not found for {item.name}")
+                runtime_globals.game_console.log(f"[SceneInventory] Component item '{item.game_item.component_item}' not found in module")
             # Save selected index so inventory selection persists when returning to game
             if self.item_list:
                 runtime_globals.food_index = self.item_list.selected_index
@@ -381,13 +385,16 @@ class SceneInventory:
             change_scene("game")
             runtime_globals.game_sound.play("happy2")
             return
-            
+        
+        runtime_globals.game_sound.play("menu")    
         # Handle status boost items
         if item.game_item.effect == "status_boost":
-            eff = game_globals.battle_effects.get(item.status, {"amount": 0, "boost_time": 0})
+            eff = game_globals.battle_effects.get(item.game_item.status, {"amount": 0, "boost_time": 0, "module": item.game_item.module})
             eff["amount"] += item.game_item.amount
             eff["boost_time"] += item.game_item.boost_time
-            game_globals.battle_effects[item.status] = eff
+            eff["module"] = item.game_item.module
+            eff["item_id"] = item.game_item.id
+            game_globals.battle_effects[item.game_item.status] = eff
             
         # Feed the item to pets
         runtime_globals.game_pet_eating = {}

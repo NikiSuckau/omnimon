@@ -3,7 +3,6 @@ Sleep Scene Background - Animated background that moves based on Sleep/Wake mode
 """
 import pygame
 from components.ui.component import UIComponent
-from core import runtime_globals
 
 
 class SleepSceneBackground(UIComponent):

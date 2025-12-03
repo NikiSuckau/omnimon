@@ -2,7 +2,7 @@ import time
 import pygame
 
 from core import game_globals, runtime_globals
-import game.core.constants as constants
+import core.constants as constants
 from core.utils.pet_utils import pets_need_care
 from core.utils.pygame_utils import blit_with_cache
 

@@ -3,8 +3,8 @@ Experience Bar Component - Shows experience progress with custom bar graphics
 """
 import pygame
 from components.ui.component import UIComponent
-from core import runtime_globals, constants
 from core.utils.pygame_utils import blit_with_cache
+from core import constants
 
 
 class ExperienceBar(UIComponent):

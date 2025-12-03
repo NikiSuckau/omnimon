@@ -6,6 +6,7 @@ import pygame
 from core import runtime_globals
 from core.animation import PetFrame
 from components.ui.ui_manager import UIManager
+from components.ui.animated_sprite import AnimatedSprite
 from core.combat import combat_constants
 import core.constants as constants
 from core.utils.pet_utils import distribute_pets_evenly, get_training_targets
@@ -32,21 +33,15 @@ class Training:
         self.impact_counter = 0
         self.attacks_prepared = False
 
-        # Sprite caching
-        self._sprite_cache = {}
+        # Animated sprite component for full-screen animations
+        self.animated_sprite = AnimatedSprite(ui_manager)
+
+        # Pet sprite caching for training display
         self._pet_sprite_cache = {}
         self.pet_state = None
 
-        # Load and cache all sprites once
-        self._sprite_cache['ready'] = self.ui_manager.load_sprite_integer_scaling(name="Ready", prefix="Training")
-
-        self._sprite_cache['battle1'] = self.ui_manager.load_sprite_integer_scaling(name="Battle1", prefix="Training")
-        self._sprite_cache['battle2'] = self.ui_manager.load_sprite_integer_scaling(name="Battle2", prefix="Training")
-        self._sprite_cache['bad'] = self.ui_manager.load_sprite_integer_scaling(name="Bad", prefix="Training")
-        self._sprite_cache['good'] = self.ui_manager.load_sprite_integer_scaling(name="Good", prefix="Training")
-        self._sprite_cache['great'] = self.ui_manager.load_sprite_integer_scaling(name="Great", prefix="Training")
-        self._sprite_cache['excellent'] = self.ui_manager.load_sprite_integer_scaling(name="Excellent", prefix="Training")
-        self._sprite_cache['trophy'] = self.ui_manager.load_sprite_integer_scaling(name="Trophies", prefix="Status")
+        # Load only the trophy sprite since it's not handled by AnimatedSprite
+        self.trophy_sprite = self.ui_manager.load_sprite_integer_scaling(name="Trophies", prefix="Status")
 
         self.background_color = (0, 0, 0)
         self.flash_color = (255, 216, 0)
@@ -61,12 +56,6 @@ class Training:
         for pet in self.pets:
             self.module_attack_sprites[pet.module] = module_attack_sprites(pet.module)
 
-        # Cache for scaled semi-transparent overlay sprites
-        self._overlay_cache = {}
-
-    def get_sprite(self, key):
-        return self._sprite_cache[key]
-
     def get_attack_sprite(self, pet, attack_id):
         """
         Get attack sprite for a pet, preferring module-specific sprites over defaults.
@@ -80,49 +69,10 @@ class Training:
         # Fall back to default attack sprites
         return self.attack_sprites.get(str(attack_id))
 
-    def _draw_overlay_background(self, surface: pygame.Surface, base_sprite: pygame.Surface, cache_key: str):
-        """Draw a semi-transparent, proportionally scaled overlay of the given sprite to cover the screen.
-        - Only active when ui scale >= 2
-        - Cached per (cache_key, screen size)
-        - Applies blur effect for atmospheric background
-        """
-        try:
-            if not base_sprite or not self.ui_manager or getattr(self.ui_manager, 'ui_scale', 1) < 2:
-                return
-
-            key = (cache_key, constants.SCREEN_WIDTH, constants.SCREEN_HEIGHT)
-            overlay = self._overlay_cache.get(key)
-            if overlay is None:
-                sw, sh = base_sprite.get_width(), base_sprite.get_height()
-                if sw <= 0 or sh <= 0:
-                    return
-                scale = max(constants.SCREEN_WIDTH / sw, constants.SCREEN_HEIGHT / sh)
-                new_size = (int(sw * scale), int(sh * scale))
-                overlay = pygame.transform.smoothscale(base_sprite, new_size)
-                
-                # Apply blur effect by downscaling and upscaling multiple times
-                blur_iterations = 4
-                blur_factor = 0.15  # Scale down to 15% for blur effect
-                
-                for _ in range(blur_iterations):
-                    # Downscale for blur
-                    blur_w = max(1, int(overlay.get_width() * blur_factor))
-                    blur_h = max(1, int(overlay.get_height() * blur_factor))
-                    overlay = pygame.transform.smoothscale(overlay, (blur_w, blur_h))
-                    # Upscale back to original size
-                    overlay = pygame.transform.smoothscale(overlay, new_size)
-                
-                # Set 50% opacity
-                overlay = overlay.convert_alpha()
-                overlay.set_alpha(128)
-                self._overlay_cache[key] = overlay
-
-            rect = overlay.get_rect(center=(constants.SCREEN_WIDTH // 2, constants.SCREEN_HEIGHT // 2))
-            surface.blit(overlay, rect)
-        except Exception as e:
-            runtime_globals.game_console.log(f"[Training] Overlay draw error for {cache_key}: {e}")
-
     def update(self):
+        # Update animated sprite component
+        self.animated_sprite.update()
+        
         if self.phase == "alert":
             self.update_alert_phase()
         elif self.phase == "charge":
@@ -232,7 +182,7 @@ class Training:
             # Draw trophy icon in bottom right
             trophy_x = constants.SCREEN_WIDTH - trophy_size - plus_text.get_width() - int(4 * constants.UI_SCALE)
             trophy_y = constants.SCREEN_HEIGHT - trophy_size
-            blit_with_shadow(surface, self._sprite_cache['trophy'], (trophy_x, trophy_y))
+            blit_with_shadow(surface, self.trophy_sprite, (trophy_x, trophy_y))
             # Draw +1 text next to trophy
             
             text_x = trophy_x + trophy_size + int(2 * constants.UI_SCALE)
@@ -287,17 +237,14 @@ class Training:
             blit_with_shadow(surface, pet_sprite, (x, y))
 
     def draw_alert(self, screen):
-        # Fill the screen with the configured background color
-        screen.fill(self.background_color)
-
-        sprite = self.get_sprite('ready')
-        if sprite:
-            # Draw semi-transparent background overlay at high UI scales
-            self._draw_overlay_background(screen, sprite, 'ready')
-            sx, sy = sprite.get_width(), sprite.get_height()
-            center_x = constants.SCREEN_WIDTH // 2 - sx // 2
-            center_y = constants.SCREEN_HEIGHT // 2 - sy // 2
-            blit_with_shadow(screen, sprite, (center_x, center_y))
+        # Use AnimatedSprite component with predefined ready animation
+        if not self.animated_sprite.is_animation_playing():
+            # Start the ready animation if not already playing
+            duration = combat_constants.ALERT_DURATION_FRAMES / constants.FRAME_RATE
+            self.animated_sprite.play_ready(duration)
+        
+        # Draw the animated sprite
+        self.animated_sprite.draw(screen)
 
     def draw_attack_ready(self, surface):
         self.draw_pets(surface, PetFrame.ATK1)
@@ -309,26 +256,14 @@ class Training:
         pass
 
     def draw_impact(self, screen):
-        # Reduce flashing frequency for accessibility (target <= 3 Hz)
-        target_hz = 3
-        toggle_interval = max(1, int(constants.FRAME_RATE / target_hz))
-
-        use_first = ((self.flash_frame // toggle_interval) % 2) == 0
-
-        if use_first:
-            # battle1: normal background color
-            screen.fill(self.background_color)
-            sprite = self.get_sprite('battle1')
-        else:
-            # battle2: use flash color as background
-            screen.fill(self.flash_color)
-            sprite = self.get_sprite('battle2')
-
-        if sprite:
-            sx, sy = sprite.get_width(), sprite.get_height()
-            center_x = constants.SCREEN_WIDTH // 2 - sx // 2
-            center_y = constants.SCREEN_HEIGHT // 2 - sy // 2
-            screen.blit(sprite, (center_x, center_y))
+        # Use AnimatedSprite component with predefined impact animation
+        if not self.animated_sprite.is_animation_playing():
+            # Start the impact animation if not already playing
+            duration = combat_constants.IMPACT_DURATION_FRAMES / constants.FRAME_RATE
+            self.animated_sprite.play_impact(duration)
+        
+        # Draw the animated sprite
+        self.animated_sprite.draw(screen)
 
     def draw_result(self, surface):
         pass

@@ -6,10 +6,10 @@ import pygame
 from core import game_globals, runtime_globals
 from core.animation import PetFrame
 from core.combat.training import Training
-from game.components.ui.ui_manager import UIManager
-from game.core.combat import combat_constants
-import game.core.constants as constants
-from components.window_xaibar import WindowXaiBar
+from components.ui.ui_manager import UIManager
+from core.combat import combat_constants
+import core.constants as constants
+from components.minigames.xai_bar import XaiBar
 from core.utils.pygame_utils import blit_with_shadow
 from core.utils.scene_utils import change_scene
 
@@ -20,7 +20,7 @@ class ExciteTraining(Training):
 
     def __init__(self, ui_manager: UIManager) -> None:
         super().__init__(ui_manager)
-        self.xaibar = WindowXaiBar(10 * constants.UI_SCALE, constants.SCREEN_HEIGHT // 2 - (18 * constants.UI_SCALE), game_globals.xai, self.pets[0])
+        self.xaibar = XaiBar(10 * constants.UI_SCALE, constants.SCREEN_HEIGHT // 2 - (18 * constants.UI_SCALE), game_globals.xai, self.pets[0])
         self.xaibar.start()
         # Remove separate sprite assignments; use self._sprite_cache from base class
 
@@ -98,40 +98,24 @@ class ExciteTraining(Training):
                         blit_with_shadow(surface, sprite, (x - (40 * constants.UI_SCALE), y + (10 * constants.UI_SCALE)))
 
     def draw_result(self, surface):
-        # Composition for result screen:
-        # 1) black background
-        surface.fill(self.background_color)
-
-        # Use cached result sprites from base class
-        bad_sprite = self._sprite_cache['bad']
-        good_sprite = self._sprite_cache['good']
-        great_sprite = self._sprite_cache['great']
-        excellent_sprite = self._sprite_cache['excellent']
-
         strength = self.xaibar.selected_strength
         
-        # Choose which result sprite to display
-        if strength == 0:
-            selected_sprite = bad_sprite
-            cache_key = 'excite_result_bad'
-        elif strength == 1:
-            selected_sprite = good_sprite
-            cache_key = 'excite_result_good'
-        elif strength == 2:
-            selected_sprite = great_sprite
-            cache_key = 'excite_result_great'
-        else:
-            selected_sprite = excellent_sprite
-            cache_key = 'excite_result_excellent'
-
-        # 2) semi-transparent full-screen proportional overlay when ui scale >= 2
-        self._draw_overlay_background(surface, selected_sprite, cache_key)
-
-        # 3) integer-scaled sprite centered
-        sx, sy = selected_sprite.get_width(), selected_sprite.get_height()
-        center_x = constants.SCREEN_WIDTH // 2 - sx // 2
-        center_y = constants.SCREEN_HEIGHT // 2 - sy // 2
-        blit_with_shadow(surface, selected_sprite, (center_x, center_y))
+        # Use AnimatedSprite component with predefined result animations
+        if not self.animated_sprite.is_animation_playing():
+            duration = combat_constants.RESULT_SCREEN_FRAMES / constants.FRAME_RATE
+            
+            # Choose which result animation to play based on strength
+            if strength == 0:
+                self.animated_sprite.play_bad(duration)
+            elif strength == 1:
+                self.animated_sprite.play_good(duration)
+            elif strength == 2:
+                self.animated_sprite.play_great(duration)
+            else:
+                self.animated_sprite.play_excellent(duration)
+        
+        # Draw the animated sprite
+        self.animated_sprite.draw(surface)
 
         # Trophy notification on max
         if strength == 3:

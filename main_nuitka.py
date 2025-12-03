@@ -240,7 +240,6 @@ def main():
             # Handle pygame events
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
-                    from game.core import game_globals
                     game.save()
                     running = False
                 else:

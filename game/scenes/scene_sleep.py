@@ -8,7 +8,7 @@ from components.ui.button import Button
 from components.ui.pet_selector import PetSelector
 from components.window_background import WindowBackground
 from core import runtime_globals, game_globals
-import game.core.constants as constants
+import core.constants as constants
 from core.utils.pet_utils import distribute_pets_evenly, get_selected_pets
 from core.utils.scene_utils import change_scene
 from components.ui.ui_constants import BASE_RESOLUTION
@@ -322,8 +322,7 @@ class SceneSleep:
         """Handle events in the sleep menu scene."""
         
         # Handle pygame events through UI manager first
-        if hasattr(event, 'type'):
-            if self.ui_manager.handle_event(event):
+        if self.ui_manager.handle_event(event):
                 return
         
         # Handle string action events (from input manager)
@@ -336,10 +335,7 @@ class SceneSleep:
                 runtime_globals.game_sound.play("cancel")
                 change_scene("game")
                 return
-
-            # Let UI manager handle navigation and other input actions
-            if self.ui_manager.handle_input_action(event):
-                return
+            
     # Button callback methods
     def on_sleep_button(self):
         """Handle Sleep button press."""

@@ -13,14 +13,14 @@ from components.window_background import WindowBackground
 from components.window_clock import WindowClock
 from components.window_mainmenu import WindowMenu
 from core import game_globals, runtime_globals
-import game.core.constants as constants
+import core.constants as constants
 from core.game_evolution_entity import GameEvolutionEntity
 from core.utils.pet_utils import all_pets_hatched, distribute_pets_evenly, draw_pet_outline, get_selected_pets
 from core.utils.pygame_utils import blit_with_cache, get_font
 from core.utils.scene_utils import change_scene
 from core.utils.inventory_utils import add_to_inventory, get_item_by_name
-from game.core.utils.module_utils import get_module
-from game.core.utils.quest_event_utils import generate_daily_quests, get_hourly_random_event
+from core.utils.module_utils import get_module
+from core.utils.quest_event_utils import generate_daily_quests, get_hourly_random_event
 from core.utils.inventory_utils import add_to_inventory
 
 HEARTS_SIZE = int(8 * constants.UI_SCALE)

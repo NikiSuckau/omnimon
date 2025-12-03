@@ -2,9 +2,9 @@ import hashlib
 import os
 import pygame
 import time
-import game.core.constants as constants
-from core import game_console, game_globals, runtime_globals
-from game.core.utils.module_utils import get_module
+import core.constants as constants
+from core import game_console, runtime_globals
+from core.utils.module_utils import get_module
 
 shadow_cache = {}
 
@@ -99,11 +99,18 @@ def sprite_load_percent_wh(path, percent_w=100, percent_h=100, keep_proportion=T
 
 def load_attack_sprites():
     attack_sprites = {}
+    # Scale to half pet height, maintaining aspect ratio
+    target_height = constants.PET_HEIGHT // 2
     for filename in os.listdir(constants.ATK_FOLDER):
         if filename.endswith(".png"):
             path = os.path.join(constants.ATK_FOLDER, filename)
             sprite = pygame.image.load(path).convert_alpha()
-            sprite = pygame.transform.scale(sprite, (24 * constants.UI_SCALE, 24 * constants.UI_SCALE))
+            # Calculate proportional width based on target height
+            original_width = sprite.get_width()
+            original_height = sprite.get_height()
+            if original_height > 0:
+                target_width = int(original_width * (target_height / original_height))
+                sprite = pygame.transform.scale(sprite, (target_width, target_height))
             atk_id = filename.split(".")[0]
             attack_sprites[atk_id] = sprite
     return attack_sprites
@@ -125,12 +132,19 @@ def module_attack_sprites(module):
     if not os.path.exists(atk_folder):
         return {}
     
+    # Scale to half pet height, maintaining aspect ratio
+    target_height = constants.PET_HEIGHT // 2
     try:
         for filename in os.listdir(atk_folder):
             if filename.endswith(".png"):
                 path = os.path.join(atk_folder, filename)
                 sprite = pygame.image.load(path).convert_alpha()
-                sprite = pygame.transform.scale(sprite, (24 * constants.UI_SCALE, 24 * constants.UI_SCALE))
+                # Calculate proportional width based on target height
+                original_width = sprite.get_width()
+                original_height = sprite.get_height()
+                if original_height > 0:
+                    target_width = int(original_width * (target_height / original_height))
+                    sprite = pygame.transform.scale(sprite, (target_width, target_height))
                 atk_id = filename.split(".")[0]
                 attack_sprites[atk_id] = sprite
     except (OSError, pygame.error) as e:

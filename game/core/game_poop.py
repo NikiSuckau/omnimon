@@ -4,7 +4,7 @@
 
 from core import runtime_globals
 from core.utils.pygame_utils import blit_with_cache
-from game.core import constants
+from core import constants
 import random
 
 class GamePoop:

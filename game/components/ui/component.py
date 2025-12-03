@@ -4,7 +4,7 @@ Base UI Component - Foundation for all UI elements
 import pygame
 
 from core import runtime_globals
-from game.core.utils.pygame_utils import blit_with_cache, blit_with_shadow
+from core.utils.pygame_utils import blit_with_shadow
 
 
 class UIComponent:
@@ -184,7 +184,7 @@ class UIComponent:
         
     def on_focus_lost(self):
         """Called when component loses focus"""
-        self.hide_tooltip()
+        pass #self.hide_tooltip()
         
     def activate(self):
         """Called when component is activated (A button or click)"""

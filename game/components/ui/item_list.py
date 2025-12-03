@@ -214,7 +214,7 @@ class ItemList(BaseList):
                 if best_fit:
                     line1, line2, line1_surface, line2_surface = best_fit
                     line_height = small_font.get_height()
-                    line_spacing = int(line_height * 0.3)  # Increased spacing between lines
+                    line_spacing = int(line_height * 1.1)  # Increased spacing between lines
                     
                     # Draw first line (left-aligned)
                     line1_rect = line1_surface.get_rect()
@@ -320,23 +320,20 @@ class ItemList(BaseList):
                 # For other types, just notify selection
                 self.on_item_activated_callback(item, index, use_immediately=False)
                 
-    def _on_item_clicked(self, index):
-        """Called when an item is clicked with mouse - only selects the item"""
+    def _on_item_clicked(self, index, was_already_selected=False):
+        """
+        Called when an item is clicked with mouse.
+        - If was_already_selected=True: activate/use the item
+        - If was_already_selected=False: just select the item
+        """
         if 0 <= index < len(self.items):
             item = self.items[index]
-            runtime_globals.game_console.log(f"[ItemList] Clicked item: {item.name if hasattr(item, 'name') else item}")
+            runtime_globals.game_console.log(f"[ItemList] Clicked item: {item.name if hasattr(item, 'name') else item} (was_already_selected={was_already_selected})")
             
-            # Check if this item was already selected BEFORE the BaseList updated selected_index
-            # We need to get the previous selection state from the parent's selected_index
-            # Since BaseList already set selected_index to the new value, we need to track this differently
-            was_already_selected = hasattr(self, '_last_selected_index') and self._last_selected_index == index
-            
-            # Update our tracking of the last selected index
-            self._last_selected_index = index
-            
-            # For mouse clicks, notify selection with the previous selection state
+            # For mouse clicks:
+            # - First click: just select (use_immediately=False)
+            # - Second click on same item: use it (use_immediately=True)
             if self.on_item_activated_callback:
-                # Pass the correct "already selected" state based on previous selection
                 self.on_item_activated_callback(item, index, use_immediately=was_already_selected)
         else:
             # Invalid index - don't call callback
@@ -389,10 +386,41 @@ class ItemList(BaseList):
         self.needs_redraw = True
 
     def get_focused_sub_rect(self):
-        return None
+        """Get the rect of the currently selected item for focus highlight"""
+        if not self.items or self.selected_index < 0 or self.selected_index >= len(self.items):
+            return self.rect
+        
+        if not self.manager or not self.items_rect:
+            return self.rect
+        
+        # Calculate the rect of the selected item in base coordinates
+        item_total_size = self.base_item_size + self.base_item_spacing
+        item_y = (self.selected_index * item_total_size) - self.scroll_offset
+        
+        base_item_rect = pygame.Rect(
+            self.base_rect.x + self.items_rect.x,
+            self.base_rect.y + item_y,
+            self.items_rect.width,
+            self.base_item_size
+        )
+        
+        # Convert to screen coordinates
+        return self.manager.ui_to_screen_rect(base_item_rect)
     
     def get_mouse_sub_rect(self, mouse_pos):
-        return None
+        """Check if mouse is over the list - return rect if valid, None if not"""
+        if not self.manager or not self.base_rect:
+            return self.rect
+
+        # mouse_pos arrives already in UI/base coordinates from UIManager
+        relative_x = mouse_pos[0] - self.base_rect.x
+        relative_y = mouse_pos[1] - self.base_rect.y
+
+        # Only accept positions inside the component's base rect
+        if not (0 <= relative_x < self.base_rect.width and 0 <= relative_y < self.base_rect.height):
+            return None
+
+        return self.rect
     
     def set_selected_index(self, index):
         """Set the selected index with bounds checking"""

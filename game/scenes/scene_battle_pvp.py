@@ -4,11 +4,10 @@ A scene for network battles against other Omnimon devices.
 """
 import pygame
 from components.window_background import WindowBackground
-from core import game_globals, runtime_globals
+from core import runtime_globals
 from core.combat.battle_encounter import BattleEncounter
 from core.combat.sim import models as sim_models
 from core.utils.scene_utils import change_scene
-import game.core.constants as constants
 
 class SceneBattlePvP:
     """

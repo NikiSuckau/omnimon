@@ -1,7 +1,7 @@
 {
-    "SCREEN_WIDTH": 700,
-    "SCREEN_HEIGHT": 700,
-    "FRAME_RATE": 30,
+    "SCREEN_WIDTH": 640,
+    "SCREEN_HEIGHT": 640,
+    "FRAME_RATE": 90,
     "MAX_PETS": 6,
     "FULLSCREEN": false,
     "AUTO_RESOLUTION": false,

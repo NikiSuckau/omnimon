@@ -1,162 +1,132 @@
 """
-Scene Battle
-Handles Battle menu with new UI system.
+Scene Battle - Refactored to use view architecture
+Manages battle-related views and delegates draw/update/input to the current view
 """
 import pygame
-
 from components.ui.ui_manager import UIManager
-from components.ui.title_scene import TitleScene
-from components.ui.button import Button
-from components.ui.background import Background
 from core import runtime_globals
-from core.utils.scene_utils import change_scene
-from components.ui.ui_constants import BASE_RESOLUTION
+from components.window_background import WindowBackground
+from scenes.views import (
+    AdventureView,
+    JogressView,
+    ArmorView,
+    VersusView,
+    ProtocolView,
+    VersusBattleView,
+    AdventureModuleSelectionView,
+    AdventureAreaSelectionView,
+    AdventureBattleView
+)
 
-#=====================================================================
-# SceneBattle (Battle Menu)
-#=====================================================================
 
 class SceneBattle:
     """
-    Battle menu scene using the new UI system.
+    Battle scene using view-based architecture.
+    Each view handles its own UI components and logic.
     """
-
+    
     def __init__(self) -> None:
         # Use RED theme for battle
         self.ui_manager = UIManager("RED")
         
-        # UI Components
-        self.background = None
-        self.title_scene = None
-        self.jogress_button = None
-        self.versus_button = None
-        self.armor_button = None
-        self.adventure_button = None
-        self.exit_button = None
+        # Connect input manager to UI manager for mouse handling
+        self.ui_manager.set_input_manager(runtime_globals.game_input)
         
-        # Set up UI
-        self.setup_ui()
-        
-        runtime_globals.game_console.log("[SceneBattle] Battle scene initialized with new UI system.")
+        # Current view
+        self.current_view = None
+        self.current_view_name = None
 
-    def setup_ui(self):
-        """Setup the UI components for the battle menu."""
+        self.window_background = WindowBackground(False)
+        
+        # View kwargs (for passing data between views)
+        self.view_kwargs = {}
+        
+        # Show main menu initially
+        self._change_view("main_menu")
+        
+        runtime_globals.game_console.log("[SceneBattle] Battle scene initialized with view architecture")
+    
+    def _change_view(self, view_name, **kwargs):
+        """Change to a new view.
+        
+        Args:
+            view_name: Name of the view to change to
+            **kwargs: Additional arguments to pass to the view constructor
+        """
+        # Cleanup old view
+        if self.current_view:
+            try:
+                self.current_view.cleanup()
+            except Exception as e:
+                runtime_globals.game_console.log(f"[SceneBattle] Error cleaning up view {self.current_view_name}: {e}")
+        
+        # Create new view
+        self.current_view_name = view_name
+        self.view_kwargs = kwargs
+        
+        view_map = {
+            "main_menu": AdventureView,
+            "jogress": JogressView,
+            "armor": ArmorView,
+            "versus": VersusView,
+            "protocol": ProtocolView,
+            "versus_battle": VersusBattleView,
+            "adventure_module_selection": AdventureModuleSelectionView,
+            "adventure_area_selection": AdventureAreaSelectionView,
+            "adventure_battle": AdventureBattleView,
+        }
+        
+        view_class = view_map.get(view_name)
+        if not view_class:
+            runtime_globals.game_console.log(f"[SceneBattle] ERROR: Unknown view '{view_name}'")
+            return
+        
         try:
-            # Use base 240x240 resolution for UI layout
-            ui_width = ui_height = BASE_RESOLUTION
-            
-            # Create and add the UI background that covers the full UI area
-            self.background = Background(ui_width, ui_height)
-            # Set single black region covering entire UI
-            self.background.set_regions([(0, ui_height, "black")])
-            self.ui_manager.add_component(self.background)
-            
-            # Create and add the title scene at top left
-            self.title_scene = TitleScene(0, 5, "BATTLE")
-            self.ui_manager.add_component(self.title_scene)
-            
-            # Create battle type buttons
-            button_width = 56
-            button_height = 56
-            button_spacing = 8
-            
-            # Calculate positions for 3 buttons side by side
-            total_width = (button_width * 3) + (button_spacing * 2)
-            start_x = (ui_width - total_width) // 2
-            start_y = 40  # Below title
-            
-            # Row 1: Jogress, Versus, Armor (3 buttons side by side with both top sides cut)
-            self.jogress_button = Button(
-                start_x, start_y, button_width, button_height,
-                "JOGRESS", self.on_jogress,
-                cut_corners={'tl': True, 'tr': True, 'bl': False, 'br': False}
-            )
-            self.ui_manager.add_component(self.jogress_button)
-
-            self.versus_button = Button(
-                start_x + (button_width + button_spacing), start_y, button_width, button_height,
-                "VERSUS", self.on_versus,
-                cut_corners={'tl': True, 'tr': True, 'bl': False, 'br': False}
-            )
-            self.ui_manager.add_component(self.versus_button)
-
-            self.armor_button = Button(
-                start_x + (button_width + button_spacing) * 2, start_y, button_width, button_height,
-                "ARMOR", self.on_armor,
-                cut_corners={'tl': True, 'tr': True, 'bl': False, 'br': False}
-            )
-            self.ui_manager.add_component(self.armor_button)
-
-            # Adventure button (occupying same width as 3 buttons above)
-            adventure_y = start_y + button_height + button_spacing
-            self.adventure_button = Button(
-                start_x, adventure_y, total_width, button_height,
-                "ADVENTURE", self.on_adventure,
-                cut_corners={'tl': False, 'tr': False, 'bl': False, 'br': False}
-            )
-            self.ui_manager.add_component(self.adventure_button)
-
-            # Exit button (smaller, centered under adventure)
-            exit_width = 80
-            exit_height = 40
-            exit_x = (ui_width - exit_width) // 2
-            exit_y = adventure_y + button_height + button_spacing
-            
-            self.exit_button = Button(
-                exit_x, exit_y, exit_width, exit_height,
-                "EXIT", self.on_exit,
-                cut_corners={'tl': False, 'tr': False, 'bl': False, 'br': False}
-            )
-            self.ui_manager.add_component(self.exit_button)
-            
-            runtime_globals.game_console.log("[SceneBattle] UI setup completed successfully")
-            
+            # Create view with ui_manager, change_view callback, and any additional kwargs
+            self.current_view = view_class(self.ui_manager, self._change_view, **kwargs)
+            runtime_globals.game_console.log(f"[SceneBattle] Changed to view: {view_name}")
         except Exception as e:
-            runtime_globals.game_console.log(f"[SceneBattle] ERROR in setup_ui: {e}")
+            runtime_globals.game_console.log(f"[SceneBattle] ERROR creating view {view_name}: {e}")
             import traceback
             runtime_globals.game_console.log(f"[SceneBattle] Traceback: {traceback.format_exc()}")
             raise
-        
-        # Set mouse mode and focus on the first button initially
-        self.ui_manager.set_mouse_mode()
-        if self.jogress_button:
-            self.ui_manager.set_focused_component(self.jogress_button)
     
-    # Button callback methods (placeholders for now, will implement step by step)
-    def on_jogress(self):
-        """Handle Jogress button press."""
-        runtime_globals.game_sound.play("menu")
-        runtime_globals.game_console.log("Jogress button pressed - not implemented yet")
-        
-    def on_versus(self):
-        """Handle Versus button press."""
-        runtime_globals.game_sound.play("menu")
-        runtime_globals.game_console.log("Versus button pressed - not implemented yet")
-        
-    def on_armor(self):
-        """Handle Armor button press."""
-        runtime_globals.game_sound.play("menu")
-        runtime_globals.game_console.log("Armor button pressed - not implemented yet")
-        
-    def on_adventure(self):
-        """Handle Adventure button press."""
-        runtime_globals.game_sound.play("menu")
-        runtime_globals.game_console.log("Adventure button pressed - not implemented yet")
-        
-    def on_exit(self):
-        """Handle Exit button press."""
-        runtime_globals.game_sound.play("cancel")
-        change_scene("game")
-
     def update(self):
-        """Update the UI manager."""
+        """Update the current view and UI manager."""
+        # Update UI manager first
         self.ui_manager.update()
-
+        
+        # Update current view
+        if self.current_view:
+            try:
+                self.current_view.update()
+            except Exception as e:
+                runtime_globals.game_console.log(f"[SceneBattle] ERROR updating view {self.current_view_name}: {e}")
+    
     def draw(self, surface: pygame.Surface):
-        """Draw the battle menu using the new UI system."""
-        surface.fill((0, 0, 0))  # Black background
+        """Draw the current view."""
+        # Clear screen
+        self.window_background.draw(surface)
+        
+        # Draw UI manager (handles UI components)
         self.ui_manager.draw(surface)
-
-    def handle_event(self, input_action):
-        """Handle input events for the battle menu."""
-        self.ui_manager.handle_event(input_action)
+        
+        # Draw current view (handles additional drawing like battle encounters)
+        if self.current_view:
+            try:
+                self.current_view.draw(surface)
+            except Exception as e:
+                runtime_globals.game_console.log(f"[SceneBattle] ERROR drawing view {self.current_view_name}: {e}")
+    
+    def handle_event(self, event):
+        """Handle input events."""
+        # Handle pygame events through UI manager first
+        if self.ui_manager.handle_event(event):
+            return  # Event was handled by UI manager
+        
+        # Delegate to current view for any additional event handling
+        if self.current_view:
+            try:
+                self.current_view.handle_event(event)
+            except Exception as e:
+                runtime_globals.game_console.log(f"[SceneBattle] ERROR handling event in view {self.current_view_name}: {e}")

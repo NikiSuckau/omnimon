@@ -1,38 +1,348 @@
-import json
 import os
 import pickle
-import pygame
-from components.window_freezer import GRID_DIM, WindowFreezer
-from components.window_menu import WindowMenu
-from components.window_party import WindowParty, get_grid_dimensions
-from components.window_status import WindowStatus
+
+from components.ui.ui_manager import UIManager
+from components.ui.background import Background
+from components.ui.title_scene import TitleScene
+from components.ui.button import Button
+from components.ui.party_grid import PartyGrid
+from components.ui.freezer_grid import FreezerGrid
+from components.ui.menu import Menu
+from components.ui.label import Label
+from components.ui.stats_panel import StatsPanel
+from components.ui.ui_constants import BASE_RESOLUTION
+from components.window_background import WindowBackground
 from core import game_globals, runtime_globals
-import game.core.constants as constants
+import core.constants as constants
 from core.game_freezer import GameFreezer
-from core.utils.pygame_utils import blit_with_shadow, get_font, sprite_load_percent
 from core.utils.scene_utils import change_scene
 
 class SceneFreezerBox:
     def __init__(self):
-        self.font = get_font(constants.FONT_SIZE_SMALL)
-        # Use new method for background, scale to screen height, keep proportions
-        if constants.SCREEN_WIDTH > constants.SCREEN_HEIGHT:
-            self.bg_sprite = sprite_load_percent(constants.DIGIDEX_BACKGROUND_PATH, percent=600, keep_proportion=True, base_on="width")
-        else:
-            self.bg_sprite = sprite_load_percent(constants.DIGIDEX_BACKGROUND_PATH, percent=100, keep_proportion=True, base_on="height")
-        self.bg_frame = 0
-        self.bg_timer = 0
-        self.bg_frame_width = self.bg_sprite.get_width() // 6  # 326
-        self.mode = "party"
-        self.party_view = WindowParty()
+        # Global background (animated)
+        self.window_background = WindowBackground(False)
+        
+        # UI Manager with CYAN theme
+        self.ui_manager = UIManager(theme="CYAN")
+        
+        # Connect input manager to UI manager
+        self.ui_manager.set_input_manager(runtime_globals.game_input)
+        
+        # Mode tracking
+        self.mode = "party"  # "party" or "freezer"
+        
+        # Freezer data
         self.freezer_pets = self.load_freezer_data()
         self.current_freezer_page = 0
-        self.freezer_view = WindowFreezer(self.freezer_pets[self.current_freezer_page])
-        self.menu = WindowMenu()
+        
+        # Status window (legacy component)
         self.window_status = None
         self.current_page = 1
-        runtime_globals.game_console.log("[Scene_FreezerBox] Loaded.")
+        
+        # UI Components
+        self.background = None
+        self.title_scene = None
+        self.box_page_label = None
+        self.party_button = None
+        self.box_button = None
+        self.exit_button = None
+        self.prev_page_button = None
+        self.next_page_button = None
+        self.party_grid = None
+        self.freezer_grid = None
+        self.menu = None
+        self.stats_panel = None
+        
+        self._setup_ui()
         self.load_current_freezer_sprites()
+        
+        runtime_globals.game_console.log("[SceneFreezerBox] Freezer scene initialized with UI system (CYAN theme).")
+    
+    def _setup_ui(self):
+        """Setup UI components for the freezer scene."""
+        ui_width = ui_height = BASE_RESOLUTION
+        
+        # Background
+        self.background = Background(ui_width, ui_height)
+        self.background.set_regions([(0, ui_height, "black")])
+        self.ui_manager.add_component(self.background)
+        
+        # Title
+        self.title_scene = TitleScene(0, 5, "FREEZER")
+        self.ui_manager.add_component(self.title_scene)
+        
+        # Box page indicator (only visible in box mode)
+        self.box_page_label = Label(180, 12, f"Box {self.current_freezer_page + 1}/10", is_title=False)
+        self.box_page_label.visible = False
+        self.ui_manager.add_component(self.box_page_label)
+        
+        # Grid dimensions
+        grid_x = 22
+        grid_y = 30
+        grid_width = 190
+        grid_height = 145
+        
+        # Party Grid (initially visible)
+        self.party_grid = PartyGrid(grid_x, grid_y, grid_width, grid_height)
+        self.party_grid.on_selection_change = self._on_party_select
+        self.ui_manager.add_component(self.party_grid)
+        self.party_grid.refresh_from_party()
+        
+        # Freezer Grid (initially hidden)
+        self.freezer_grid = FreezerGrid(grid_x+5, grid_y, grid_width, grid_height)
+        self.freezer_grid.on_selection_change = self._on_freezer_select
+        self.freezer_grid.visible = False
+        self.ui_manager.add_component(self.freezer_grid)
+        self.freezer_grid.refresh_from_freezer_page(self.freezer_pets[self.current_freezer_page])
+        
+        # Page navigation buttons (sides of grid, for freezer view only)
+        nav_button_width = 20
+        
+        self.prev_page_button = Button(
+            4, grid_y, nav_button_width, grid_height,
+            "<", self._on_prev_page_button
+        )
+        self.prev_page_button.visible = False
+        self.ui_manager.add_component(self.prev_page_button)
+        
+        self.next_page_button = Button(
+            216, grid_y, nav_button_width, grid_height,
+            ">", self._on_next_page_button
+        )
+        self.next_page_button.visible = False
+        self.ui_manager.add_component(self.next_page_button)
+        
+        # Bottom buttons (mode switching and exit)
+        button_y = 185
+        button_height = 47
+        
+        # Mode switching buttons (Party / Box)
+        mode_button_width = 70
+        self.party_button = Button(
+            8, button_y, mode_button_width, button_height,
+            "", self._on_party_mode,
+            decorators=["Freezer_Party"]
+        )
+        self.ui_manager.add_component(self.party_button)
+        
+        self.box_button = Button(
+            82, button_y, mode_button_width, button_height,
+            "", self._on_box_mode,
+            decorators=["Freezer_Box"]
+        )
+        self.ui_manager.add_component(self.box_button)
+        
+        # EXIT button
+        exit_button_width = 70
+        self.exit_button = Button(
+            156, button_y, exit_button_width, button_height,
+            "EXIT", self._on_exit
+        )
+        self.ui_manager.add_component(self.exit_button)
+        
+        # Menu component (initially hidden) - NOT added to UI manager to avoid double event processing
+        self.menu = Menu()
+        self.menu.visible = False
+        self.menu.manager = self.ui_manager  # Set manager for rendering/scaling
+        
+        # Manually set up menu rect scaling (since not added via add_component)
+        if not self.menu.base_rect:
+            self.menu.base_rect = self.menu.rect.copy()
+        self.menu.rect = self.ui_manager.scale_rect(self.menu.base_rect)
+        
+        # Set mouse mode and initial focus
+        self.ui_manager.set_mouse_mode()
+        self.ui_manager.set_focused_component(self.party_grid)
+    
+    def _on_party_mode(self):
+        """Switch to party view."""
+        if self.mode != "party":
+            runtime_globals.game_sound.play("menu")
+            self.mode = "party"
+            self.party_grid.visible = True
+            self.party_grid.refresh_from_party()
+            self.freezer_grid.visible = False
+            self.prev_page_button.visible = False
+            self.next_page_button.visible = False
+            self.box_page_label.visible = False
+            #self.ui_manager.set_focused_component(self.party_grid)
+            runtime_globals.game_console.log("[SceneFreezerBox] Switched to party view")
+    
+    def _on_box_mode(self):
+        """Switch to freezer box view."""
+        if self.mode != "freezer":
+            runtime_globals.game_sound.play("menu")
+            self.mode = "freezer"
+            self.party_grid.visible = False
+            self.freezer_grid.visible = True
+            self.freezer_grid.refresh_from_freezer_page(self.freezer_pets[self.current_freezer_page])
+            # Show arrow buttons only if mouse is enabled
+            mouse_enabled = runtime_globals.game_input.mouse_enabled if runtime_globals.game_input else False
+            self.prev_page_button.visible = mouse_enabled
+            self.next_page_button.visible = mouse_enabled
+            self.box_page_label.visible = True
+            self.box_page_label.set_text(f"Box {self.current_freezer_page + 1}/10")
+            #self.ui_manager.set_focused_component(self.freezer_grid)
+            self.load_current_freezer_sprites()
+            runtime_globals.game_console.log("[SceneFreezerBox] Switched to box view")
+    
+    def _on_party_select(self, item):
+        """Handle party grid selection (A button pressed)."""
+        if not item:
+            return
+        
+        if item.data:  # Has pet
+            pet = item.data
+            if getattr(pet, "state", None) == "dead":
+                self.menu.open(["Clear", "Stats"], self._on_menu_select, self._on_menu_cancel)
+                self.ui_manager.set_active_menu(self.menu)
+            else:
+                self.menu.open(["Store", "Stats"], self._on_menu_select, self._on_menu_cancel)
+                self.ui_manager.set_active_menu(self.menu)
+        else:  # Empty slot
+            runtime_globals.game_sound.play("menu")
+            self.clean_unused_pet_sprites()
+            change_scene("egg")
+    
+    def _on_freezer_select(self, item):
+        """Handle freezer grid selection (A button pressed)."""
+        if not item or not item.data:
+            return
+        
+        pet = item.data
+        if getattr(pet, "state", None) == "dead":
+            self.menu.open(["Clear", "Stats"], self._on_menu_select, self._on_menu_cancel)
+            self.ui_manager.set_active_menu(self.menu)
+        else:
+            self.menu.open(["Add", "Stats"], self._on_menu_select, self._on_menu_cancel)
+            self.ui_manager.set_active_menu(self.menu)
+    
+    def _on_prev_page_button(self):
+        """Handle previous page button click"""
+        self._change_freezer_page(-1)
+    
+    def _on_next_page_button(self):
+        """Handle next page button click"""
+        self._change_freezer_page(1)
+    
+    def _change_freezer_page(self, direction):
+        """Change freezer page."""
+        max_pages = len(self.freezer_pets)
+        self.current_freezer_page = (self.current_freezer_page + direction) % max_pages
+        
+        # Update box page label if visible
+        if self.box_page_label and self.box_page_label.visible:
+            self.box_page_label.set_text(f"Box {self.current_freezer_page + 1}/10")
+        
+        # Refresh freezer grid if visible
+        if self.freezer_grid and self.freezer_grid.visible:
+            self.freezer_grid.refresh_from_freezer_page(self.freezer_pets[self.current_freezer_page])
+            self.load_current_freezer_sprites()
+    
+    def _on_exit(self):
+        """Handle EXIT button press."""
+        runtime_globals.game_sound.play("cancel")
+        self.clean_unused_pet_sprites()
+        if len(game_globals.pet_list) == 0:
+            change_scene("egg")
+        else:
+            change_scene("game")
+    
+    def _on_menu_select(self, option_index):
+        """Handle menu option selection."""
+        runtime_globals.game_console.log(f"[SceneFreezerBox] Menu option {option_index} selected")
+        
+        # Get selected pet from appropriate grid
+        if self.mode == "party":
+            item = self.party_grid.get_selected_item()
+            selected_pet = item.data if item else None
+        else:
+            item = self.freezer_grid.get_selected_item()
+            selected_pet = item.data if item else None
+        
+        if not selected_pet:
+            runtime_globals.game_console.log(f"[SceneFreezerBox] No pet selected, closing menu")
+            self.menu.close()
+            return
+
+        if option_index == 0:  # Add, Store, or Clear
+            # Suppress menu opening during grid refresh
+            if self.mode == "party":
+                # Party mode: Store or Clear
+                if getattr(selected_pet, "state", None) == "dead":
+                    # Clear (delete) the pet from party
+                    if selected_pet in game_globals.pet_list:
+                        game_globals.pet_list.remove(selected_pet)
+                        runtime_globals.game_console.log(f"Cleared {selected_pet.name} from party.")
+                    else:
+                        runtime_globals.game_console.log(f"[SceneFreezerBox] Pet {selected_pet.name} not in party list!")
+                else:
+                    # Store to freezer
+                    if selected_pet in game_globals.pet_list:
+                        game_globals.pet_list.remove(selected_pet)
+                        self.freezer_pets[self.current_freezer_page].pets.append(selected_pet)
+                        runtime_globals.game_console.log(f"Stored {selected_pet.name}.")
+                    else:
+                        runtime_globals.game_console.log(f"[SceneFreezerBox] Pet {selected_pet.name} not in party list!")
+            else:
+                # In freezer mode
+                if getattr(selected_pet, "state", None) == "dead":
+                    # Clear (delete) the pet
+                    if selected_pet in self.freezer_pets[self.current_freezer_page].pets:
+                        self.freezer_pets[self.current_freezer_page].pets.remove(selected_pet)
+                        runtime_globals.game_console.log(f"Cleared {selected_pet.name} from freezer.")
+                    else:
+                        runtime_globals.game_console.log(f"[SceneFreezerBox] Pet {selected_pet.name} not in freezer!")
+                    # Refresh freezer grid
+                    self.freezer_grid.refresh_from_freezer_page(self.freezer_pets[self.current_freezer_page])
+                else:
+                    # Move from freezer to party
+                    if len(game_globals.pet_list) < constants.MAX_PETS:
+                        if selected_pet in self.freezer_pets[self.current_freezer_page].pets:
+                            self.freezer_pets[self.current_freezer_page].pets.remove(selected_pet)
+                            selected_pet.patch()
+                            game_globals.pet_list.append(selected_pet)
+                            runtime_globals.game_console.log(f"Moved {selected_pet.name} to party.")
+                            runtime_globals.game_sound.play("menu")
+                        else:
+                            runtime_globals.game_console.log(f"[SceneFreezerBox] Pet {selected_pet.name} not in freezer!")
+                    else:
+                        runtime_globals.game_console.log(f"Cannot add {selected_pet.name}: Party is full!")
+                        runtime_globals.game_sound.play("cancel")
+            
+            # Save updated freezer state, rebuild, and update sprites
+            self.save_freezer_data()
+            self.freezer_pets[self.current_freezer_page].rebuild()
+            self.load_current_freezer_sprites()
+            
+            # Refresh grids AFTER rebuild to ensure correct state
+            if self.mode == "party":
+                self.party_grid.refresh_from_party()
+                self.freezer_grid.refresh_from_freezer_page(self.freezer_pets[self.current_freezer_page])
+            else:
+                self.freezer_grid.refresh_from_freezer_page(self.freezer_pets[self.current_freezer_page])
+                self.party_grid.refresh_from_party()
+            
+        elif option_index == 1:  # Stats
+            runtime_globals.game_console.log(f"Viewing stats of {selected_pet.name}.")
+            # Create and show stats panel
+            self.stats_panel = StatsPanel(selected_pet)
+            self.ui_manager.set_active_stats_panel(self.stats_panel)
+            runtime_globals.game_console.log(f"[SceneFreezerBox] Stats panel opened, returning early")
+            return  # Return early since we already closed the menu
+        
+        # Close menu after any option
+        runtime_globals.game_console.log(f"[SceneFreezerBox] Closing menu after option {option_index}")
+        self.menu.close()
+    
+    def _on_menu_cancel(self):
+        """Handle menu cancellation."""
+        self.menu.close()
+    
+    def clean_unused_pet_sprites(self):
+        runtime_globals.pet_sprites = {}
+        for pet in game_globals.pet_list:
+            pet.load_sprite()
 
     def load_current_freezer_sprites(self):
         # Load sprites for pets on the current freezer page
@@ -41,12 +351,7 @@ class SceneFreezerBox:
             if pet not in runtime_globals.pet_sprites:
                 pet.load_sprite()
 
-    def switch_freezer_page(self, direction):
-        max_pages = len(self.freezer_pets)
-        self.current_freezer_page = (self.current_freezer_page + direction) % max_pages
-        runtime_globals.game_console.log(f"Switched to freezer page {self.current_freezer_page}")
-        self.freezer_view.set_page(self.freezer_pets[self.current_freezer_page])
-        self.load_current_freezer_sprites()
+
 
     def load_freezer_data(self):
         file_path = "save/freezer.pkl"
@@ -67,74 +372,76 @@ class SceneFreezerBox:
             pickle.dump(pets, f)
 
     def update(self):
-        self.bg_timer += 1
-        if self.bg_timer >= 3 * (constants.FRAME_RATE / 30):
-            self.bg_timer = 0
-            self.bg_frame = (self.bg_frame + 1) % 6
+        self.ui_manager.update()
+        
+        # Update arrow button visibility based on mouse mode
+        if self.mode == "freezer":
+            mouse_enabled = runtime_globals.game_input.mouse_enabled if runtime_globals.game_input else False
+            self.prev_page_button.visible = mouse_enabled
+            self.next_page_button.visible = mouse_enabled
 
     def draw(self, surface):
-        # Update window components for mouse hover
-        if self.mode == "party":
-            self.party_view.update()
-        else:
-            self.freezer_view.update()
-        if self.menu.active:
-            self.menu.update()
+        # Draw animated background
+        self.window_background.draw(surface)
         
-        # Draw animated background, scaled and positioned
-        width_scale = constants.SCREEN_WIDTH / 240
-        height_scale = constants.SCREEN_HEIGHT / 240
-        frame_rect = pygame.Rect(int(self.bg_frame * self.bg_frame_width), 0, self.bg_frame_width, self.bg_sprite.get_height())
-        bg_scaled = pygame.transform.smoothscale(self.bg_sprite.subsurface(frame_rect), (constants.SCREEN_WIDTH, constants.SCREEN_HEIGHT))
-        surface.blit(bg_scaled, (0, 0))
+        # Draw status window overlay if active
+        #if self.window_status:
+        #    self.window_status.draw_page(surface, self.current_page)
+        #    return
+        
+        # Draw UI components (includes menu and stats panel as modals)
+        self.ui_manager.draw(surface)
 
-        if self.window_status:
-            self.window_status.draw_page(surface, self.current_page)
+    def handle_event(self, event):
+        """Handle pygame events and string input actions."""
+        # Status window has priority
+        #if self.window_status:
+        #    if isinstance(event, str):
+        #        self.handle_status_input(event)
+        #    return
+
+        if self.ui_manager.handle_event(event):
             return
-        if self.mode == "party":
-            self.party_view.draw(surface)
-            option1Color = constants.FONT_COLOR_BLUE
-            option2Color = constants.FONT_COLOR_GRAY
-        else:
-            option2Color = constants.FONT_COLOR_BLUE
-            option1Color = constants.FONT_COLOR_GRAY
-            self.freezer_view.draw(surface)
-
-        # Draw mode switch buttons, scaled and positioned
-        pygame.draw.rect(surface, option1Color, (int(20 * width_scale), int(10 * height_scale), int(90 * width_scale), int(25 * height_scale)))
-        pygame.draw.rect(surface, option2Color, (int(130 * width_scale), int(10 * height_scale), int(90 * width_scale), int(25 * height_scale)))
-
-        view_surface = self.font.render(f"Party", True, constants.FONT_COLOR_DEFAULT)
-        blit_with_shadow(surface, view_surface, (int(25 * width_scale), int(11 * height_scale)))
-
-        view_surface = self.font.render(f"Box {self.current_freezer_page+1}/10", True, constants.FONT_COLOR_DEFAULT)
-        blit_with_shadow(surface, view_surface, (int(135 * width_scale), int(11 * height_scale)))
         
-        self.menu.draw(surface)
-
-    def handle_event(self, input_action):
-        # Mode switching with SELECT
-        if not self.menu.active and input_action == "SELECT":
-            runtime_globals.game_sound.play("menu")
-            self.mode = "party" if self.mode == "freezer" else "freezer"
-            runtime_globals.game_console.log(f"[SceneFreezerBox] Switched to {self.mode}")
+        # Only process scene events if no modal component blocked the event
+        if isinstance(event, str):
+            # String input actions
+            input_action = event
+            
+            # B button exits
+            if input_action == "B":
+                self._on_exit()
+                return
+            
+            # Mode switching with SELECT - handle before grid
+            if input_action == "SELECT":
+                runtime_globals.game_sound.play("menu")
+                if self.mode == "party":
+                    self._on_box_mode()
+                else:
+                    self._on_party_mode()
+                return
+            
+            # Page navigation with L/R shoulder buttons (freezer mode only) - handle before grid
             if self.mode == "freezer":
-                self.load_current_freezer_sprites()
-            return
-
-        if self.window_status:
-            self.handle_status_input(input_action)
-            return
-        # If menu is active, handle its events first
-        if self.menu.active:
-            self.handle_menu_input(input_action)
-            return
-
-        # Mode-specific input handling
-        if self.mode == "party":
-            self.handle_party_input(input_action)
-        else:
-            self.handle_freezer_input(input_action)
+                if input_action == "L":
+                    runtime_globals.game_sound.play("menu")
+                    self._change_freezer_page(-1)
+                    return
+                elif input_action == "R":
+                    runtime_globals.game_sound.play("menu")
+                    self._change_freezer_page(1)
+                    return
+                # Check for LEFT/RIGHT at grid edges to change page
+                if self.freezer_grid.focused:
+                    if input_action == "LEFT" and self.freezer_grid.cursor_col == 0:
+                        runtime_globals.game_sound.play("menu")
+                        self._change_freezer_page(-1)
+                        return
+                    elif input_action == "RIGHT" and self.freezer_grid.cursor_col == self.freezer_grid.columns - 1:
+                        runtime_globals.game_sound.play("menu")
+                        self._change_freezer_page(1)
+                        return
 
     def clean_unused_pet_sprites(self):
         runtime_globals.pet_sprites = {}
@@ -154,157 +461,3 @@ class SceneFreezerBox:
             runtime_globals.game_sound.play("cancel")
             self.window_status = None
 
-    def handle_menu_input(self, input_action):
-        self.menu.handle_event(input_action)
-        if input_action == "A":
-            runtime_globals.game_sound.play("menu")
-            if self.mode == "party":
-                selected_pet = game_globals.pet_list[self.party_view.selected_index]
-            else:
-                row, col = self.freezer_view.cursor_row, self.freezer_view.cursor_col
-                selected_pet = self.freezer_view.pet_grid[row][col]
-
-            if self.menu.menu_index == 0:  # Add, Store, or Clear
-                if self.mode == "party":
-                    # Party mode: Store or Clear
-                    if getattr(selected_pet, "state", None) == "dead":
-                        # Clear (delete) the pet from party
-                        game_globals.pet_list.pop(self.party_view.selected_index)
-                        runtime_globals.game_console.log(f"Cleared {selected_pet.name} from party.")
-                    else:
-                        # Store to freezer
-                        game_globals.pet_list.pop(self.party_view.selected_index)
-                        self.freezer_pets[self.current_freezer_page].pets.append(selected_pet)
-                        runtime_globals.game_console.log(f"Stored {selected_pet.name}.")
-                else:
-                    # In freezer mode
-                    if getattr(selected_pet, "state", None) == "dead":
-                        # Clear (delete) the pet
-                        self.freezer_pets[self.current_freezer_page].pets.remove(selected_pet)
-                        runtime_globals.game_console.log(f"Cleared {selected_pet.name} from freezer.")
-                    else:
-                        # Move from freezer to party
-                        if len(game_globals.pet_list) < constants.MAX_PETS:
-                            self.freezer_pets[self.current_freezer_page].pets.remove(selected_pet)
-                            selected_pet.patch()
-                            game_globals.pet_list.append(selected_pet)
-                            runtime_globals.game_console.log(f"Moved {selected_pet.name} to party.")
-                self.freezer_view._scene_cache_key = None  # Reset cache key to force rebuild
-                self.party_view._scene_cache_key = None  # Reset cache key for party view
-                # Save updated freezer state
-                self.save_freezer_data()
-                self.freezer_pets[self.current_freezer_page].rebuild()
-                # Refresh freezer view to reflect current page pets
-                self.freezer_view.set_page(self.freezer_pets[self.current_freezer_page])
-                # Update sprites
-                self.load_current_freezer_sprites()
-            elif self.menu.menu_index == 1:  # Status
-                runtime_globals.game_console.log(f"Viewing status of {selected_pet.name}.")
-                self.window_status = WindowStatus(selected_pet)  # Replace `pet` with your active pet object
-                self.current_page = 1
-            self.menu.close()
-        elif input_action == "B":
-            runtime_globals.game_sound.play("cancel")
-            self.menu.close()
-
-    def handle_party_input(self, input_action):
-        self.party_view.handle_event(input_action)
-        if input_action == "A" and self.party_view.selected_index < len(game_globals.pet_list):
-            runtime_globals.game_sound.play("menu")
-            # Dynamically calculate pet grid position
-            col = self.party_view.selected_index % 2
-            # Menu sizing (scaled)
-            menu_width = int(120 * constants.UI_SCALE)
-            menu_height = int(70 * constants.UI_SCALE)
-            # Determine grid columns to support variable MAX_PETS
-            _, cols = get_grid_dimensions(constants.MAX_PETS)
-            # Position menu at bottom of screen
-            menu_y = constants.SCREEN_HEIGHT - menu_height
-            # Decide side: rightmost column opens left, all others open right (including center)
-            if col == cols - 1:  # rightmost column
-                menu_x = 0
-            else:  # left and center columns
-                menu_x = constants.SCREEN_WIDTH - menu_width
-
-            pet = game_globals.pet_list[self.party_view.selected_index]
-            if getattr(pet, "state", None) == "dead":
-                self.menu.open((menu_x, menu_y), ["Clear", "Stats"])
-            else:
-                self.menu.open((menu_x, menu_y), ["Store", "Stats"])
-        elif input_action == "A":
-            runtime_globals.game_sound.play("menu")
-            self.clean_unused_pet_sprites()
-            change_scene("egg")
-        elif input_action == "B":
-            runtime_globals.game_sound.play("cancel")
-            self.clean_unused_pet_sprites()
-            if len(game_globals.pet_list) == 0:
-                change_scene("egg")
-            else:
-                change_scene("game")
-
-    def handle_freezer_input(self, input_action):
-        row, col = self.freezer_view.cursor_row, self.freezer_view.cursor_col
-        max_row = 5 - 1
-        max_col = 5 - 1
-
-        if input_action == "UP":
-            runtime_globals.game_sound.play("menu")
-            row = max_row if row == 0 else row - 1
-        elif input_action == "DOWN":
-            runtime_globals.game_sound.play("menu")
-            row = 0 if row == max_row else row + 1
-        elif input_action == "LEFT":
-            runtime_globals.game_sound.play("menu")
-            if col == 0:
-                self.switch_freezer_page(-1)
-                col = max_col
-            else:
-                col -= 1
-        elif input_action == "RIGHT":
-            runtime_globals.game_sound.play("menu")
-            if col == max_col:
-                self.switch_freezer_page(1)
-                col = 0
-            else:
-                col += 1
-        elif input_action == "L":
-            runtime_globals.game_sound.play("menu")
-            self.switch_freezer_page(-1)
-            return
-        elif input_action == "R":
-            runtime_globals.game_sound.play("menu")
-            self.switch_freezer_page(1)
-            return
-        elif input_action == "A":
-            runtime_globals.game_sound.play("menu")
-            if row < len(self.freezer_view.pet_grid) and col < len(self.freezer_view.pet_grid[row]):
-                pet = self.freezer_view.pet_grid[row][col]
-                if pet:
-                    # Use same bottom/corner placement logic as party menu
-                    menu_width = int(120 * constants.UI_SCALE)
-                    menu_height = int(70 * constants.UI_SCALE)
-                    cols = GRID_DIM  # freezer grid columns
-                    # Anchor menu to bottom of screen
-                    menu_y = constants.SCREEN_HEIGHT - menu_height
-                    # Opposite side: rightmost column -> open left, others -> open right
-                    if col == cols - 1:
-                        menu_x = 0
-                    else:
-                        menu_x = constants.SCREEN_WIDTH - menu_width
-
-                    if getattr(pet, "state", None) == "dead":
-                        self.menu.open((menu_x, menu_y), ["Clear", "Stats"])
-                    else:
-                        self.menu.open((menu_x, menu_y), ["Add", "Stats"])
-            return
-        elif input_action == "B":
-            runtime_globals.game_sound.play("cancel")
-            self.clean_unused_pet_sprites()
-            if len(game_globals.pet_list) == 0:
-                change_scene("egg")
-            else:
-                change_scene("game")
-        # Update cursor
-        self.freezer_view.cursor_row = row
-        self.freezer_view.cursor_col = col

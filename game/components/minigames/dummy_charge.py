@@ -1,9 +1,7 @@
-import random
-import pygame
-from game.components.ui.ui_manager import UIManager
-from game.core import runtime_globals
-import game.core.constants as constants
-from core.utils.pygame_utils import blit_with_shadow, sprite_load_percent
+from components.ui.ui_manager import UIManager
+from core import runtime_globals
+import core.constants as constants
+from core.utils.pygame_utils import blit_with_shadow
 
 
 class DummyCharge:

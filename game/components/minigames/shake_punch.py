@@ -5,8 +5,8 @@ import pygame
 import random
 from core import runtime_globals
 from core.animation import PetFrame
-import game.core.constants as constants
-from game.core.combat import combat_constants
+import core.constants as constants
+from core.combat import combat_constants
 from core.utils.pygame_utils import blit_with_cache, blit_with_shadow
 
 

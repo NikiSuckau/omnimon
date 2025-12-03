@@ -11,7 +11,7 @@ import pickle
 
 from components.window_background import WindowBackground
 from core import game_globals, runtime_globals
-import game.core.constants as constants
+import core.constants as constants
 from core.utils.module_utils import get_module
 from core.utils.pet_utils import distribute_pets_evenly
 from core.utils.pygame_utils import blit_with_cache, sprite_load_percent

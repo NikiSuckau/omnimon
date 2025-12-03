@@ -416,6 +416,25 @@ class GamePet:
         self.set_state("happy1")
         register_digidex_entry(self.name, module.name, self.version)
 
+    def armor_evolve(self, item_name):
+        """Evolve the pet using an armor item (digimental).
+        
+        Args:
+            item_name: The name of the armor item (must match evolution's "item" field)
+        """
+        runtime_globals.game_console.log(f"[GamePet] Armor evolving with {item_name}")
+        
+        # Find evolution with matching item requirement
+        for evo in self.evolve:
+            if "item" in evo and evo["item"] == item_name:
+                target_name = evo["to"]
+                target_version = evo.get("version", self.version)
+                runtime_globals.game_console.log(f"[GamePet] Armor evolution found: {target_name} (version {target_version})")
+                self.evolve_to(target_name, target_version)
+                return
+        
+        runtime_globals.game_console.log(f"[GamePet] Warning: No armor evolution found for {item_name}")
+
     def force_poop(self):
         self.set_state("pooping")
 
@@ -1015,7 +1034,7 @@ class GamePet:
                 if gcell_points != 0:
                     self.add_gcell_points(gcell_points)
 
-    def finish_battle(self, won, enemy, area, final = False, random=False):
+    def finish_battle(self, won, enemy, area, final = False, is_random_encounter=False):
         self.battles += 1
         self.dp -= 1
         self.totalBattles += 1
@@ -1055,7 +1074,7 @@ class GamePet:
             # Add G-Cell points for battle win if module uses G-Cells
             module = get_module(self.module)
             if getattr(module, 'use_gcells', False):
-                if random:
+                if is_random_encounter:
                     # Random encounter win
                     gcell_points = getattr(module, 'gcell_random_encounter_win', 0)
                 else:
@@ -1071,7 +1090,7 @@ class GamePet:
             # Remove G-Cell points for battle loss if module uses G-Cells
             module = get_module(self.module)
             if getattr(module, 'use_gcells', False):
-                if random:
+                if is_random_encounter:
                     # Random encounter loss
                     gcell_points = getattr(module, 'gcell_random_encounter_loose', 0)
                 else:

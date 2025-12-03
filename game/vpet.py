@@ -12,7 +12,7 @@ from core import game_globals, runtime_globals
 from core.input.system_stats import get_system_stats
 from core.utils.module_utils import load_modules
 from core.utils.pygame_utils import blit_with_cache, load_misc_sprites
-from game.core import constants
+from core import constants
 from scenes.scene_battle import SceneBattle
 from scenes.scene_battle_pvp import SceneBattlePvP
 from scenes.scene_boot import SceneBoot
@@ -24,7 +24,7 @@ from scenes.scene_freezerbox import SceneFreezerBox
 from scenes.scene_library import SceneLibrary
 from scenes.scene_settingsmenu import SceneSettingsMenu
 from scenes.scene_sleep import SceneSleep
-from game.scenes.scene_status import SceneStatus
+from scenes.scene_status import SceneStatus
 from scenes.scene_maingame import SceneMainGame
 from scenes.scene_inventory import SceneInventory
 from scenes.scene_training import SceneTraining
@@ -130,15 +130,11 @@ class VirtualPetGame:
         """
         Delegates event handling to the current scene.
         """
-        # First, let the scene handle the raw pygame event (for mouse motion, etc.)
-        if hasattr(self.scene, 'handle_event'):
-            if self.scene.handle_event(event):
-                return
-        
-        # Then process it through input manager for action conversion
         input_action = runtime_globals.game_input.process_event(event)
-        if input_action:
-            self.scene.handle_event(input_action)
+
+        # First, let the scene handle the raw pygame event (for mouse motion, etc.)
+        if self.scene.handle_event(input_action if input_action else event):
+            return
         else: #Analog inputs only
             for action in runtime_globals.game_input.get_just_pressed_joystick():
                 if action in ("ANALOG_UP", "ANALOG_DOWN", "ANALOG_LEFT", "ANALOG_RIGHT"):

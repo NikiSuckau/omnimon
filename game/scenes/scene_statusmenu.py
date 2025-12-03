@@ -5,7 +5,7 @@ from components.window_status import WindowStatus
 from core import runtime_globals
 from core.utils.pygame_utils import blit_with_cache, sprite_load_percent
 from core.utils.scene_utils import change_scene
-from game.core import constants
+from core import constants
 
 
 class SceneStatusMenu:

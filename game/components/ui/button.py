@@ -8,7 +8,7 @@ from core.utils.pygame_utils import blit_with_shadow
 
 
 class Button(UIComponent):
-    def __init__(self, x, y, width, height, text, callback=None, icon_name=None, icon_prefix="Sleep", cut_corners=None, decorators=None, enabled=True, shadow_mode="disabled"):
+    def __init__(self, x, y, width, height, text, callback=None, icon_name=None, icon_prefix="Sleep", cut_corners=None, decorators=None, enabled=True, shadow_mode="disabled", draw_background=True):
         super().__init__(x, y, width, height)
         self.text = text
         self.focusable = True
@@ -30,6 +30,9 @@ class Button(UIComponent):
         # Set shadow mode for this button
         self.shadow_mode = shadow_mode
         
+        # Whether to draw the button's background rectangle
+        self.draw_background = draw_background
+        
     def on_manager_set(self):
         """Called when UI manager is set - load icon and decorators if specified"""
         if self.icon_name and self.manager:
@@ -49,6 +52,18 @@ class Button(UIComponent):
                     # Determine prefix based on decorator type
                     if decorator.startswith("Selection_"):
                         prefix = ""  # Selection_ decorators don't need additional prefix
+                        decorator_path = decorator
+                    elif decorator.startswith("Battle_"):
+                        prefix = ""  # Battle_ decorators don't need additional prefix
+                        decorator_path = decorator
+                    elif decorator.startswith("Settings_"):
+                        prefix = ""  # Battle_ decorators don't need additional prefix
+                        decorator_path = decorator
+                    elif decorator.startswith("Freezer_"):
+                        prefix = ""  # Freezer_ decorators don't need additional prefix
+                        decorator_path = decorator
+                    elif decorator.startswith("Library_"):
+                        prefix = ""  # Library_ decorators don't need additional prefix
                         decorator_path = decorator
                     else:
                         prefix = "Training_"  # Traditional training decorators
@@ -110,6 +125,7 @@ class Button(UIComponent):
         """Enable or disable the button"""
         if self.enabled != enabled:
             self.enabled = enabled
+            self.focusable = enabled  # Disabled buttons are not focusable
             self.needs_redraw = True
     
     def get_highlight_shape(self):
@@ -216,113 +232,115 @@ class Button(UIComponent):
         fg_color = colors["fg"]
         line_color = colors["line"]
         
-        # Check if we need cut corners
-        has_cuts = any(self.cut_corners.values())
-        
-        if has_cuts:
-            # Use centralized cut corner polygon method
-            # We need to convert to base coordinates for the method
-            button_rect = (0, 0, self.rect.width // self.manager.ui_scale, self.rect.height // self.manager.ui_scale)
-            cut_size = 12  # Base cut size
+        # Only draw background if draw_background is True
+        if self.draw_background:
+            # Check if we need cut corners
+            has_cuts = any(self.cut_corners.values())
             
-            # For the button surface, we need to draw at already-scaled coordinates
-            # So we bypass the centralized method and draw directly
-            cut = int(12 * self.manager.ui_scale)  # Diagonal cut size
-            w, h = self.rect.width, self.rect.height
-            border_size = self.manager.get_border_size()
-            
-            # Calculate border polygon points
-            border_inset = border_size
-            border_points = []
-            
-            # Top-left corner
-            if self.cut_corners.get('tl'):
-                border_points.extend([(cut, border_inset), (border_inset, cut)])
-            else:
-                border_points.append((border_inset, border_inset))
-            
-            # Bottom-left corner  
-            if self.cut_corners.get('bl'):
-                border_points.extend([(border_inset, h - cut - border_inset), (cut, h - border_inset)])
-            else:
-                border_points.append((border_inset, h - border_inset))
-            
-            # Bottom-right corner
-            if self.cut_corners.get('br'):
-                border_points.extend([(w - cut - border_inset, h - border_inset), (w - border_inset, h - cut - border_inset)])
-            else:
-                border_points.append((w - border_inset, h - border_inset))
-            
-            # Top-right corner
-            if self.cut_corners.get('tr'):
-                border_points.extend([(w - border_inset, cut), (w - cut - border_inset, border_inset)])
-            else:
-                border_points.append((w - border_inset, border_inset))
-            
-            # Calculate background polygon points (further inset)
-            bg_inset = border_size * 2
-            bg_points = []
-            
-            # Top-left corner
-            if self.cut_corners.get('tl'):
-                bg_points.extend([(cut, bg_inset), (bg_inset, cut)])
-            else:
-                bg_points.append((bg_inset, bg_inset))
-            
-            # Bottom-left corner
-            if self.cut_corners.get('bl'):
-                bg_points.extend([(bg_inset, h - cut - bg_inset), (cut, h - bg_inset)])
-            else:
-                bg_points.append((bg_inset, h - bg_inset))
-            
-            # Bottom-right corner
-            if self.cut_corners.get('br'):
-                bg_points.extend([(w - cut - bg_inset, h - bg_inset), (w - bg_inset, h - cut - bg_inset)])
-            else:
-                bg_points.append((w - bg_inset, h - bg_inset))
-            
-            # Top-right corner
-            if self.cut_corners.get('tr'):
-                bg_points.extend([(w - bg_inset, cut), (w - cut - bg_inset, bg_inset)])
-            else:
-                bg_points.append((w - bg_inset, bg_inset))
-            
-            # Draw border polygon (filled, not outline)
-            if len(border_points) >= 3:
-                pygame.draw.polygon(surface, line_color, border_points)
+            if has_cuts:
+                # Use centralized cut corner polygon method
+                # We need to convert to base coordinates for the method
+                button_rect = (0, 0, self.rect.width // self.manager.ui_scale, self.rect.height // self.manager.ui_scale)
+                cut_size = 12  # Base cut size
                 
-            # Draw background polygon on top
-            if len(bg_points) >= 3:
-                pygame.draw.polygon(surface, bg_color, bg_points)
+                # For the button surface, we need to draw at already-scaled coordinates
+                # So we bypass the centralized method and draw directly
+                cut = int(12 * self.manager.ui_scale)  # Diagonal cut size
+                w, h = self.rect.width, self.rect.height
+                border_size = self.manager.get_border_size()
                 
-        else:
-            # Use centralized rounded rectangle method
-            # Convert to base coordinates
-            button_rect = (0, 0, self.rect.width // self.manager.ui_scale, self.rect.height // self.manager.ui_scale)
-            
-            # For button surface, we need to draw at screen coordinates, so draw directly
-            border_size = self.manager.get_border_size()
-            
-            # Draw border first (full size)
-            if border_size > 0:
+                # Calculate border polygon points
+                border_inset = border_size
+                border_points = []
+                
+                # Top-left corner
+                if self.cut_corners.get('tl'):
+                    border_points.extend([(cut, border_inset), (border_inset, cut)])
+                else:
+                    border_points.append((border_inset, border_inset))
+                
+                # Bottom-left corner  
+                if self.cut_corners.get('bl'):
+                    border_points.extend([(border_inset, h - cut - border_inset), (cut, h - border_inset)])
+                else:
+                    border_points.append((border_inset, h - border_inset))
+                
+                # Bottom-right corner
+                if self.cut_corners.get('br'):
+                    border_points.extend([(w - cut - border_inset, h - border_inset), (w - border_inset, h - cut - border_inset)])
+                else:
+                    border_points.append((w - border_inset, h - border_inset))
+                
+                # Top-right corner
+                if self.cut_corners.get('tr'):
+                    border_points.extend([(w - border_inset, cut), (w - cut - border_inset, border_inset)])
+                else:
+                    border_points.append((w - border_inset, border_inset))
+                
+                # Calculate background polygon points (further inset)
+                bg_inset = border_size * 2
+                bg_points = []
+                
+                # Top-left corner
+                if self.cut_corners.get('tl'):
+                    bg_points.extend([(cut, bg_inset), (bg_inset, cut)])
+                else:
+                    bg_points.append((bg_inset, bg_inset))
+                
+                # Bottom-left corner
+                if self.cut_corners.get('bl'):
+                    bg_points.extend([(bg_inset, h - cut - bg_inset), (cut, h - bg_inset)])
+                else:
+                    bg_points.append((bg_inset, h - bg_inset))
+                
+                # Bottom-right corner
+                if self.cut_corners.get('br'):
+                    bg_points.extend([(w - cut - bg_inset, h - bg_inset), (w - bg_inset, h - cut - bg_inset)])
+                else:
+                    bg_points.append((w - bg_inset, h - bg_inset))
+                
+                # Top-right corner
+                if self.cut_corners.get('tr'):
+                    bg_points.extend([(w - bg_inset, cut), (w - cut - bg_inset, bg_inset)])
+                else:
+                    bg_points.append((w - bg_inset, bg_inset))
+                
+                # Draw border polygon (filled, not outline)
+                if len(border_points) >= 3:
+                    pygame.draw.polygon(surface, line_color, border_points)
+                    
+                # Draw background polygon on top
+                if len(bg_points) >= 3:
+                    pygame.draw.polygon(surface, bg_color, bg_points)
+                    
+            else:
+                # Use centralized rounded rectangle method
+                # Convert to base coordinates
+                button_rect = (0, 0, self.rect.width // self.manager.ui_scale, self.rect.height // self.manager.ui_scale)
+                
+                # For button surface, we need to draw at screen coordinates, so draw directly
+                border_size = self.manager.get_border_size()
+                
+                # Draw border first (full size)
+                if border_size > 0:
+                    pygame.draw.rect(
+                        surface, 
+                        line_color, 
+                        (0, 0, self.rect.width, self.rect.height), 
+                        width=border_size,
+                        border_radius=border_size
+                    )
+                
+                # Draw background (inset by border)
+                border_offset = border_size // 2
+                inner_rect = (border_offset, border_offset, 
+                             self.rect.width - border_size, self.rect.height - border_size)
                 pygame.draw.rect(
                     surface, 
-                    line_color, 
-                    (0, 0, self.rect.width, self.rect.height), 
-                    width=border_size,
-                    border_radius=border_size
+                    bg_color, 
+                    inner_rect,
+                    border_radius=max(0, border_size - border_offset)
                 )
-            
-            # Draw background (inset by border)
-            border_offset = border_size // 2
-            inner_rect = (border_offset, border_offset, 
-                         self.rect.width - border_size, self.rect.height - border_size)
-            pygame.draw.rect(
-                surface, 
-                bg_color, 
-                inner_rect,
-                border_radius=max(0, border_size - border_offset)
-            )
         
         # Draw content (icon + text)
         font = self.get_font("text")
@@ -438,41 +456,36 @@ class Button(UIComponent):
         decorator_use_shadow = self.manager and self.manager.should_render_shadow(self, "decorator")
         for decorator in self.decorators:
             if decorator in self.decorator_sprites:
-                # Use highlight version if button is focused or clicked, standard otherwise
                 use_highlight = self.focused or self.clicked
                 sprite_key = 'highlight' if use_highlight else 'standard'
                 decorator_sprite = self.decorator_sprites[decorator][sprite_key]
-                
                 # Scale decorator sprite to match UI scale
                 if self.manager:
                     ui_scale = self.manager.ui_scale
                     sprite_scale = self.manager.get_sprite_scale()
                     scale_factor = ui_scale / sprite_scale
-                    
                     original_size = decorator_sprite.get_size()
-                    runtime_globals.game_console.log(f"[Button] Decorator {decorator}: ui_scale={ui_scale}, sprite_scale={sprite_scale}, scale_factor={scale_factor:.2f}, original_size={original_size}")
-                    
                     if scale_factor != 1.0:
-                        # Scale the sprite to match UI scale
                         new_size = (int(original_size[0] * scale_factor), int(original_size[1] * scale_factor))
                         scaled_sprite = pygame.transform.scale(decorator_sprite, new_size)
-                        runtime_globals.game_console.log(f"[Button] Scaled decorator {decorator}: {original_size} -> {new_size}")
-                        if decorator_use_shadow:
-                            blit_with_shadow(surface, scaled_sprite, (0, 0))
-                        else:
-                            surface.blit(scaled_sprite, (0, 0))
                     else:
-                        runtime_globals.game_console.log(f"[Button] No scaling needed for decorator {decorator}")
-                        if decorator_use_shadow:
-                            blit_with_shadow(surface, decorator_sprite, (0, 0))
-                        else:
-                            surface.blit(decorator_sprite, (0, 0))
+                        scaled_sprite = decorator_sprite
                 else:
-                    # Fallback if no manager
-                    if decorator_use_shadow:
-                        blit_with_shadow(surface, decorator_sprite, (0, 0))
-                    else:
-                        surface.blit(decorator_sprite, (0, 0))
+                    scaled_sprite = decorator_sprite
+                # Center decorator if smaller than button surface
+                sprite_w, sprite_h = scaled_sprite.get_size()
+                surf_w, surf_h = surface.get_size()
+                offset_x = max(0, (surf_w - sprite_w) // 2)
+                offset_y = max(0, (surf_h - sprite_h) // 2)
+                if decorator_use_shadow:
+                    blit_with_shadow(surface, scaled_sprite, (offset_x, offset_y))
+                else:
+                    surface.blit(scaled_sprite, (offset_x, offset_y))
+        
+        # Apply transparency for disabled buttons
+        if not self.enabled:
+            # Create a semi-transparent version by setting alpha
+            surface.set_alpha(128)  # 50% transparency
         
         return surface
     
@@ -480,8 +493,14 @@ class Button(UIComponent):
         """Handle input events for the button"""
         if not self.enabled:
             return False
-        if action == "A":
-            return self.activate()
+            
+        # Handle string action (keyboard/controller/mouse)
+        # NOTE: Only handle string actions, not raw pygame events
+        # Raw events are converted to strings by input manager to prevent double-processing
+        if isinstance(action, str):
+            if action == "A":
+                return self.activate()
+                    
         return False
     
     def activate(self):

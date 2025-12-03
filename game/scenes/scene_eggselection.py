@@ -25,7 +25,7 @@ from core.utils.utils_unlocks import unlock_item
 from components.ui.ui_constants import BASE_RESOLUTION, BLUE, GRAY, GREEN, PURPLE, YELLOW, RED
 from core.game_digidex import is_pet_unlocked
 from core.utils.utils_unlocks import get_unlocked_backgrounds, is_unlocked
-from core.utils.sprite_utils import load_pet_sprites, convert_sprites_to_list
+from core.utils.sprite_utils import load_pet_sprites
 
 #=====================================================================
 # SceneEggSelection (New Journey Category Selection)
@@ -752,9 +752,8 @@ class SceneEggSelection:
         """Handle events in the egg selection scene."""
         
         # Handle pygame events through UI manager first
-        if hasattr(event, 'type'):
-            if self.ui_manager.handle_event(event):
-                return
+        if self.ui_manager.handle_event(event):
+            return
         
         # Handle string action events (from input manager)
         elif isinstance(event, str):
@@ -799,10 +798,6 @@ class SceneEggSelection:
                     # R key acts as page right
                     self.on_egg_next_page()
                     return
-            
-            # Let UI manager handle other input actions
-            if self.ui_manager.handle_input_action(event):
-                return
 
     # Button callback methods for category selection
     def on_classic_selection(self):

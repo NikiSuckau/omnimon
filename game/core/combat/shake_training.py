@@ -2,19 +2,17 @@
 # ShakeTraining (Simple Strength Bar Training)
 #=====================================================================
 
-import random
 import pygame
 
 from core import runtime_globals
 from core.animation import PetFrame
 from core.combat.training import Training
-from game.components.ui.ui_manager import UIManager
-from game.components.minigames.shake_punch import ShakePunch
-from game.core.combat import combat_constants
-import game.core.constants as constants
-from core.game_module import sprite_load
-from core.utils.pygame_utils import blit_with_cache, blit_with_shadow
-from game.core.utils.scene_utils import change_scene
+from components.ui.ui_manager import UIManager
+from components.minigames.shake_punch import ShakePunch
+from core.combat import combat_constants
+import core.constants as constants
+from core.utils.pygame_utils import blit_with_shadow
+from core.utils.scene_utils import change_scene
 
 class ShakeTraining(Training):
     """
@@ -141,58 +139,32 @@ class ShakeTraining(Training):
             blit_with_shadow(surface, sprite, (int(x), int(y)))
 
     def draw_result(self, surface):
-        # Use cached result sprites
-        bad_sprite = self._sprite_cache['bad']
-        good_sprite = self._sprite_cache['good']
-        great_sprite = self._sprite_cache['great']
-        excellent_sprite = self._sprite_cache['excellent']
-
-        result_img = None
-        if 15 <= self.strength < 20:
-            result_img = self.bag2
-        elif self.strength < 10:
-            result_img = self.bag1
-
-        if self.frame_counter < 30:
-            if result_img:
-                x = int(50 * constants.UI_SCALE)
-                y = constants.SCREEN_HEIGHT // 2 - result_img.get_height() // 2
-                blit_with_shadow(surface, result_img, (x, y))
-        else:
-            # Composition for result screen:
-            # 1) black background
-            surface.fill(self.background_color)
-
-            # Choose which result sprite to display
+        # Use AnimatedSprite component with predefined result animations
+        if not self.animated_sprite.is_animation_playing():
+            duration = combat_constants.RESULT_SCREEN_FRAMES / constants.FRAME_RATE
+            
+            # Choose which result animation to play based on strength
             if self.strength < 10:
-                selected_sprite = bad_sprite
-                cache_key = 'shake_result_bad'
-                trophy_qty = 0
+                self.animated_sprite.play_bad(duration)
             elif self.strength < 15:
-                selected_sprite = good_sprite
-                cache_key = 'shake_result_good'
-                trophy_qty = 0
+                self.animated_sprite.play_good(duration)
             elif self.strength < 20:
-                selected_sprite = great_sprite
-                cache_key = 'shake_result_great'
-                trophy_qty = 1
+                self.animated_sprite.play_great(duration)
             else:
-                selected_sprite = excellent_sprite
-                cache_key = 'shake_result_excellent'
-                trophy_qty = 2
+                self.animated_sprite.play_excellent(duration)
+        
+        # Draw the animated sprite
+        self.animated_sprite.draw(surface)
 
-            # 2) semi-transparent full-screen proportional overlay when ui scale >= 2
-            self._draw_overlay_background(surface, selected_sprite, cache_key)
-
-            # 3) integer-scaled sprite centered
-            sx, sy = selected_sprite.get_width(), selected_sprite.get_height()
-            center_x = constants.SCREEN_WIDTH // 2 - sx // 2
-            center_y = constants.SCREEN_HEIGHT // 2 - sy // 2
-            blit_with_shadow(surface, selected_sprite, (center_x, center_y))
-
-            # Trophy notification
-            if trophy_qty > 0:
-                self.draw_trophy_notification(surface, quantity=trophy_qty)
+        # Trophy notification on top of animated sprite
+        trophy_qty = 0
+        if self.strength == 20:
+            trophy_qty = 2
+        elif self.strength >= 15:
+            trophy_qty = 1
+            
+        if trophy_qty > 0:
+            self.draw_trophy_notification(surface, quantity=trophy_qty)
 
     def prepare_attacks(self):
         """Prepare multiple attacks from each pet based on strength level."""

@@ -5,8 +5,17 @@
 import math
 import random
 import pygame
-from components.window_xai import WindowXai
-from components.window_xaibar import WindowXaiBar
+from components.minigames.count_match import CountMatch
+from components.minigames.dummy_charge import DummyCharge
+from components.minigames.shake_punch import ShakePunch
+from components.minigames.xai_roll import XaiRoll
+from components.minigames.xai_bar import XaiBar
+from components.ui.ui_manager import UIManager
+from components.ui.animated_sprite import AnimatedSprite
+from components.ui.hp_bar import HPBar
+from components.ui.label import Label
+from components.ui.label_value import LabelValue
+from components.ui import ui_constants
 from core import game_globals, runtime_globals
 from core.animation import PetFrame
 from core.combat.game_battle import GameBattle
@@ -19,10 +28,10 @@ from core.utils.scene_utils import change_scene
 from core.utils.utils_unlocks import unlock_item
 from core.utils import inventory_utils
 from core.combat.sim.global_battle_simulator import GlobalBattleSimulator
-from game.core import constants
-from game.core.combat import combat_constants
-from game.core.game_quest import QuestType
-from game.core.utils.quest_event_utils import update_quest_progress
+from core import constants
+from core.combat import combat_constants
+from core.game_quest import QuestType
+from core.utils.quest_event_utils import update_quest_progress
 
 #=====================================================================
 # BattleEncounter Class
@@ -49,42 +58,43 @@ class BattleEncounter:
         self.module = get_module(module)
         self.set_initial_state(area, round, version)
 
-        # Graphics and assets (keep in __init__)
-        self.backgroundIm = sprite_load_percent(constants.BATTLE_BACKGROUND_PATH, percent=100, keep_proportion=True, base_on="width")
-        self.battle_sprite = sprite_load_percent(constants.BATTLE_SPRITE_PATH, percent=100, keep_proportion=True, base_on="width")
-        self.level_sprite = sprite_load_percent(constants.BATTLE_LEVEL_SPRITE_PATH, percent=100, keep_proportion=True, base_on="width")
-        self.bar_piece = sprite_load_percent(constants.BAR_PIECE_PATH, percent=(int(12 * constants.UI_SCALE) / constants.SCREEN_HEIGHT) * 100, keep_proportion=True, base_on="height")
-        self.bar_back = sprite_load_percent(constants.BAR_BACK_PATH, percent=(int(170 * constants.UI_SCALE) / constants.SCREEN_HEIGHT) * 100, keep_proportion=True, base_on="height")
-        self.training_max = sprite_load_percent(constants.TRAINING_MAX_PATH, percent=(int(60 * constants.UI_SCALE) / constants.SCREEN_HEIGHT) * 100, keep_proportion=True, base_on="height")
-        self.ready_sprite = sprite_load_percent(constants.READY_SPRITE_PATH, percent=100, keep_proportion=True, base_on="width")
-        self.go_sprite = sprite_load_percent(constants.GO_SPRITE_PATH, percent=100, keep_proportion=True, base_on="width")
+        # Initialize UI Manager and AnimatedSprite component for battle result animations
+        self.ui_manager = UIManager()
+        self.animated_sprite = AnimatedSprite(self.ui_manager)
+
+        # Initialize minigames for different rulesets
+        self.reset_minigames()
+
+        # Create a top-centered HPBar using screen/global coordinates (not within the reduced UI area)
+        width_scale = constants.SCREEN_WIDTH / 240
+        left_bar_w = int(100 * width_scale)
+        center_s = int(29 * width_scale)
+        right_bar_w = int(100 * width_scale)
+        total_w = left_bar_w + center_s + right_bar_w
+        bar_h = max(29, int(29 * width_scale))
+        x = (constants.SCREEN_WIDTH - total_w) // 2
+        y = int(6 * width_scale)
+
+        self.hp_bar = HPBar(0, 0, total_w, bar_h)
+        # Position using screen coordinates so UIManager scaling isn't required for placement
+        self.hp_bar.rect = pygame.Rect(x, y, total_w, bar_h)
+        # Provide ui_scale via manager so internal scaling of bar internals matches screen sizing
+        self.hp_bar.manager = self.ui_manager
+        # Default mode for non-versus encounters - pass module for BattleIcon display
+        self.hp_bar.set_mode('adventure', module=self.module)
+        # Attempt to load center sprite now that manager is available
+        self.hp_bar.on_manager_set()
+        # Initialize totals if battle_player already exists
+            
+        self.hp_bar.set_totals(self.battle_player.team2_total_hp, self.battle_player.team1_total_hp)
+        self.hp_bar.set_values(self.battle_player.team2_total_hp, self.battle_player.team1_total_hp)
+
 
         self.font = get_font(constants.FONT_SIZE_LARGE)
         self.font_small = get_font(constants.FONT_SIZE_MEDIUM)
-        self.result_sprites = {
-            "clear": [
-                sprite_load_percent(constants.CLEAR1_PATH, percent=100, keep_proportion=True, base_on="width"),
-                sprite_load_percent(constants.CLEAR2_PATH, percent=100, keep_proportion=True, base_on="width")
-            ],
-            "warning": [
-                sprite_load_percent(constants.WARNING1_PATH, percent=100, keep_proportion=True, base_on="width"),
-                sprite_load_percent(constants.WARNING2_PATH, percent=100, keep_proportion=True, base_on="width")
-            ]
-        }
-        self.ready_sprites = {
-            1: sprite_load_percent(constants.READY_SPRITES_PATHS[1], 100, keep_proportion=True, base_on="width"),
-            2: sprite_load_percent(constants.READY_SPRITES_PATHS[2], 100, keep_proportion=True, base_on="width"),
-            3: sprite_load_percent(constants.READY_SPRITES_PATHS[3], 100, keep_proportion=True, base_on="width")
-        }
-        self.count_sprites = {
-            4: sprite_load_percent(constants.COUNT_SPRITES_PATHS[4], 100, keep_proportion=True, base_on="width"),
-            3: sprite_load_percent(constants.COUNT_SPRITES_PATHS[3], 100, keep_proportion=True, base_on="width"),
-            2: sprite_load_percent(constants.COUNT_SPRITES_PATHS[2], 100, keep_proportion=True, base_on="width"),
-            1: sprite_load_percent(constants.COUNT_SPRITES_PATHS[1], 100, keep_proportion=True, base_on="width")
-        }
-        self.mega_hit = sprite_load_percent(constants.MEGA_HIT_PATH, 100, keep_proportion=True, base_on="width")
+        # Note: All sprites now handled by AnimatedSprite component
+
         self.attack_sprites = load_attack_sprites()
-        
         
         self.load_module_attack_sprites()
         
@@ -94,6 +104,10 @@ class BattleEncounter:
         self.super_hits = 0
         self.strength = 0
         
+        # Cache for result screen rendering (everything except animated pets)
+        self.result_surface_cache = None
+        self.result_animation_started = False
+        
 
     def set_initial_state(self, area=0, round=0, version=1):
         """
@@ -101,10 +115,8 @@ class BattleEncounter:
         """
         # --- Jumper Gate: skip to boss if status_boost is active ---
         if not self.pvp_mode:
-            if (
-                "skip_to_boss" in game_globals.battle_effects
-                and game_globals.battle_effects["skip_to_boss"].get("amount", 0) > 0
-            ):
+            skip_effect = self.get_battle_effect("skip_to_boss")
+            if skip_effect and skip_effect.get("amount", 0) > 0:
                 # Find the next boss round for this area
                 current_area = game_globals.battle_area[self.module.name] if area == 0 else area
                 round_to_check = game_globals.battle_round[self.module.name] if round == 0 else round
@@ -120,7 +132,12 @@ class BattleEncounter:
         self.victory_status = None
         self.bonus_experience = 0
         self.frame_counter = 0
+        self.result_timer = 0
         self.enemies = []
+        
+        # Reset result screen cache
+        self.result_surface_cache = None
+        self.result_animation_started = False
 
         if self.pvp_mode:
             self.area = 0
@@ -137,34 +154,25 @@ class BattleEncounter:
             self.enemy_entry_counter = constants.PET_WIDTH + (2 * constants.UI_SCALE)
 
             # --- Apply XAI roll boost (Seven Switch) ---
-            if "xai_roll" in game_globals.battle_effects:
-                xai_val = game_globals.battle_effects["xai_roll"].get("amount", None)
+            xai_effect = self.get_battle_effect("xai_roll")
+            if xai_effect:
+                xai_val = xai_effect.get("amount", None)
                 if xai_val is not None:
                     runtime_globals.game_console.log(f"[BattleEncounter] XAI roll boost applied: {xai_val}")
 
             # --- Apply EXP multiplier boost (EXP Coat) ---
-            if "exp_multiplier" in game_globals.battle_effects:
-                exp_val = game_globals.battle_effects["exp_multiplier"].get("amount", None)
+            exp_effect = self.get_battle_effect("exp_multiplier")
+            if exp_effect:
+                exp_val = exp_effect.get("amount", None)
                 if exp_val is not None:
                     runtime_globals.game_console.log(f"[BattleEncounter] EXP multiplier boost applied: x{exp_val}")
 
             # --- Apply Jumper Gate boost ---
-            if "skip_to_boss" in game_globals.battle_effects:
-                skip_val = game_globals.battle_effects["skip_to_boss"].get("amount", None)
+            skip_effect = self.get_battle_effect("skip_to_boss")
+            if skip_effect:
+                skip_val = skip_effect.get("amount", None)
                 if skip_val:
                     runtime_globals.game_console.log(f"[BattleEncounter] Jumper Gate: Skipping to boss round.")
-
-        self.strength = 0
-        self.bar_level = 14
-        self.xai_phase = 0
-        self.xai_number = 1
-        self.window_xai = None
-        self.window_xaibar = None
-
-        self.result_timer = 0
-        self.press_counter = 0
-        self.final_color = 3
-        self.correct_color = 0
 
         if self.pvp_mode:
             self.hp_boost = 0
@@ -175,20 +183,23 @@ class BattleEncounter:
 
             # --- Apply HP boost from status_boost items if present ---
             self.hp_boost = 0
-            if "hp" in game_globals.battle_effects:
-                self.hp_boost = game_globals.battle_effects["hp"].get("amount", 0)
+            hp_effect = self.get_battle_effect("hp")
+            if hp_effect:
+                self.hp_boost = hp_effect.get("amount", 0)
                 runtime_globals.game_console.log(f"[BattleEncounter] HP boost applied: +{self.hp_boost}")
 
             # --- Apply Attack boost from status_boost items (DMX ruleset) ---
             self.attack_boost = 0
-            if "attack" in game_globals.battle_effects:
-                self.attack_boost = game_globals.battle_effects["attack"].get("amount", 0)
+            attack_effect = self.get_battle_effect("attack")
+            if attack_effect:
+                self.attack_boost = attack_effect.get("amount", 0)
                 runtime_globals.game_console.log(f"[BattleEncounter] Attack boost applied: +{self.attack_boost}")
 
             # --- Apply Strength boost from status_boost items (PW Board) ---
             self.strength_bonus = 0
-            if "strength" in game_globals.battle_effects:
-                self.strength_bonus = game_globals.battle_effects["strength"].get("amount", 0)
+            strength_effect = self.get_battle_effect("strength")
+            if strength_effect:
+                self.strength_bonus = strength_effect.get("amount", 0)
                 runtime_globals.game_console.log(f"[BattleEncounter] Strength boost applied: +{self.strength_bonus}")
 
         self.battle_player = GameBattle(get_battle_targets(), self.enemies, self.hp_boost, self.attack_boost, self.module)
@@ -205,6 +216,14 @@ class BattleEncounter:
 
         # Reload module attack sprites for the current battle participants
         self.load_module_attack_sprites()
+        
+        # Reset minigames and counters
+        self.reset_minigames()
+        
+        # Reset and update HPBar with new battle values
+        if hasattr(self, 'hp_bar') and self.hp_bar:
+            self.hp_bar.set_totals(self.battle_player.team2_total_hp, self.battle_player.team1_total_hp)
+            self.hp_bar.set_values(self.battle_player.team2_total_hp, self.battle_player.team1_total_hp)
 
     def prime_enemy_first(self):
         """Configure this encounter so enemy actions are processed before pets.
@@ -228,6 +247,49 @@ class BattleEncounter:
         # For PvP clients, use staggered cooldowns to ensure proper synchronization
         if self.pvp_mode:
             bp.reset_cooldowns_staggered()
+
+    def reset_minigames(self):
+        """Reset all minigame instances and related counters."""
+        # Reset minigame counters
+        self.press_counter = 0
+        self.rotation_index = 0
+        self.super_hits = 0
+        self.strength = 0
+        self.xai_phase = 0
+        
+        # Clean up minigame instances
+        self.count_match = None
+        self.dummy_charge = None
+        self.shake_punch = None
+        self.xai_roll = None
+        self.xai_bar = None
+
+    def get_battle_effect(self, effect_name, default=None):
+        """
+        Get a battle effect value if it applies to this battle.
+        Only returns effects for non-PvP battles that match the current module.
+        
+        Args:
+            effect_name: Name of the effect to retrieve
+            default: Default value to return if effect doesn't exist or doesn't apply
+            
+        Returns:
+            The effect dict if it exists and applies, otherwise default
+        """
+        if self.pvp_mode:
+            return default
+            
+        if effect_name not in game_globals.battle_effects:
+            return default
+            
+        effect = game_globals.battle_effects[effect_name]
+        
+        # Check if effect has module restriction
+        if "module" in effect:
+            if effect["module"] != self.module.name:
+                return default
+        
+        return effect
 
     def setup_pvp_teams(self, my_pets, enemy_pet_data):
         """Sets up teams for PvP battle from pet data."""
@@ -484,6 +546,9 @@ class BattleEncounter:
         """
         self.frame_counter += 1
         self.battle_player.increment_frame_counters()
+        
+        # Update AnimatedSprite component
+        self.animated_sprite.update()
 
         if self.phase == "level":
             self.update_level()
@@ -491,8 +556,6 @@ class BattleEncounter:
             self.update_entry()
         elif self.phase == "intimidate":
             self.update_intimidate()
-        elif self.phase == "set_attribute":
-            self.update_set_attribute()
         elif self.phase == "alert":
             self.update_alert()
         elif self.phase == "charge":
@@ -535,23 +598,34 @@ class BattleEncounter:
             self.frame_counter = 0
             self.enemy_entry_counter = 0
             self.battle_player.reset_frame_counters()
+            
+            # Start intimidate animation once when entering phase
+            duration = 3.0  # 3 second intimidate animation (increased from 2.0)
+            if self.boss:
+                # Use warning animation for boss (intimidating)
+                self.animated_sprite.play_warning(duration)
+            else:
+                # Use battle animation for normal battle
+                self.animated_sprite.play_battle(duration)
 
     def update_intimidate(self):
         """
-        Update logic for the intimidate phase, transitions to set_attribute or alert phase.
+        Update logic for the intimidate phase, transitions to alert phase.
         """
         if self.frame_counter >= combat_constants.IDLE_ANIM_DURATION:
-            self.phase = "set_attribute" if self.module.ruleset == "penc" else "alert"
-            self.frame_counter = 0
-
-    def update_set_attribute(self):
-        """
-        Update logic for setting pet attributes, transitions to alert phase.
-        """
-        #self.frame_counter += 1
-        if self.frame_counter >= int(combat_constants.READY_FRAME_COUNTER):
             self.phase = "alert"
             self.frame_counter = 0
+            # Stop intimidate animation when exiting phase
+            self.animated_sprite.stop()
+            
+            # Reset minigames before alert phase
+            self.reset_minigames()
+
+            if self.module.ruleset == "penc":
+                # For PenC, initialize count match minigame early for alert phase drawing
+                pets = get_battle_targets()
+                self.count_match = CountMatch(self.ui_manager, pets[0], self.animated_sprite)
+                self.count_match.set_phase("ready")
 
     def update_alert(self):
         """
@@ -559,7 +633,7 @@ class BattleEncounter:
         """
         if self.frame_counter == int(combat_constants.ALERT_DURATION_FRAMES * 0.8):
             runtime_globals.game_sound.play("happy")
-        if self.frame_counter > combat_constants.ALERT_DURATION_FRAMES:
+        elif self.frame_counter > combat_constants.ALERT_DURATION_FRAMES:
             runtime_globals.game_console.log("Entering charge phase")
             self.phase = "charge"
             self.frame_counter = 0
@@ -571,51 +645,86 @@ class BattleEncounter:
         Setup logic for the charge phase, varies by ruleset.
         """
         if self.module.ruleset == "dmc":
-            self.strength = 0
+            # DMC ruleset: Dummy charge minigame
             self.bar_level = 14
             self.battle_player.reset_frame_counters()
+            self.dummy_charge = DummyCharge(self.ui_manager)
         elif self.module.ruleset == "dmx":
+            # DMX ruleset: XAI roll and bar
             self.xai_phase = 1  # Start Xai roll
-            self.window_xai = WindowXai(
+            self.xai_roll = XaiRoll(
                 x=constants.SCREEN_WIDTH // 2 - int(100 * constants.UI_SCALE) // 2,
                 y=constants.SCREEN_HEIGHT // 2 - int(100 * constants.UI_SCALE) // 2,
                 width=int(100 * constants.UI_SCALE),
                 height=int(100 * constants.UI_SCALE),
                 xai_number=1
             )
-            self.window_xai.roll()
+            self.xai_roll.roll()
         elif self.module.ruleset == "penc":
-            self.press_counter = 0
+            # PenC ruleset: Count match minigame
             self.rotation_index = 3
+            # Ensure count match minigame exists
+            if not self.count_match:
+                pets = get_battle_targets()
+                self.count_match = CountMatch(self.ui_manager, pets[0], self.animated_sprite)
+            self.count_match.set_phase("count")
+        elif self.module.ruleset == "vb":
+            # VB ruleset: Shake punch minigame
+            self.bar_level = 20
+            pets = get_battle_targets()
+            self.shake_punch = ShakePunch(self.ui_manager, pets)
+            self.shake_punch.set_phase("punch")
 
     def update_charge(self):
         """
         Update logic for the charge phase, handles input and transitions to pet_charge phase.
         """
-        if self.module.ruleset == "dmx":
+        # Update minigames
+        if self.module.ruleset == "dmc" and self.dummy_charge:
+            self.dummy_charge.update()
+            self.strength = self.dummy_charge.strength
+        elif self.module.ruleset == "penc" and self.count_match:
+            self.count_match.update()
+            self.press_counter = self.count_match.get_press_counter()
+            self.rotation_index = self.count_match.get_rotation_index()
+        elif self.module.ruleset == "vb" and self.shake_punch:
+            self.shake_punch.update()
+            self.strength = self.shake_punch.get_strength()
+        elif self.module.ruleset == "dmx":
             if self.xai_phase == 1:
-                self.window_xai.update()
-                if not self.window_xai.rolling and not self.window_xai.stopping:
+                self.xai_roll.update()
+                if not self.xai_roll.rolling and not self.xai_roll.stopping:
                     self.xai_phase = 2
-                    self.window_xaibar = WindowXaiBar(
+                    self.xai_bar = XaiBar(
                         x=constants.SCREEN_WIDTH // 2 - int(152 * constants.UI_SCALE) // 2,
                         y=constants.SCREEN_HEIGHT // 2 - int(72 * constants.UI_SCALE) // 2 + int(48 * constants.UI_SCALE),
                         xai_number=self.xai_number,
                         pet=self.attacking_pet if hasattr(self, "attacking_pet") and self.attacking_pet else get_battle_targets()[0]
                     )
-                    self.window_xaibar.start()
+                    self.xai_bar.start()
             elif self.xai_phase == 2:
-                self.window_xaibar.update()
-        if self.module.ruleset != "dmx" or self.xai_phase == 3:
-            if pygame.time.get_ticks() - self.bar_timer > combat_constants.BAR_HOLD_TIME_MS:
-                runtime_globals.game_console.log("Entering pet_charge phase")
-                self.phase = "battle"
-                self.frame_counter = 0
-                self.battle_player.reset_frame_counters()
-                self.battle_player.reset_jump_and_forward()
-                if self.module.ruleset == "penc":
-                    self.calculate_results()
-                self.calculate_combat_for_pairs()
+                self.xai_bar.update()
+        
+        # Check if minigame time is up and transition to battle
+        time_up = False
+        if self.module.ruleset == "vb" and self.shake_punch:
+            # VB uses different timing
+            time_up = self.shake_punch.is_time_up() or self.strength >= 20
+        elif self.module.ruleset == "dmx":
+            time_up = self.xai_phase == 3
+        else:
+            time_up = pygame.time.get_ticks() - self.bar_timer > combat_constants.BAR_HOLD_TIME_MS
+        
+        if time_up:
+            runtime_globals.game_console.log("Entering battle phase")
+            self.phase = "battle"
+            self.frame_counter = 0
+            self.animated_sprite.stop()
+            self.battle_player.reset_frame_counters()
+            self.battle_player.reset_jump_and_forward()
+            if self.module.ruleset == "penc":
+                self.calculate_results()
+            self.calculate_combat_for_pairs()
 
     def calculate_results(self):
         self.correct_color = self.get_first_pet_attribute()
@@ -701,8 +810,9 @@ class BattleEncounter:
 
         # If victory, calculate XP for winners and bonus
         xp_multiplier = 1
-        if "exp_multiplier" in game_globals.battle_effects:
-            xp_multiplier = game_globals.battle_effects["exp_multiplier"].get("amount", 1)
+        exp_effect = self.get_battle_effect("exp_multiplier")
+        if exp_effect:
+            xp_multiplier = exp_effect.get("amount", 1)
         boss = self.boss
 
         self.battle_player.xp = int((2.83 * self.battle_player.team2[0].stage) + (0.81 * self.battle_player.team2[0].power) + (0.17 * self.round) + ((0.67 * self.area) * (6.39 if boss else 0))) * xp_multiplier
@@ -742,6 +852,9 @@ class BattleEncounter:
         if self.boss or not self.module.battle_sequential_rounds:
             to_remove = []
             for status, effect in game_globals.battle_effects.items():
+                # Only decrement boosts for this module
+                if "module" in effect and effect["module"] != self.module.name:
+                    continue
                 if "boost_time" in effect:
                     effect["boost_time"] -= 1
                     if effect["boost_time"] <= 0:
@@ -757,7 +870,7 @@ class BattleEncounter:
         # Update debug battle logs based on current phases
         if constants.DEBUG_MODE:
             self.update_debug_battle_logs()
-
+        self.hp_bar.update()
         # For PvP, always process attacks in the same order (team1 then team2)
         # The battle log device labels are pre-swapped for clients so the correct attacks are found
         for i in range(len(self.battle_player.team1)):
@@ -1034,6 +1147,10 @@ class BattleEncounter:
                     # Apply damage
                     self.battle_player.team2_hp[defender_idx] = max(0, self.battle_player.team2_hp[defender_idx] - damage)
                     self.battle_player.team2_total_hp = sum(self.battle_player.team2_hp)
+                    # Trigger HPBar animation for enemy (left side) and update current HP
+                    self.hp_bar.add_damage('left', damage)
+                    self.hp_bar.set_current_hp(left_current=self.battle_player.team2_total_hp)
+
                     self.battle_player.team2_bar_counters[defender_idx] = BAR_COUNTER
                 else:
                     runtime_globals.game_sound.play("attack_fail")
@@ -1083,6 +1200,10 @@ class BattleEncounter:
                     runtime_globals.game_sound.play("attack_hit")
                     self.battle_player.team1_hp[defender_idx] = max(0, self.battle_player.team1_hp[defender_idx] - damage)
                     self.battle_player.team1_total_hp = sum(self.battle_player.team1_hp)
+                    # Trigger HPBar animation for player (right side) and update current HP
+                    self.hp_bar.add_damage('right', damage)
+                    self.hp_bar.set_current_hp(right_current=self.battle_player.team1_total_hp)
+
                     self.battle_player.team1_bar_counters[defender_idx] = BAR_COUNTER
                 else:
                     runtime_globals.game_sound.play("attack_fail")
@@ -1168,17 +1289,23 @@ class BattleEncounter:
             # Return to main scene after PvP
             self.return_to_main_scene()
             return
-
+        
+        pets = get_battle_targets()
         if self.victory_status == "Victory":
-            runtime_globals.game_sound.play("happy")
             if not self.boss:
-                self.round += 1
-                if self.round > game_globals.battle_round[self.module.name]:
-                    game_globals.battle_round[self.module.name] = self.round
-                self.victory_status = None
-                if self.module.battle_sequential_rounds:
-                    self.set_initial_state(round=self.round, area=self.area)
+                if len(pets) == 0:
+                    #No more pets capable of continuing the battle
+                    runtime_globals.game_sound.play("fail")
+                    self.return_to_main_scene()
                     return
+                else:
+                    self.round += 1
+                    if self.round > game_globals.battle_round[self.module.name]:
+                        game_globals.battle_round[self.module.name] = self.round
+                    self.victory_status = None
+                    if self.module.battle_sequential_rounds:
+                        self.set_initial_state(round=self.round, area=self.area)
+                        return
             else:
                 # --- Unlock adventure items of the area just won ---
                 unlocks = getattr(self.module, "unlocks", None)
@@ -1236,8 +1363,10 @@ class BattleEncounter:
         """
         Main draw loop for the battle encounter, calls phase-specific draws.
         """
-        self.draw_health_bars(surface)
-        surface.blit(self.backgroundIm, (0, 0))
+        # Hide HPBar during charge phase for cleaner minigame presentation
+        if self.phase not in ["charge", "result"]:
+            self.draw_health_bars(surface)
+        #surface.blit(self.backgroundIm, (0, 0))
 
         # Draw by phase
         if self.phase == "level":
@@ -1246,8 +1375,6 @@ class BattleEncounter:
             self.draw_entry(surface)
         elif self.phase == "intimidate":
             self.draw_intimidate(surface)
-        elif self.phase == "set_attribute":
-            self.draw_set_attribute(surface)
         elif self.phase == "alert":
             self.draw_alert(surface)
         elif self.phase == "charge":
@@ -1265,11 +1392,30 @@ class BattleEncounter:
 
     def draw_level(self, surface):
         """
-        Draws the level information on the screen.
+        Draws the level information on the screen using AnimatedSprite component.
         """
-        surface.blit(self.level_sprite, (0, constants.SCREEN_HEIGHT // 2 - self.level_sprite.get_height() // 2))
-        level_text = self.font.render(f"Round {self.round}", True, constants.FONT_COLOR_GREEN).convert_alpha()
-        blit_with_cache(surface, level_text, (6 * constants.UI_SCALE, 116 * constants.UI_SCALE))
+        # Check if we need to start the battle level animation
+        if not self.animated_sprite.is_animation_playing():
+            self.animated_sprite.play_battle_level(duration_seconds=1.0)
+        
+        # Draw the animated sprite (just the Combat_Level sprite)
+        self.animated_sprite.draw(surface)
+        
+        # Draw area/round text using scaled font
+        from components.ui import ui_constants
+        area_text = f"AREA {self.area}-{self.round}"
+        
+        # Position: 6 pixels from left in UI space, accounting for UI offset
+        text_x = self.ui_manager.ui_offset_x + int(6 * constants.UI_SCALE)
+        
+        # Use title font with scaled size (32 * UI_SCALE), left-aligned
+        font_size = int(32 * constants.UI_SCALE)
+        font = get_font(font_size)
+        text_surface = font.render(area_text, True, ui_constants.GREEN).convert_alpha()
+        
+        # Center vertically based on actual text height, accounting for UI offset
+        text_y = self.ui_manager.ui_offset_y + ((self.ui_manager.ui_height - text_surface.get_height()) // 2)
+        surface.blit(text_surface, (text_x, text_y))
 
     def draw_entry(self, surface):
         """
@@ -1282,58 +1428,65 @@ class BattleEncounter:
 
     def draw_intimidate(self, surface):
         """
-        Draws the intimidate phase, showing warning or battle sprites.
+        Draws the intimidate phase, showing warning or battle sprites using AnimatedSprite component.
         """
         if self.frame_counter >= combat_constants.IDLE_ANIM_DURATION // 2:
-            if self.boss:
-                sprite = self.result_sprites["warning"][(self.frame_counter // int(10 * constants.FRAME_RATE / 30)) % 2]
-                surface.blit(sprite, (0, constants.SCREEN_HEIGHT // 2 - sprite.get_height() // 2))
-            else:
-                surface.blit(self.battle_sprite, (0, constants.SCREEN_HEIGHT // 2 - self.battle_sprite.get_height() // 2))
+            # Draw the animated sprite (animation started in update_entry when entering phase)
+            self.animated_sprite.draw(surface)
         else:
             self.draw_enemies(surface)
             self.draw_pets(surface)
             runtime_globals.game_message.draw(surface)
             self.draw_hit_animations(surface)
 
-    def draw_set_attribute(self, surface):
-        """
-        Draws the attribute selection for the pet, indicating readiness to attack.
-        """
-        attr = self.get_first_pet_attribute()
-        sprite = self.ready_sprites[attr]
-        y = (constants.SCREEN_HEIGHT - sprite.get_height()) // 2
-        surface.blit(sprite, (0, y))
-
     def draw_alert(self, surface):
         """
-        Draws the alert phase, showing readiness sprites or count down.
+        Draws the alert phase, showing readiness sprites using AnimatedSprite component.
         """
         if self.module.ruleset == "penc":
-            sprite = self.count_sprites[4]
-            y = (constants.SCREEN_HEIGHT - sprite.get_height()) // 2
-            surface.blit(sprite, (0, y))
+            self.animated_sprite.stop()
+            # PenC ruleset: Count match minigame shows in both alert and charge phases
+            self.count_match.set_phase("ready")
+            self.count_match.draw(surface)
+            # Don't draw the animated sprite for count match - use only minigame version
         else:
-            center_y = constants.SCREEN_HEIGHT // 2 - self.ready_sprite.get_height() // 2
-            surface.blit(self.ready_sprite, (0, center_y))
+            # For other rulesets, use animated sprite ready animation
+            # Force stop any previous animation and setup alert animation
+            self.animated_sprite.stop()
+            
+            if not self.animated_sprite.is_animation_playing():
+                duration = 1.5  # 1.5 second alert animation
+                # Use ready animation for other rulesets
+                self.animated_sprite.play_ready(duration)
+            
+            # Draw the animated sprite
+            self.animated_sprite.draw(surface)
 
     def draw_charge(self, surface):
         """
-        Draws the charge phase, showing strength bar or Xai roll.
+        Draws the charge phase, showing strength bar, minigame, or Xai roll.
         """
-        self.draw_enemies(surface)
-        self.draw_pets(surface)
+        # Draw enemies and pets as background for most rulesets
+        if self.module.ruleset != "vb":
+            self.draw_enemies(surface)
+            self.draw_pets(surface)
+        
+        # Draw minigame UI on top
         if self.module.ruleset == "dmc":
-            self.draw_strength_bar(surface)
+            # DMC ruleset: Dummy charge minigame
+            self.dummy_charge.draw(surface)
         elif self.module.ruleset == "penc":
-            sprite = self.count_sprites[self.rotation_index]
-            y = (constants.SCREEN_HEIGHT - sprite.get_height()) // 2
-            surface.blit(sprite, (0, y))
+            # PenC ruleset: Count match minigame
+            self.count_match.draw(surface)
+        elif self.module.ruleset == "vb":
+            # VB ruleset: Shake punch minigame (full screen, draws its own pets)
+            self.shake_punch.draw(surface)
         elif self.module.ruleset == "dmx":
+            # DMX ruleset: XAI roll and bar
             if self.xai_phase == 1:
-                self.window_xai.draw(surface)
+                self.xai_roll.draw(surface)
             elif self.xai_phase >= 2:
-                self.window_xaibar.draw(surface)
+                self.xai_bar.draw(surface)
 
     def draw_battle(self, surface):
         """
@@ -1349,142 +1502,288 @@ class BattleEncounter:
 
     def draw_clear(self, surface):
         """
-        Draws the clear of the battle, showing clear sprites.
+        Draws the clear of the battle, showing clear sprites using AnimatedSprite component.
+        This phase is only reached for boss battles - show win animation here.
         """
         if self.boss:
-            sprites = self.result_sprites["clear"]
-            sprite = sprites[(self.result_timer // (10 * int(constants.FRAME_RATE / 30))) % 2]
-            surface.blit(sprite, (0, constants.SCREEN_HEIGHT // 2 - sprite.get_height() // 2))
+            # Use AnimatedSprite component for win animation during clear phase
+            if not self.animated_sprite.is_animation_playing():
+                duration = 1.0  # 1 second win animation (will be followed by clear in result phase)
+                self.animated_sprite.play_win(duration)
+            
+            # Draw the animated sprite
+            self.animated_sprite.draw(surface)
 
     def draw_result(self, surface):
         """
-        Improved result screen: victory/defeat, battle damage, pet stats, and prize.
-        Uses new global battle structures.
+        Upgraded result screen using new UI elements:
+        - Title label (WIN/LOSE) at top in theme colors
+        - Animated pet sprites (not UI components)
+        - Per-pet reward labels below each pet based on module's visible_stats
+        - Prize label at bottom using LabelValue
+        All labels use global screen positions scaled to any screen size.
         """
-        # Draw header
-        header = self.font.render(
-            f"{self.victory_status}!",
-            True,
-            constants.FONT_COLOR_GREEN if self.victory_status == "Victory" else constants.FONT_COLOR_RED
-        ).convert_alpha()
-        blit_with_cache(surface, header, (20 * constants.UI_SCALE, 30 * constants.UI_SCALE))
-
-        # Draw pet sprites horizontally (half size)
-        # For PvP, client should show their own pets (team2), not team1
-        if self.pvp_mode and hasattr(self, 'show_team2_in_result') and self.show_team2_in_result:
-            pets = [enemy for enemy in self.battle_player.team2 if hasattr(enemy, 'get_sprite')]
-            # Use team2 indices for frame counters and winners
-            team1_count = len(self.battle_player.team1)
-            pet_frame_counters = []
-            pet_winners = []
-            for i in range(len(pets)):
-                frame_counter_idx = team1_count + i
-                if frame_counter_idx < len(self.battle_player.frame_counters):
-                    pet_frame_counters.append(self.battle_player.frame_counters[frame_counter_idx])
-                else:
-                    pet_frame_counters.append(0)  # Default frame counter
-                
-                winner_idx = team1_count + i  
-                if winner_idx < len(self.battle_player.winners):
-                    pet_winners.append(self.battle_player.winners[winner_idx])
-                else:
-                    pet_winners.append("team1")  # Default winner
+        # Start result animation once at the beginning
+        if not self.result_animation_started:
+            self.animated_sprite.stop()
+            if self.victory_status == "Victory" and self.boss:
+                # For boss victory: play clear for 1 second (win was already shown in clear phase)
+                duration = 1.0
+                self.animated_sprite.play_clear(duration)
+            elif self.victory_status == "Victory":
+                # For normal victory: play win for 2 seconds
+                duration = 2.0
+                self.animated_sprite.play_win(duration)
+            else:
+                # For defeat: play lose for 2 seconds
+                duration = 2.0
+                self.animated_sprite.play_lose(duration)
+            self.result_animation_started = True
+        
+        # Show result animation for the first 1-2 seconds
+        if self.animated_sprite.is_playing:
+            # Draw the animated sprite
+            self.animated_sprite.draw(surface)
         else:
-            pets = self.battle_player.team1
-            pet_frame_counters = self.battle_player.frame_counters[:len(self.battle_player.team1)]
-            pet_winners = self.battle_player.winners[:len(self.battle_player.team1)]
-            
-        total = len(pets)
-        sprite_width = constants.PET_WIDTH // 2
-        sprite_height = constants.PET_HEIGHT // 2
-        spacing = min((constants.SCREEN_WIDTH - int(30 * constants.UI_SCALE)) // total, sprite_width + int(16 * constants.UI_SCALE))
-        total_width = spacing * total
-        offset_x = 30 +(constants.SCREEN_WIDTH - total_width) // 2
-        y = int(86 * constants.UI_SCALE)
-        for i, pet in enumerate(pets):
-            # Safety check for frame counters
-            if i < len(pet_frame_counters):
-                anim_toggle = (pet_frame_counters[i] + i * 5) // (15 * constants.FRAME_RATE / 30) % 2
-            else:
-                anim_toggle = 0
+            # Build UI components once (labels for title, pet rewards, and prize)
+            if self.result_surface_cache is None:
+                # Use UI constants for colors (not theme colors)
+                win_color = ui_constants.GREEN
+                lose_color = ui_constants.RED
+                white_color = (245, 245, 245)
+                yellow_color = ui_constants.YELLOW
                 
-            # Safety check for winners
-            if (i < len(pet_winners) and pet_winners[i] == "team2") or self.victory_status == "Defeat":
-                frame_id = PetFrame.LOSE.value
-            else:
-                frame_id = PetFrame.IDLE1.value if anim_toggle == 0 else PetFrame.HAPPY.value
-            sprite = pet.get_sprite(frame_id)
-            sprite = pygame.transform.scale(sprite, (sprite_width, sprite_height))
-            x = offset_x + i * spacing
-            blit_with_cache(surface, sprite, (x, y))
-
-        # Draw Level, Exp, Bonus headers and values (adjusted for new sprite size)
-        label_y = y + sprite_height + int(10 * constants.UI_SCALE)
-        col_xs = [offset_x + i * spacing + sprite_width // 2 for i in range(total)]
-
-        any_dmx_pets = False
-        for i, pet in enumerate(pets):
-            if pet.module == "DMX":
-                any_dmx_pets = True
-
-        if any_dmx_pets:            
-            # Draw headers
-            for idx, label in enumerate(["Lv", "Xp", "+"]):
-                text = self.font_small.render(label, True, constants.FONT_COLOR_GREEN).convert_alpha()
-                blit_with_cache(surface, text, (20 * constants.UI_SCALE, label_y + idx * 24 * constants.UI_SCALE))
-            # Draw values for each pet
-            for i, pet in enumerate(pets):
-                if pet.module == "DMX":
-                    # Level
-                    level = getattr(pet, "level", "-")
-                    # For PvP, no level ups occur
-                    level_up_indicator = ""
-                    if not self.pvp_mode and i < len(self.battle_player.level_up):
-                        level_up_indicator = '+' if self.battle_player.level_up[i] else ''
+                # Calculate positions
+                width_scale = constants.SCREEN_WIDTH / 240
+                height_scale = constants.SCREEN_HEIGHT / 240
+                
+                # Title label at top center (using global positioning)
+                title_text = "WIN" if self.victory_status == "Victory" else "LOSE"
+                title_color = win_color if self.victory_status == "Victory" else lose_color
+                title_y = int(20 * height_scale)
+                
+                # Create title label (will be centered after rendering)
+                self.result_title_label = Label(0, title_y, title_text, is_title=True, color_override=title_color)
+                self.result_title_label.manager = self.ui_manager
+                
+                # Determine pets to display
+                if self.pvp_mode and hasattr(self, 'show_team2_in_result') and self.show_team2_in_result:
+                    pets = [enemy for enemy in self.battle_player.team2 if hasattr(enemy, 'get_sprite')]
+                else:
+                    pets = self.battle_player.team1
+                
+                # Calculate pet layout with better spacing
+                total = len(pets)
+                # Use larger sprites and better horizontal distribution
+                base_sprite_size = constants.PET_WIDTH  # Use full size instead of half
+                sprite_width = int(base_sprite_size * width_scale)
+                sprite_height = int((constants.PET_HEIGHT * width_scale))
+                
+                # Calculate spacing to distribute evenly across width
+                margin = int(20 * width_scale)  # Side margins
+                available_width = constants.SCREEN_WIDTH - (2 * margin)
+                
+                # Calculate spacing between pets
+                if total > 1:
+                    spacing = available_width // total
+                    # Ensure sprites don't overlap by limiting spacing
+                    max_sprite_width = spacing - int(8 * width_scale)  # Minimum 8px gap between pets
+                    if sprite_width > max_sprite_width:
+                        sprite_width = max_sprite_width
+                        sprite_height = max_sprite_width  # Keep square aspect ratio
+                else:
+                    spacing = available_width
+                
+                # Center the pet group
+                total_width = spacing * total
+                offset_x = margin + (available_width - total_width) // 2
+                pets_y = int(50 * height_scale)
+                
+                # Create per-pet reward labels with doubled font size
+                self.result_pet_labels = []
+                for i, pet in enumerate(pets):
+                    pet_center_x = offset_x + i * spacing + sprite_width // 2
+                    label_y_start = pets_y + sprite_height + int(12 * height_scale)
                     
-                    level_text = self.font_small.render(
-                        f"{level}{level_up_indicator}", True,
-                        constants.FONT_COLOR_YELLOW if level_up_indicator else constants.FONT_COLOR_DEFAULT
-                    ).convert_alpha()
-                    level_text_width = level_text.get_width()
-                    blit_with_cache(surface, level_text, (col_xs[i] - level_text_width // 2, label_y))
-
-                    # Exp (show XP gained this battle)
-                    exp = self.battle_player.xp if self.victory_status == "Victory" else 0
-                    xp_color = constants.FONT_COLOR_DEFAULT
+                    pet_labels = []
+                    current_y = label_y_start
                     
-                    # For PvP client showing team2 pets, check team2 max level
-                    if (self.pvp_mode and hasattr(self, 'show_team2_in_result') and self.show_team2_in_result):
-                        max_level_check = pet.level == constants.MAX_LEVEL.get(pet.stage, 99)
-                        level_up_check = False  # No level ups in PvP
-                    else:
-                        # Safety check for team1 access
-                        if i < len(self.battle_player.team1):
-                            max_level_check = self.battle_player.team1[i].level == constants.MAX_LEVEL[self.battle_player.team1[i].stage]
+                    # Get pet's module
+                    pet_module_name = getattr(pet, 'module', self.module.name)
+                    pet_module = get_module(pet_module_name)
+                    
+                    # Check if module uses G-Cells
+                    if getattr(pet_module, 'use_gcells', False):
+                        # Calculate G-Cell points gained (from finish_battle logic)
+                        if self.victory_status == "Victory":
+                            gcell_points = getattr(pet_module, 'gcell_battle_win', 0)
                         else:
-                            max_level_check = False
-                        level_up_check = self.battle_player.level_up[i] if i < len(self.battle_player.level_up) else False
+                            gcell_points = getattr(pet_module, 'gcell_battle_loose', 0)
+                        
+                        if gcell_points != 0:
+                            # Use title font for doubled size
+                            gcell_label = Label(0, current_y, f"GC {gcell_points:+d}", is_title=False, color_override=win_color if gcell_points > 0 else white_color, shadow_mode="full", custom_size=16)
+                            gcell_label.manager = self.ui_manager
+                            pet_labels.append((gcell_label, pet_center_x))
+                            current_y += int(28 * height_scale)  # More spacing for larger font
                     
-                    if not level_up_check and max_level_check:
-                        exp = 0
-                        xp_color = constants.FONT_COLOR_RED
-                    exp_text = self.font_small.render(str(exp), True, xp_color).convert_alpha()
-                    exp_text_width = exp_text.get_width()
-                    blit_with_cache(surface, exp_text, (col_xs[i] - exp_text_width // 2, label_y + 24 * constants.UI_SCALE))
-
-                    # Bonus
-                    bonus = self.battle_player.bonus if self.victory_status == "Victory" else 0
-                    bonus_text = self.font_small.render(str(bonus), True, constants.FONT_COLOR_DEFAULT).convert_alpha()
-                    bonus_text_width = bonus_text.get_width()
-                    blit_with_cache(surface, bonus_text, (col_xs[i] - bonus_text_width // 2, label_y + 48 * constants.UI_SCALE))
-
-        # Draw Prize
-        if self.victory_status == "Victory" and getattr(self, "prize_item", None):
-            prize_text = self.prize_item.name
-        else:
-            prize_text = "None"
-        prize_label = self.font_small.render(f"Prize: {prize_text}", True, constants.FONT_COLOR_YELLOW).convert_alpha()
-        blit_with_cache(surface, prize_label, (20 * constants.UI_SCALE, constants.SCREEN_HEIGHT - 40 * constants.UI_SCALE))
+                    # Check if module has Level in visible_stats
+                    visible_stats = getattr(pet_module, 'visible_stats', None)
+                    if visible_stats and "Level" in visible_stats:
+                        # Show level and level up indicator
+                        level = getattr(pet, "level", 1)
+                        level_up_indicator = ""
+                        level_color = white_color
+                        
+                        if not self.pvp_mode and i < len(self.battle_player.level_up):
+                            if self.battle_player.level_up[i]:
+                                level_up_indicator = " +"
+                                level_color = win_color
+                        
+                        # Use title font for doubled size
+                        level_label = Label(0, current_y, f"Lv {level}{level_up_indicator}", is_title=False, color_override=level_color, shadow_mode="full", custom_size=16)
+                        level_label.manager = self.ui_manager
+                        pet_labels.append((level_label, pet_center_x))
+                        current_y += int(28 * height_scale)  # More spacing for larger font
+                        
+                        # Show experience gained
+                        exp_gained = self.battle_player.xp if self.victory_status == "Victory" else 0
+                        
+                        # Check if at max level
+                        if i < len(self.battle_player.team1):
+                            max_level_check = self.battle_player.team1[i].level == constants.MAX_LEVEL.get(self.battle_player.team1[i].stage, 99)
+                            level_up_check = self.battle_player.level_up[i] if i < len(self.battle_player.level_up) else False
+                            
+                            if not level_up_check and max_level_check:
+                                exp_gained = 0
+                        
+                        # Use title font for doubled size
+                        exp_label = Label(0, current_y, f"Exp +{exp_gained}", is_title=False, color_override=win_color if exp_gained > 0 else white_color, shadow_mode="full", custom_size=16)
+                        exp_label.manager = self.ui_manager
+                        pet_labels.append((exp_label, pet_center_x))
+                        current_y += int(28 * height_scale)  # More spacing for larger font
+                    
+                    self.result_pet_labels.append(pet_labels)
+                
+                # Create prize labels at bottom (using Label components for doubled font size)
+                prize_y = constants.SCREEN_HEIGHT - int(35 * height_scale)
+                prize_label_x = int(20 * width_scale)
+                
+                if self.victory_status == "Victory" and getattr(self, "prize_item", None):
+                    prize_text = self.prize_item.name
+                    prize_value_color = ui_constants.GREEN
+                else:
+                    prize_text = "None"
+                    prize_value_color = white_color
+                
+                # Create separate labels for "Prize:" and the value with title font
+                self.result_prize_label_text = Label(prize_label_x, prize_y, "Prize:", is_title=False, color_override=white_color, shadow_mode="full", custom_size=32)
+                self.result_prize_label_text.manager = self.ui_manager
+                
+                # Position value label to the right (will calculate after rendering label text)
+                self.result_prize_value_text = prize_text
+                self.result_prize_value_color = prize_value_color
+                
+                # Mark cache as built
+                self.result_surface_cache = True
+            
+            # Draw title label (centered at top)
+            title_surface = self.result_title_label.render()
+            title_x = (constants.SCREEN_WIDTH - title_surface.get_width()) // 2
+            surface.blit(title_surface, (title_x, self.result_title_label.rect.y))
+            
+            # Draw prize labels at bottom
+            prize_label_surface = self.result_prize_label_text.render()
+            surface.blit(prize_label_surface, (self.result_prize_label_text.rect.x, self.result_prize_label_text.rect.y))
+            
+            # Draw prize value to the right of label
+            width_scale = constants.SCREEN_WIDTH / 240
+            height_scale = constants.SCREEN_HEIGHT / 240
+            prize_value_x = self.result_prize_label_text.rect.x + prize_label_surface.get_width() + int(8 * width_scale)
+            prize_value_label = Label(prize_value_x, self.result_prize_label_text.rect.y, self.result_prize_value_text, is_title=False, color_override=self.result_prize_value_color, shadow_mode="full", custom_size=32)
+            prize_value_label.manager = self.ui_manager
+            prize_value_surface = prize_value_label.render()
+            surface.blit(prize_value_surface, (prize_value_x, self.result_prize_label_text.rect.y))
+            
+            # Draw animated pet sprites (not cached, drawn directly)
+            if self.pvp_mode and hasattr(self, 'show_team2_in_result') and self.show_team2_in_result:
+                pets = [enemy for enemy in self.battle_player.team2 if hasattr(enemy, 'get_sprite')]
+                # Use team2 indices for frame counters and winners
+                team1_count = len(self.battle_player.team1)
+                pet_frame_counters = []
+                pet_winners = []
+                for i in range(len(pets)):
+                    frame_counter_idx = team1_count + i
+                    if frame_counter_idx < len(self.battle_player.frame_counters):
+                        pet_frame_counters.append(self.battle_player.frame_counters[frame_counter_idx])
+                    else:
+                        pet_frame_counters.append(0)  # Default frame counter
+                    
+                    winner_idx = team1_count + i  
+                    if winner_idx < len(self.battle_player.winners):
+                        pet_winners.append(self.battle_player.winners[winner_idx])
+                    else:
+                        pet_winners.append("team1")  # Default winner
+            else:
+                pets = self.battle_player.team1
+                pet_frame_counters = self.battle_player.frame_counters[:len(self.battle_player.team1)]
+                pet_winners = self.battle_player.winners[:len(self.battle_player.team1)]
+            
+            # Calculate pet layout (scaled for any screen size) - match label creation logic
+            width_scale = constants.SCREEN_WIDTH / 240
+            height_scale = constants.SCREEN_HEIGHT / 240
+            total = len(pets)
+            
+            # Use larger sprites and better horizontal distribution
+            base_sprite_size = constants.PET_WIDTH  # Use full size instead of half
+            sprite_width = int(base_sprite_size * width_scale)
+            sprite_height = int((constants.PET_HEIGHT * width_scale))
+            
+            # Calculate spacing to distribute evenly across width
+            margin = int(20 * width_scale)  # Side margins
+            available_width = constants.SCREEN_WIDTH - (2 * margin)
+            
+            # Calculate spacing between pets
+            if total > 1:
+                spacing = available_width // total
+                # Ensure sprites don't overlap by limiting spacing
+                max_sprite_width = spacing - int(8 * width_scale)  # Minimum 8px gap between pets
+                if sprite_width > max_sprite_width:
+                    sprite_width = max_sprite_width
+                    sprite_height = max_sprite_width  # Keep square aspect ratio
+            else:
+                spacing = available_width
+            
+            # Center the pet group
+            total_width = spacing * total
+            offset_x = margin + (available_width - total_width) // 2
+            pets_y = int(50 * height_scale)
+            
+            # Draw each pet sprite and their labels
+            for i, pet in enumerate(pets):
+                pet_x = offset_x + i * spacing
+                pet_center_x = pet_x + sprite_width // 2
+                
+                # Draw pet sprite (animated)
+                if i < len(pet_frame_counters):
+                    anim_toggle = (pet_frame_counters[i] + i * 5) // (15 * constants.FRAME_RATE / 30) % 2
+                else:
+                    anim_toggle = 0
+                    
+                if (i < len(pet_winners) and pet_winners[i] == "team2") or self.victory_status == "Defeat":
+                    frame_id = PetFrame.LOSE.value
+                else:
+                    frame_id = PetFrame.IDLE1.value if anim_toggle == 0 else PetFrame.HAPPY.value
+                sprite = pet.get_sprite(frame_id)
+                sprite = pygame.transform.scale(sprite, (sprite_width, sprite_height))
+                blit_with_cache(surface, sprite, (pet_x, pets_y))
+                
+                # Draw per-pet labels (centered under each pet)
+                if hasattr(self, 'result_pet_labels') and i < len(self.result_pet_labels):
+                    for label, label_center_x in self.result_pet_labels[i]:
+                        label_surface = label.render()
+                        label_x = label_center_x - label_surface.get_width() // 2
+                        surface.blit(label_surface, (label_x, label.rect.y))
 
     def draw_hit_animations(self, surface):
         """
@@ -1655,35 +1954,7 @@ class BattleEncounter:
         """
         Draws the health bars for the player and enemy, showing current and max health.
         """
-        max_player_health = self.battle_player.team1_max_total_hp 
-        max_enemy_health = self.battle_player.team2_max_total_hp
-
-        width_scale = constants.SCREEN_WIDTH / 240
-        bar_width = int(67 * width_scale)
-        bar_height = int(18 * width_scale)
-
-        # Cores
-        red = (181, 41, 41)
-        green = (0, 255, 108)
-
-        # Player bar (right side)
-        start_x_player = constants.SCREEN_WIDTH - int(96 * width_scale)
-        y = int(6 * width_scale)
-        # Draw red background
-        pygame.draw.rect(surface, red, (start_x_player, y, bar_width, bar_height))
-        # Draw green foreground (current health)
-        if max_player_health > 0:
-            green_width = int(bar_width * (self.battle_player.team1_total_hp / self.battle_player.team1_max_total_hp))
-            pygame.draw.rect(surface, green, (start_x_player + (bar_width - green_width), y, green_width, bar_height))
-
-        # Enemy bar (left side)
-        start_x_enemy = int(96 * width_scale)
-        # Draw red background
-        pygame.draw.rect(surface, red, (start_x_enemy - bar_width, y, bar_width, bar_height))
-        # Draw green foreground (current health)
-        if max_enemy_health > 0:
-            green_width = int(bar_width * (self.battle_player.team2_total_hp / max_enemy_health))
-            pygame.draw.rect(surface, green, (start_x_enemy - bar_width, y, green_width, bar_height))
+        self.hp_bar.draw(surface)
 
     def draw_health_bars_for_battlers(self, surface):
         """
@@ -1784,7 +2055,37 @@ class BattleEncounter:
     def handle_event(self, input_action):
         """
         Handles input events for the battle encounter, phase and ruleset specific.
+        Supports both string actions and pygame events.
         """
+        # Handle pygame events for minigames
+        if hasattr(input_action, 'type'):  # It's a pygame event
+            if self.phase == "charge":
+                if self.module.ruleset == 'dmc' and self.dummy_charge:
+                    # Dummy charge handles pygame events for A/LCLICK input
+                    if self.dummy_charge.handle_event(input_action):
+                        self.strength = self.dummy_charge.strength
+                elif self.module.ruleset == 'penc' and self.count_match:
+                    shake_event = self.count_match.handle_pygame_event(input_action)
+                    if shake_event:
+                        self.press_counter = self.count_match.get_press_counter()
+                        self.rotation_index = self.count_match.get_rotation_index()
+                elif self.module.ruleset == 'vb' and self.shake_punch:
+                    # Shake punch handles pygame events for shake detection
+                    self.shake_punch.handle_pygame_event(input_action)
+                    self.strength = self.shake_punch.get_strength()
+                elif self.module.ruleset == 'dmx':
+                    # XAI roll and bar handle pygame events for keyboard/mouse input
+                    if self.xai_phase == 1 and self.xai_roll:
+                        if self.xai_roll.handle_event(input_action):
+                            self.xai_number = self.xai_roll.get_result()
+                    elif self.xai_phase == 2 and self.xai_bar:
+                        if self.xai_bar.handle_event(input_action):
+                            self.strength = self.xai_bar.get_result()
+                            self.xai_phase = 3
+                            self.bar_timer = pygame.time.get_ticks()
+            return
+        
+        # Handle string actions
         if input_action == "B":
             if self.phase == "battle":
                 runtime_globals.game_sound.play("cancel")
@@ -1795,26 +2096,29 @@ class BattleEncounter:
                 change_scene("game")
         elif self.module.ruleset == 'dmc':
             if self.phase == "charge":
-                if input_action == "A":
-                    runtime_globals.game_sound.play("menu")
-                    self.strength = min(self.strength + 1, self.bar_level)
+                if input_action in ("A", "LCLICK"):
+                    # Let the minigame handle the input
+                    if self.dummy_charge and self.dummy_charge.handle_event(input_action):
+                        self.strength = self.dummy_charge.strength
         elif self.module.ruleset == 'dmx':
             if self.phase == "charge":
-                if self.xai_phase == 1 and input_action == "A" and not self.window_xai.stopping:
+                # Use XAI minigame handle_event methods for consistency
+                if self.xai_phase == 1 and input_action == "A" and self.xai_roll:
                     # --- Seven Switch: force XAI roll to 7 if status_boost is active ---
-                    if (
-                        "xai_roll" in game_globals.battle_effects
-                        and game_globals.battle_effects["xai_roll"].get("amount", 0) == 7
-                    ):
-                        self.window_xai.stop()
+                    xai_effect = self.get_battle_effect("xai_roll")
+                    if xai_effect and xai_effect.get("amount", 0) == 7:
+                        self.xai_roll.stop()
                         self.xai_number = 7
-                        self.window_xai.current_frame = 6  # 0-based index for 7
+                        self.xai_roll.current_frame = 6  # 0-based index for 7
                     else:
-                        self.window_xai.stop()
-                        self.xai_number = self.window_xai.current_frame + 1
-                elif self.xai_phase == 2 and input_action == "A":
-                    self.window_xaibar.stop()
-                    self.strength = self.window_xaibar.selected_strength or 1
+                        if not self.xai_roll.rolling:
+                            self.xai_roll.roll()
+                        elif not self.xai_roll.stopping:
+                            self.xai_roll.stop()
+                            self.xai_number = self.xai_roll.get_result()
+                elif self.xai_phase == 2 and input_action == "A" and self.xai_bar:
+                    self.xai_bar.stop()
+                    self.strength = self.xai_bar.get_result() or 1
                     self.xai_phase = 3
                     self.bar_timer = pygame.time.get_ticks()
         elif self.module.ruleset == 'penc':
@@ -1822,11 +2126,16 @@ class BattleEncounter:
                 if self.phase == "alert":
                     self.frame_counter = combat_constants.ALERT_DURATION_FRAMES
                 elif self.phase == "charge":
-                    self.press_counter += 1
-                    if self.press_counter % 2 == 0:
-                        self.rotation_index -= 1
-                        if self.rotation_index < 1:
-                            self.rotation_index = 3
+                    # Let the minigame handle the input
+                    if self.count_match and self.count_match.handle_event(input_action):
+                        self.press_counter = self.count_match.get_press_counter()
+                        self.rotation_index = self.count_match.get_rotation_index()
+        elif self.module.ruleset == 'vb':
+            if self.phase == "charge":
+                if input_action in ("Y", "SHAKE"):
+                    # Let the minigame handle the input
+                    if self.shake_punch and self.shake_punch.handle_event(input_action):
+                        self.strength = self.shake_punch.get_strength()
 
     #========================
     # Region: Utility Methods
@@ -1849,8 +2158,10 @@ class BattleEncounter:
     def get_minigame_strength(self):
         """
         Returns the selected strength for the mini-game, defaulting to 1 if not set.
+        Maps minigame results to battle simulator strength values.
         """
         if self.module.ruleset == "dmc":
+            # DMC: Dummy charge strength 0-14
             if self.strength < 5:
                 return 0
             elif self.strength < 10:
@@ -1860,9 +2171,21 @@ class BattleEncounter:
             else:
                 return 3
         elif self.module.ruleset == "dmx":
+            # DMX: XAI bar strength (varies by XAI roll)
             return self.strength
         elif self.module.ruleset == "penc":
+            # PenC: Count match super hits
             return self.super_hits
+        elif self.module.ruleset == "vb":
+            # VB: Shake punch strength 0-20
+            if self.strength < 10:
+                return 0
+            elif self.strength < 15:
+                return 1
+            elif self.strength < 20:
+                return 2
+            else:
+                return 3
         return 1
 
     def simulate_global_combat(self):
@@ -1937,6 +2260,7 @@ class BattleEncounter:
         self.victory_status = "Victory" if result.winner == "device1" else "Defeat"
         
         # Update quest progress if battle was won (skip for PvP)
+
         if not self.pvp_mode and self.victory_status == "Victory":
             if self.boss:
                 # Update BOSS quest progress

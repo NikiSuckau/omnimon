@@ -1,8 +1,7 @@
 from datetime import datetime
 import os
 
-from core import game_globals
-from game.core import constants
+from core import constants
 
 
 #=====================================================================

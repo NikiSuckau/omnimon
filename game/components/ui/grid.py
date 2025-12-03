@@ -108,15 +108,16 @@ class Grid(UIComponent):
         self.needs_redraw = True
         
     def move_cursor(self, dx, dy):
-        """Move the cursor by the given delta"""
+        """Move the cursor by the given delta. Returns False if at edge to allow focus navigation."""
         old_row, old_col = self.cursor_row, self.cursor_col
         
         new_col = self.cursor_col + dx
         new_row = self.cursor_row + dy
         
-        # Clamp to grid bounds
-        new_col = max(0, min(self.columns - 1, new_col))
-        new_row = max(0, min(self.rows - 1, new_row))
+        # Check if we're trying to move beyond the grid boundaries
+        # If so, return False to allow UI manager to handle focus navigation
+        if new_col < 0 or new_col >= self.columns or new_row < 0 or new_row >= self.rows:
+            return False
         
         # Check if the new position has a valid item
         current_items = self.get_current_page_items()
@@ -127,12 +128,12 @@ class Grid(UIComponent):
             self.cursor_col = new_col
             self.needs_redraw = True
             
-            # Trigger selection change callback
-            if self.on_selection_change:
-                self.on_selection_change(self.get_selected_item())
+            # Don't trigger selection change callback on navigation - only on actual selection (A button/click)
                 
             return True
-        return False
+        
+        # No valid item at new position and we're within grid bounds - don't move, but consume the input
+        return True
         
     def change_page(self, delta):
         """Change the page by the given delta"""
@@ -174,11 +175,9 @@ class Grid(UIComponent):
             if current_items:
                 self.needs_redraw = True
                 
-                # Trigger callbacks
+                # Trigger page change callback (but not selection change - that's only for actual selection)
                 if self.on_page_change:
                     self.on_page_change(self.current_page, total_pages)
-                if self.on_selection_change:
-                    self.on_selection_change(self.get_selected_item())
                     
                 return True
         return False
@@ -188,8 +187,12 @@ class Grid(UIComponent):
         if not self.visible or not self.focusable:
             return False
             
-        # Handle string events from the input manager
+        # Handle string events from the input manager - only when focused
         if isinstance(event, str):
+            # Only handle keyboard navigation when this component is focused
+            if not self.focused:
+                return False
+                
             if event == "UP":
                 runtime_globals.game_sound.play("menu")
                 return self.move_cursor(0, -1)
@@ -227,39 +230,25 @@ class Grid(UIComponent):
         
     def handle_mouse_event(self, event):
         """Handle mouse events for grid interaction"""
-        if event.type == pygame.MOUSEMOTION:
-            # Update cursor position on hover (focus) but don't trigger selection change
+        # Mouse motion/hover is now handled by UIManager via get_mouse_sub_rect()
+        # Only handle mouse clicks here
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            # Only handle clicks within the grid bounds
             mouse_x, mouse_y = event.pos
             relative_x = mouse_x - self.rect.x
             relative_y = mouse_y - self.rect.y
             
             if 0 <= relative_x < self.rect.width and 0 <= relative_y < self.rect.height:
-                cell_x = relative_x // (self.cell_width + self.cell_padding)
-                cell_y = relative_y // (self.cell_height + self.cell_padding)
+                # Select the currently focused item on click
+                current_items = self.get_current_page_items()
+                item_index = self.cursor_row * self.columns + self.cursor_col
                 
-                if 0 <= cell_x < self.columns and 0 <= cell_y < self.rows:
-                    # Check if this cell has a valid item
-                    current_items = self.get_current_page_items()
-                    item_index = cell_y * self.columns + cell_x
-                    
-                    if 0 <= item_index < len(current_items):
-                        if self.cursor_row != cell_y or self.cursor_col != cell_x:
-                            self.cursor_row = cell_y
-                            self.cursor_col = cell_x
-                            self.needs_redraw = True
-                            # Don't trigger selection change callback on hover, only on actual selection
-                            return True
-        elif event.type == pygame.MOUSEBUTTONDOWN:
-            # Select the currently focused item on click
-            current_items = self.get_current_page_items()
-            item_index = self.cursor_row * self.columns + self.cursor_col
-            
-            if 0 <= item_index < len(current_items):
-                self.select_current_item()
-                # Trigger selection change callback only on actual click/selection
-                if self.on_selection_change:
-                    self.on_selection_change(self.get_selected_item())
-                return True
+                if 0 <= item_index < len(current_items):
+                    self.select_current_item()
+                    # Trigger selection change callback only on actual click/selection
+                    if self.on_selection_change:
+                        self.on_selection_change(self.get_selected_item())
+                    return True
         return False
         
     def render(self):
@@ -387,7 +376,52 @@ class Grid(UIComponent):
         return None
         
     def get_mouse_sub_rect(self, mouse_pos):
-        """Get the rect of the cell under the mouse (return None to disable mouse highlighting)"""
+        """Get the rect of the cell under the mouse"""
+        from core import runtime_globals
+        
+        if not self.manager:
+            return None
+        
+        # mouse_pos is in UI coordinates (base 240x240 space)
+        # self.base_rect is also in base coordinates
+        
+        # Convert to component-relative coordinates in base space
+        relative_x = mouse_pos[0] - self.base_rect.x
+        relative_y = mouse_pos[1] - self.base_rect.y
+        
+        # Check if mouse is within component bounds (base coordinates)
+        if not (0 <= relative_x < self.base_rect.width and 0 <= relative_y < self.base_rect.height):
+            return None
+        
+        # Find which cell the mouse is over (all in base coordinates)
+        for row in range(self.rows):
+            for col in range(self.columns):
+                # Calculate cell position in base coordinates (relative to component)
+                cell_x = self.cell_padding + col * (self.cell_width + self.cell_padding)
+                cell_y = self.cell_padding + row * (self.cell_height + self.cell_padding)
+                
+                # Check if mouse is over this cell (base space comparison)
+                if (cell_x <= relative_x < cell_x + self.cell_width and
+                    cell_y <= relative_y < cell_y + self.cell_height):
+                    
+                    # Update cursor position
+                    if self.cursor_row != row or self.cursor_col != col:
+                        self.cursor_row = row
+                        self.cursor_col = col
+                        self.needs_redraw = True
+                    
+                    # Return the cell rect in screen coordinates
+                    # Calculate absolute cell position in base space
+                    abs_cell_x = self.base_rect.x + cell_x
+                    abs_cell_y = self.base_rect.y + cell_y
+                    
+                    # Scale to screen coordinates
+                    scaled_x, scaled_y = self.manager.scale_position(abs_cell_x, abs_cell_y)
+                    scaled_width = self.manager.scale_value(self.cell_width)
+                    scaled_height = self.manager.scale_value(self.cell_height)
+                    
+                    return pygame.Rect(scaled_x, scaled_y, scaled_width, scaled_height)
+        
         return None
         
     def on_manager_set(self):

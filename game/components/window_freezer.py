@@ -1,6 +1,6 @@
 import pygame
 from core import runtime_globals
-import game.core.constants as constants
+import core.constants as constants
 from core.utils.pygame_utils import blit_with_cache, blit_with_shadow, get_font, sprite_load_percent
 
 GRID_DIM = 5

@@ -25,7 +25,7 @@ RED_LIGHT = (255, 217, 217)
 # New color schemes for different scenes
 GRAY_DARK = (64, 64, 64)
 GRAY = (162, 173, 193)
-GRAY_LIGHT = (209, 223, 248)
+GRAY_LIGHT = (247, 250, 254)
 
 YELLOW_BRIGHT_DARK = (153, 138, 46)
 YELLOW_BRIGHT = (255, 235, 59)
@@ -39,9 +39,30 @@ CYAN_DARK = (46, 77, 77)
 CYAN = (82, 204, 204)
 CYAN_LIGHT = (217, 255, 255)
 
+# AnimatedSprite-specific colors (used by the full-screen AnimatedSprite component)
+# These are intentionally separate from some of the generic UI color names to
+# avoid changing existing theme values used elsewhere in the UI.
+COMBAT_BLUE = (11, 23, 39)
+COMBAT_YELLOW = (255, 255, 0)
+ANIM_BLACK = (0, 0, 0)
+
 LIME_DARK = (69, 77, 46)
 LIME = (139, 195, 74)
 LIME_LIGHT = (230, 255, 217)
+
+
+BATTLE_COLORS = {
+    "orange_dark": (226, 129, 69),
+    "orange_light": (247, 172, 37),
+    "blue_dark": (30, 82, 101),
+    "blue": (65, 79, 231),
+    "yellow": (245, 231, 109),
+    "green": (178, 249, 154),
+    "lime": (210, 224, 183),
+    "cyan": (38, 230, 233),
+    "pink": (230, 76, 233),
+    "red": (169, 81, 72)
+}
 
 # ===============================
 # Scene Color Theme Mapping

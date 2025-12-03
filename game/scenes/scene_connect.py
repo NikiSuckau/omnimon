@@ -1,6 +1,6 @@
 """
-Scene Connect
-A scene for network connectivity and battles against other Omnimon devices.
+Scene Connect - Network connectivity and battles (Modern UI version)
+Refactored to use the new UI system with dark red theme.
 """
 import pygame
 import random
@@ -10,15 +10,21 @@ import threading
 import json
 import time
 import copy
+import traceback
 
+from components.ui.ui_manager import UIManager
+from components.ui.background import Background
+from components.ui.title_scene import TitleScene
+from components.ui.button import Button
+from components.ui.label import Label
+from components.ui.pet_selector import PetSelector
+from components.ui.menu import Menu
+from components.ui.ui_constants import BASE_RESOLUTION
 from components.window_background import WindowBackground
-from components.window_menu import WindowMenu
 from core import game_globals, runtime_globals
-from game.components.window_horizontalmenu import WindowHorizontalMenu
-from game.components.window_petview import WindowPetList
-import game.core.constants as constants
+import core.constants as constants
 from core.utils.scene_utils import change_scene
-from core.utils.pygame_utils import sprite_load_percent, get_font, blit_with_shadow
+from core.utils.pygame_utils import blit_with_shadow, get_font
 
 #=====================================================================
 # SceneConnect
@@ -30,41 +36,41 @@ class SceneConnect:
 
     def __init__(self) -> None:
         """
-        Initializes the connect scene.
+        Initializes the connect scene with modern UI system.
         """
         try:
             runtime_globals.game_console.log("[SceneConnect] Starting initialization...")
             
-            self.background = WindowBackground()
+            # Global background (animated)
+            self.window_background = WindowBackground(False)
             runtime_globals.game_console.log("[SceneConnect] Background created")
             
-            self.options = [
-                ("Wifi", sprite_load_percent(constants.OMNI_WIFI_PATH, percent=(constants.OPTION_ICON_SIZE / constants.SCREEN_HEIGHT) * 100, keep_proportion=True, base_on="height"))
-            ]
-            runtime_globals.game_console.log("[SceneConnect] Options created")
-
-            self.selected_index = 0
-            runtime_globals.strategy_index = 0
+            # UI Manager with DARK RED theme
+            self.ui_manager = UIManager(theme="RED_DARK_VARIANT")
+            self.ui_manager.set_input_manager(runtime_globals.game_input)
+            runtime_globals.game_console.log("[SceneConnect] UI Manager created with DARK_RED theme")
             
             # Phase management
             self.phase = "menu"  # menu, pet_selection, host_join_menu, hosting, joining, device_list, module_check, battle_confirm, connecting
             
-            # Pet selection setup
-            self.pet_list_window = WindowPetList(lambda: game_globals.pet_list)
-            runtime_globals.game_console.log("[SceneConnect] Pet list window created")
-            self.pets = []
+            # Selected pets list
+            self.selected_pets = []
+            self.pets = []  # Actual pet objects for network battle
             
-            # Menu components
-            self.menu_window = WindowHorizontalMenu(
-                options=self.options,
-                get_selected_index_callback=lambda: self.selected_index,
-            )
-            runtime_globals.game_console.log("[SceneConnect] Menu window created")
+            # UI Components (will be created in _setup_ui)
+            self.background = None
+            self.title_scene = None
+            self.wifi_button = None
+            self.menu_exit_button = None
+            self.pet_selector = None
+            self.pet_select_instructions = None
+            self.pet_select_confirm_button = None
+            self.pet_select_back_button = None
             
-            # Host/Join menu
+            # Host/Join menu (modern UI component)
             self.host_join_menu = None
             
-            # Device list menu  
+            # Device list menu (modern UI component)
             self.device_list_menu = None
             self.discovered_devices = []
             
@@ -84,30 +90,478 @@ class SceneConnect:
             self.enemies = []
             self.chosen_module = None
             self.battle_simulation_data = None
+            
+            # Hosting/Discovery/Battle UI components (will be created in _setup_ui)
+            self.hosting_title_label = None
+            self.hosting_code_label = None
+            self.hosting_wait_label = None
+            self.hosting_cancel_button = None
+            self.discovery_title_label = None
+            self.discovery_status_label = None
+            self.discovery_back_button = None
+            self.module_error_title = None
+            self.module_error_subtitle = None
+            self.module_error_labels = []
+            self.module_error_button = None
+            self.battle_ready_label = None
+            self.battle_enemy_label = None
+            self.battle_confirm_button = None
+            self.battle_cancel_button = None
+            self.connecting_label = None
+            self.connecting_wait_label = None
 
-            # Caching
-            self._cache_surface = None
-            self._cache_key = None
+            # Setup UI
+            self._setup_ui()
 
-            runtime_globals.game_console.log("[SceneConnect] Connect scene initialized successfully.")
+            runtime_globals.game_console.log("[SceneConnect] Connect scene initialized with UI system (DARK_RED theme).")
             
         except Exception as e:
             runtime_globals.game_console.log(f"[SceneConnect] Initialization error: {e}")
-            import traceback
             runtime_globals.game_console.log(f"[SceneConnect] Traceback: {traceback.format_exc()}")
             raise
+    
+    def _setup_ui(self):
+        """Setup UI components for all phases."""
+        ui_width = ui_height = BASE_RESOLUTION
+        
+        # Background (black, always visible)
+        self.background = Background(ui_width, ui_height)
+        self.background.set_regions([(0, ui_height, "black")])
+        self.ui_manager.add_component(self.background)
+        
+        # Title
+        self.title_scene = TitleScene(0, 5, "CONNECT")
+        self.ui_manager.add_component(self.title_scene)
+        
+        # Setup phase-specific UI components
+        self._setup_main_menu_ui()
+        self._setup_pet_selection_ui()
+        self._setup_hosting_ui()
+        self._setup_discovery_ui()
+        self._setup_module_error_ui()
+        self._setup_battle_confirm_ui()
+        self._setup_connecting_ui()
+    
+    def _setup_main_menu_ui(self):
+        """Setup UI for the main menu phase."""
+        button_width = 160
+        button_height = 60
+        button_x = (BASE_RESOLUTION - button_width) // 2
+        button_y = 80
+        
+        self.wifi_button = Button(
+            button_x, button_y, button_width, button_height,
+            "WIFI BATTLE", self._on_wifi_selected
+        )
+        self.ui_manager.add_component(self.wifi_button)
+        
+        exit_width = 100
+        exit_height = 40
+        exit_x = (BASE_RESOLUTION - exit_width) // 2
+        exit_y = 185
+        
+        self.menu_exit_button = Button(
+            exit_x, exit_y, exit_width, exit_height,
+            "EXIT", self._on_main_menu_exit
+        )
+        self.ui_manager.add_component(self.menu_exit_button)
+    
+    def _setup_pet_selection_ui(self):
+        """Setup UI for pet selection phase."""
+        selector_width = 220
+        selector_height = 120
+        selector_x = (BASE_RESOLUTION - selector_width) // 2
+        selector_y = 40
+        
+        self.pet_selector = PetSelector(selector_x, selector_y, selector_width, selector_height)
+        self.pet_selector.set_pets(game_globals.pet_list)
+        self.pet_selector.set_interactive(True)
+        # PetSelector supports multiple selections by default
+        self.pet_selector.visible = False
+        self.ui_manager.add_component(self.pet_selector)
+        
+        self.pet_select_instructions = Label(
+            10, 165, "Select pets. Press START when ready.", is_title=False
+        )
+        self.pet_select_instructions.visible = False
+        self.ui_manager.add_component(self.pet_select_instructions)
+        
+        confirm_width = 100
+        confirm_height = 35
+        confirm_x = 20
+        confirm_y = 195
+        
+        self.pet_select_confirm_button = Button(
+            confirm_x, confirm_y, confirm_width, confirm_height,
+            "CONFIRM", self._on_pet_selection_confirm
+        )
+        self.pet_select_confirm_button.visible = False
+        self.ui_manager.add_component(self.pet_select_confirm_button)
+        
+        back_width = 80
+        back_height = 35
+        back_x = BASE_RESOLUTION - back_width - 20
+        back_y = 195
+        
+        self.pet_select_back_button = Button(
+            back_x, back_y, back_width, back_height,
+            "BACK", self._on_pet_selection_back
+        )
+        self.pet_select_back_button.visible = False
+        self.ui_manager.add_component(self.pet_select_back_button)
+    
+    def _setup_hosting_ui(self):
+        """Setup UI for hosting phase."""
+        # Note: Label doesn't support centered parameter, position manually
+        self.hosting_title_label = Label(
+            10, 60, "Hosting Network Battle", is_title=False
+        )
+        self.hosting_title_label.visible = False
+        self.ui_manager.add_component(self.hosting_title_label)
+        
+        self.hosting_code_label = Label(
+            10, 100, "Host Code: ----", is_title=False
+        )
+        self.hosting_code_label.visible = False
+        self.ui_manager.add_component(self.hosting_code_label)
+        
+        self.hosting_wait_label = Label(
+            10, 140, "Waiting for other device...", is_title=False
+        )
+        self.hosting_wait_label.visible = False
+        self.ui_manager.add_component(self.hosting_wait_label)
+        
+        cancel_width = 100
+        cancel_height = 35
+        cancel_x = (BASE_RESOLUTION - cancel_width) // 2
+        cancel_y = 190
+        
+        self.hosting_cancel_button = Button(
+            cancel_x, cancel_y, cancel_width, cancel_height,
+            "CANCEL", self._on_hosting_cancel
+        )
+        self.hosting_cancel_button.visible = False
+        self.ui_manager.add_component(self.hosting_cancel_button)
+    
+    def _setup_discovery_ui(self):
+        """Setup UI for device discovery phase."""
+        self.discovery_title_label = Label(
+            10, 60, "Searching for devices...", is_title=False
+        )
+        self.discovery_title_label.visible = False
+        self.ui_manager.add_component(self.discovery_title_label)
+        
+        self.discovery_status_label = Label(
+            10, 100, "Please wait...", is_title=False
+        )
+        self.discovery_status_label.visible = False
+        self.ui_manager.add_component(self.discovery_status_label)
+        
+        back_width = 100
+        back_height = 35
+        back_x = (BASE_RESOLUTION - back_width) // 2
+        back_y = 190
+        
+        self.discovery_back_button = Button(
+            back_x, back_y, back_width, back_height,
+            "CANCEL", self._on_discovery_cancel
+        )
+        self.discovery_back_button.visible = False
+        self.ui_manager.add_component(self.discovery_back_button)
+    
+    def _setup_module_error_ui(self):
+        """Setup UI for module compatibility error phase."""
+        self.module_error_title = Label(
+            10, 60, "Module Error!", is_title=False
+        )
+        self.module_error_title.visible = False
+        self.ui_manager.add_component(self.module_error_title)
+        
+        self.module_error_subtitle = Label(
+            10, 90, "Missing modules:", is_title=False
+        )
+        self.module_error_subtitle.visible = False
+        self.ui_manager.add_component(self.module_error_subtitle)
+        
+        for i in range(5):
+            label = Label(
+                10, 120 + (i * 20), "", is_title=False
+            )
+            label.visible = False
+            self.module_error_labels.append(label)
+            self.ui_manager.add_component(label)
+        
+        button_width = 100
+        button_height = 35
+        button_x = (BASE_RESOLUTION - button_width) // 2
+        button_y = 190
+        
+        self.module_error_button = Button(
+            button_x, button_y, button_width, button_height,
+            "CONTINUE", self._on_module_error_continue
+        )
+        self.module_error_button.visible = False
+        self.ui_manager.add_component(self.module_error_button)
+    
+    def _setup_battle_confirm_ui(self):
+        """Setup UI for battle confirmation phase."""
+        self.battle_ready_label = Label(
+            10, 70, "Connection Established!", is_title=False
+        )
+        self.battle_ready_label.visible = False
+        self.ui_manager.add_component(self.battle_ready_label)
+        
+        self.battle_enemy_label = Label(
+            10, 110, "Enemy has X pets", is_title=False
+        )
+        self.battle_enemy_label.visible = False
+        self.ui_manager.add_component(self.battle_enemy_label)
+        
+        confirm_width = 100
+        confirm_height = 35
+        confirm_x = 30
+        confirm_y = 190
+        
+        self.battle_confirm_button = Button(
+            confirm_x, confirm_y, confirm_width, confirm_height,
+            "START", self._on_battle_confirm
+        )
+        self.battle_confirm_button.visible = False
+        self.ui_manager.add_component(self.battle_confirm_button)
+        
+        cancel_width = 100
+        cancel_height = 35
+        cancel_x = BASE_RESOLUTION - cancel_width - 30
+        cancel_y = 190
+        
+        self.battle_cancel_button = Button(
+            cancel_x, cancel_y, cancel_width, cancel_height,
+            "GIVE UP", self._on_battle_cancel
+        )
+        self.battle_cancel_button.visible = False
+        self.ui_manager.add_component(self.battle_cancel_button)
+    
+    def _setup_connecting_ui(self):
+        """Setup UI for connecting phase."""
+        self.connecting_label = Label(
+            10, 100, "Connecting...", is_title=False
+        )
+        self.connecting_label.visible = False
+        self.ui_manager.add_component(self.connecting_label)
+        
+        self.connecting_wait_label = Label(
+            10, 140, "Waiting for opponent confirmation", is_title=False
+        )
+        self.connecting_wait_label.visible = False
+        self.ui_manager.add_component(self.connecting_wait_label)
+    
+    # Button Callbacks
+    def _on_wifi_selected(self):
+        """Called when WIFI BATTLE button is clicked."""
+        runtime_globals.game_console.log("[SceneConnect] WiFi battle selected")
+        self.set_phase("pet_selection")
+        self._show_phase_components("pet_selection")
+    
+    def _on_main_menu_exit(self):
+        """Called when EXIT button on main menu is clicked."""
+        runtime_globals.game_console.log("[SceneConnect] Exiting to main menu")
+        change_scene("game")
+    
+    def _on_pet_selection_confirm(self):
+        """Called when CONFIRM button on pet selection is clicked."""
+        self.selected_pets = self.pet_selector.get_selected_pets()
+        if self.selected_pets:
+            runtime_globals.game_console.log(f"[SceneConnect] Pets selected: {len(self.selected_pets)}")
+            # Set self.pets for compatibility with network methods
+            self.pets = self.selected_pets
+            self.set_phase("host_join_menu")
+            self._show_phase_components("host_join_menu")
+        else:
+            runtime_globals.game_console.log("[SceneConnect] No pets selected")
+    
+    def _on_pet_selection_back(self):
+        """Called when BACK button on pet selection is clicked."""
+        runtime_globals.game_console.log("[SceneConnect] Back to main menu")
+        self.set_phase("menu")
+        self._show_phase_components("menu")
+    
+    def _on_hosting_cancel(self):
+        """Called when CANCEL button on hosting screen is clicked."""
+        runtime_globals.game_console.log("[SceneConnect] Hosting cancelled")
+        self.stop_networking()
+        self.set_phase("host_join_menu")
+        self._show_phase_components("host_join_menu")
+    
+    def _on_discovery_cancel(self):
+        """Called when CANCEL button on discovery screen is clicked."""
+        runtime_globals.game_console.log("[SceneConnect] Discovery cancelled")
+        self.stop_networking()
+        self.set_phase("host_join_menu")
+        self._show_phase_components("host_join_menu")
+    
+    def _on_module_error_continue(self):
+        """Called when CONTINUE button on module error screen is clicked."""
+        runtime_globals.game_console.log("[SceneConnect] Continuing despite module error")
+        self.set_phase("menu")
+        self._show_phase_components("menu")
+    
+    def _on_battle_confirm(self):
+        """Called when START button on battle confirm is clicked."""
+        runtime_globals.game_console.log("[SceneConnect] Battle confirmed - starting")
+        self.set_phase("connecting")
+        self._show_phase_components("connecting")
+        self._pending_start_battle = True
+        self._pending_start_time = time.time()
+    
+    def _on_battle_cancel(self):
+        """Called when GIVE UP button on battle confirm is clicked."""
+        runtime_globals.game_console.log("[SceneConnect] Battle cancelled")
+        self.stop_networking()
+        self.set_phase("menu")
+        self._show_phase_components("menu")
+    
+    def _on_host_join_select(self, option_index):
+        """Called when an option is selected from the host/join menu."""
+        option = self.host_join_menu.options[option_index]
+        runtime_globals.game_console.log(f"[SceneConnect] Host/Join selected: {option}")
+        
+        if option == "Host":
+            self.start_hosting()
+        elif option == "Join":
+            self.start_joining()
+    
+    def _on_host_join_cancel(self):
+        """Called when host/join menu is cancelled."""
+        runtime_globals.game_console.log("[SceneConnect] Host/Join menu cancelled")
+        self.set_phase("pet_selection")
+        self._show_phase_components("pet_selection")
+    
+    def _on_device_selected(self, option_index):
+        """Called when a device is selected from the device list."""
+        if option_index < len(self.discovered_devices):
+            device_info = self.discovered_devices[option_index]
+            runtime_globals.game_console.log(f"[SceneConnect] Device selected: {device_info['host_code']}")
+            
+            # Run connection in a separate thread to avoid blocking UI
+            connection_thread = threading.Thread(target=self.connect_to_device, args=(device_info,), daemon=True)
+            connection_thread.start()
+    
+    def _on_device_list_cancel(self):
+        """Called when device list menu is cancelled."""
+        runtime_globals.game_console.log("[SceneConnect] Device list cancelled")
+        self.stop_networking()
+        self.set_phase("host_join_menu")
+        self._show_phase_components("host_join_menu")
+    
+    def _show_phase_components(self, phase: str):
+        """Show components for the given phase, hide all others."""
+        self._hide_all_phase_components()
+        
+        if phase == "menu":
+            self.wifi_button.visible = True
+            self.menu_exit_button.visible = True
+        
+        elif phase == "pet_selection":
+            self.pet_selector.visible = True
+            self.pet_select_instructions.visible = True
+            self.pet_select_confirm_button.visible = True
+            self.pet_select_back_button.visible = True
+        
+        elif phase == "host_join_menu":
+            # Create and show the host/join menu
+            self.show_host_join_menu()
+        
+        elif phase == "hosting":
+            self.hosting_title_label.visible = True
+            self.hosting_code_label.visible = True
+            self.hosting_code_label.set_text(f"Host Code: {self.host_code or '----'}")
+            self.hosting_wait_label.visible = True
+            self.hosting_cancel_button.visible = True
+        
+        elif phase == "joining":
+            self.discovery_title_label.visible = True
+            self.discovery_status_label.visible = True
+            self.discovery_back_button.visible = True
+        
+        elif phase == "device_list":
+            # Device list is shown via the Menu component (device_list_menu)
+            # No additional UI components needed - menu handles everything
+            pass
+        
+        elif phase == "module_check":
+            self.module_error_title.visible = True
+            self.module_error_subtitle.visible = True
+            for i, module_name in enumerate(self.missing_modules[:5]):
+                if i < len(self.module_error_labels):
+                    self.module_error_labels[i].set_text(module_name)
+                    self.module_error_labels[i].visible = True
+            self.module_error_button.visible = True
+        
+        elif phase == "battle_confirm":
+            self.battle_ready_label.visible = True
+            self.battle_enemy_label.visible = True
+            self.battle_enemy_label.set_text(f"Enemy has {self.enemy_pet_count} pets")
+            self.battle_confirm_button.visible = True
+            self.battle_cancel_button.visible = True
+        
+        elif phase == "connecting":
+            self.connecting_label.visible = True
+            self.connecting_wait_label.visible = True
+    
+    def _hide_all_phase_components(self):
+        """Hide all phase-specific components."""
+        # Menu
+        self.wifi_button.visible = False
+        self.menu_exit_button.visible = False
+        
+        # Pet Selection
+        self.pet_selector.visible = False
+        self.pet_select_instructions.visible = False
+        self.pet_select_confirm_button.visible = False
+        self.pet_select_back_button.visible = False
+        
+        # Hosting
+        if self.hosting_title_label:
+            self.hosting_title_label.visible = False
+            self.hosting_code_label.visible = False
+            self.hosting_wait_label.visible = False
+            self.hosting_cancel_button.visible = False
+        
+        # Discovery
+        if self.discovery_title_label:
+            self.discovery_title_label.visible = False
+            self.discovery_status_label.visible = False
+            self.discovery_back_button.visible = False
+        
+        # Module Error
+        if self.module_error_title:
+            self.module_error_title.visible = False
+            self.module_error_subtitle.visible = False
+            for label in self.module_error_labels:
+                label.visible = False
+            self.module_error_button.visible = False
+        
+        # Battle Confirm
+        if self.battle_ready_label:
+            self.battle_ready_label.visible = False
+            self.battle_enemy_label.visible = False
+            self.battle_confirm_button.visible = False
+            self.battle_cancel_button.visible = False
+        
+        # Connecting
+        if self.connecting_label:
+            self.connecting_label.visible = False
+            self.connecting_wait_label.visible = False
 
     def update(self) -> None:
         """
-        Updates the connect scene.
+        Updates the connect scene with UI manager.
         """
-        # Update menu window for mouse hover if in menu phase
-        if self.phase == "menu" and runtime_globals.game_input.mouse_enabled:
-            self.menu_window.update()
+        # Update UI manager (handles button hovers, etc.)
+        self.ui_manager.update()
         
         # Handle phase changes from network threads
         if hasattr(self, '_phase_changed'):
-            self._cache_surface = None
             delattr(self, '_phase_changed')
         
         # If a battle start was requested from the input handler, wait a small
@@ -145,54 +599,18 @@ class SceneConnect:
     
     def draw(self, surface: pygame.Surface) -> None:
         """
-        Draws the connect scene with caching.
+        Draws the connect scene with UI manager.
         """
         try:
-            # Use a cache key for the current state that affects rendering
-            cache_key = (
-                self.phase,
-                self.selected_index,
-                len(self.pets),
-                tuple(self.pets),
-                self.host_code,
-                len(self.discovered_devices),
-                self.enemy_pet_count,
-                tuple(self.missing_modules),
-            )
-
-            if cache_key != self._cache_key or self._cache_surface is None:
-                # Redraw full scene on new state
-                cache_surface = pygame.Surface((constants.SCREEN_WIDTH, constants.SCREEN_HEIGHT), pygame.SRCALPHA)
-
-                self.background.draw(cache_surface)
-                
-                if self.phase == "menu":
-                    self.menu_window.draw(cache_surface, x=int(16 * constants.UI_SCALE), y=int(16 * constants.UI_SCALE), spacing=int(16 * constants.UI_SCALE))
-                    # Also draw the pet list window to show available pets
-                    self.pet_list_window.draw(cache_surface)
-                elif self.phase == "pet_selection":
-                    self.menu_window.draw(cache_surface, x=int(16 * constants.UI_SCALE), y=int(16 * constants.UI_SCALE), spacing=int(16 * constants.UI_SCALE))
-                    # Also draw the pet list window to show available pets
-                    self.draw_pet_selection(cache_surface)
-                elif self.phase == "host_join_menu":
-                    if self.host_join_menu:
-                        self.host_join_menu.draw(cache_surface)
-                elif self.phase == "hosting":
-                    self.draw_hosting_screen(cache_surface)
-                elif self.phase == "joining" or self.phase == "device_list":
-                    self.draw_device_discovery(cache_surface)
-                elif self.phase == "module_check":
-                    self.draw_module_error(cache_surface)
-                elif self.phase == "battle_confirm":
-                    self.draw_battle_confirmation(cache_surface)
-                elif self.phase == "connecting":
-                    self.draw_connecting_screen(cache_surface)
-
-                self._cache_surface = cache_surface
-                self._cache_key = cache_key
-
-            # Blit cached surface every frame
-            surface.blit(self._cache_surface, (0, 0))
+            # Draw window background (NOT managed by UI manager)
+            self.window_background.draw(surface)
+            
+            # Draw UI components (includes host_join_menu which is now a UI component)
+            self.ui_manager.draw(surface)
+            
+            # Draw legacy device_list_menu if still using old WindowMenu
+            if self.phase == "device_list" and self.device_list_menu:
+                self.device_list_menu.draw(surface)
         except Exception as e:
             runtime_globals.game_console.log(f"[SceneConnect] Draw error: {e}")
             import traceback
@@ -202,10 +620,14 @@ class SceneConnect:
         """
         Handles keyboard and GPIO button inputs for the connect scene.
         """
-        self._cache_surface = None  # Invalidate cache for any input
-        
         runtime_globals.game_console.log(f"[SceneConnect] Input received: {input_action} in phase: {self.phase}")
         
+        # Let UI manager handle events (it will check for mouse internally)
+        if self.ui_manager.handle_event(input_action):
+            runtime_globals.game_console.log("[SceneConnect] UI component handled event")
+            return
+        
+        # Phase-specific keyboard/button input
         if self.phase == "menu":
             self.handle_menu_input(input_action)
         elif self.phase == "pet_selection":
@@ -222,72 +644,35 @@ class SceneConnect:
             self.handle_battle_confirm_input(input_action)
 
     def handle_menu_input(self, input_action) -> None:
-        """Handles input for the main menu phase."""
+        """Handles input for the main menu phase (keyboard navigation)."""
         runtime_globals.game_console.log(f"[SceneConnect] Menu input: {input_action}")
         
-        # Handle mouse clicks on navigation arrows for multi-option menus
-        if input_action == "A" and runtime_globals.game_input.mouse_enabled:
-            mouse_pos = runtime_globals.game_input.get_mouse_position()
-            if self.menu_window.handle_mouse_click(mouse_pos):
-                # Mouse click was handled by the menu (navigation arrow click)
-                return
-        
-        if input_action == "B":  # ESC or START
-            runtime_globals.game_sound.play("cancel")
-            runtime_globals.game_console.log("[SceneConnect] Exiting to main game")
-            change_scene("game")
-        elif input_action in ("LEFT", "RIGHT"):
-            runtime_globals.game_sound.play("menu")
-            direction = 1 if input_action == "RIGHT" else -1
-            self.selected_index = (self.selected_index + direction) % len(self.options)
-            runtime_globals.game_console.log(f"[SceneConnect] Selected index: {self.selected_index}")
-        elif input_action == "A":
-            runtime_globals.game_console.log("[SceneConnect] Confirming selection")
-            self.confirm_selection()
+        if input_action == "B":  # ESC button - exit to main game
+            self._on_main_menu_exit()
+        elif input_action == "A":  # Select WIFI BATTLE
+            self._on_wifi_selected()
 
     def handle_pet_selection_input(self, input_action) -> None:
-        """Handles input for pet selection phase."""
+        """Handles input for pet selection phase (keyboard navigation)."""
         runtime_globals.game_console.log(f"[SceneConnect] Pet selection input: {input_action}")
         if input_action == "B":
-            runtime_globals.game_sound.play("cancel")
-            runtime_globals.game.console.log("[SceneConnect] Returning to main menu from pet selection")
-            self.phase = "menu"
-            self.pet_list_window.select_mode = False
-            self.pet_list_window.selected_indices.clear()
-            self.pets = []
-        elif input_action in ("LEFT", "RIGHT"):
-            self.pet_list_window.handle_input(input_action)
+            # Handled by back button callback
+            self._on_pet_selection_back()
+        elif input_action in ("LEFT", "RIGHT", "UP", "DOWN"):
+            # Navigate pet selector
+            self.pet_selector.handle_input(input_action)
         elif input_action == "A":
-            self.pet_list_window.handle_input(input_action)
-            self.pets = [game_globals.pet_list[i] for i in self.pet_list_window.selected_indices]
-            runtime_globals.game_console.log(f"[SceneConnect] Selected pets: {len(self.pets)}")
+            # Toggle pet selection
+            self.pet_selector.handle_input(input_action)
         elif input_action == "START":
-            if len(self.pets) > 0:
-                runtime_globals.game_sound.play("menu")
-                runtime_globals.game_console.log(f"[SceneConnect] Starting with {len(self.pets)} pets")
-                self.show_host_join_menu()
-            else:
-                runtime_globals.game_sound.play("cancel")
-                runtime_globals.game_console.log("[SceneConnect] No pets selected")
+            # Confirm selection (same as CONFIRM button)
+            self._on_pet_selection_confirm()
 
     def handle_host_join_input(self, input_action) -> None:
-        """Handles input for host/join menu."""
-        runtime_globals.game_console.log(f"[SceneConnect] Host/Join menu input: {input_action}")
-        if input_action == "B":
-            runtime_globals.game_sound.play("cancel")
-            self.host_join_menu.close()
-            self.host_join_menu = None
-            self.phase = "pet_selection"
-            runtime_globals.game_console.log("[SceneConnect] Returning to pet selection")
-        elif input_action in ("UP", "DOWN"):
-            self.host_join_menu.handle_event(input_action)
-        elif input_action == "A":
-            selected_option = self.host_join_menu.options[self.host_join_menu.menu_index]
-            runtime_globals.game_console.log(f"[SceneConnect] Selected: {selected_option}")
-            if selected_option == "Host":
-                self.start_hosting()
-            elif selected_option == "Join":
-                self.start_joining()
+        """Handles input for host/join menu - menu handles input through UI manager."""
+        # The Menu component handles all input through the UI manager and callbacks
+        # This method is kept for logging purposes only
+        runtime_globals.game_console.log(f"[SceneConnect] Host/Join menu active, input: {input_action}")
 
     def handle_hosting_input(self, input_action) -> None:
         """Handles input while hosting (waiting for connections)."""
@@ -347,11 +732,22 @@ class SceneConnect:
     def show_host_join_menu(self) -> None:
         """Shows the Host/Join menu after pet selection."""
         runtime_globals.game_console.log("[SceneConnect] Opening host/join menu")
-        self.host_join_menu = WindowMenu()
+        
+        # Create menu if it doesn't exist
+        if not self.host_join_menu:
+            self.host_join_menu = Menu(width=120, height=100)
+            self.ui_manager.add_component(self.host_join_menu)
+        
+        # Open with callbacks
         self.host_join_menu.open(
-            position=((constants.SCREEN_WIDTH - int(120 * constants.UI_SCALE)) // 2, (constants.SCREEN_HEIGHT - int(100 * constants.UI_SCALE)) // 2),
-            options=["Host", "Join"]
+            options=["Host", "Join"],
+            on_select=self._on_host_join_select,
+            on_cancel=self._on_host_join_cancel
         )
+        
+        # Set as active menu so UIManager gives it event priority
+        self.ui_manager.active_menu = self.host_join_menu
+        
         self.phase = "host_join_menu"
 
     def start_hosting(self) -> None:
@@ -360,6 +756,9 @@ class SceneConnect:
         self.is_host = True
         self.host_code = self.generate_host_code()
         self.phase = "hosting"
+        
+        # Show hosting UI
+        self._show_phase_components("hosting")
         
         # Start network thread for hosting
         self.network_thread = threading.Thread(target=self.host_network, daemon=True)
@@ -373,6 +772,9 @@ class SceneConnect:
         self.is_host = False
         self.phase = "joining"
         self.discovered_devices = []
+        
+        # Show discovery UI
+        self._show_phase_components("joining")
         
         # Start network thread for discovery
         self.network_thread = threading.Thread(target=self.discover_devices, daemon=True)
@@ -449,9 +851,11 @@ class SceneConnect:
                     
                     if self.check_module_compatibility(self.enemy_modules):
                         self.set_phase("battle_confirm")
+                        self._show_phase_components("battle_confirm")
                         self.connection_established = True
                     else:
                         self.set_phase("module_check")
+                        self._show_phase_components("module_check")
                         self.connection_socket.close()
                         self.connection_socket = None
                     break
@@ -472,10 +876,14 @@ class SceneConnect:
             udp_socket.bind(('0.0.0.0', 12346))
             udp_socket.settimeout(1.0)
             
+            runtime_globals.game_console.log("[SceneConnect] UDP discovery listener started on port 12346")
+            
             while self.phase == "hosting":
                 try:
                     data, addr = udp_socket.recvfrom(1024)
                     message = json.loads(data.decode())
+                    
+                    runtime_globals.game_console.log(f"[SceneConnect] Received UDP message from {addr}: {message}")
                     
                     if message.get("type") == "discovery" and message.get("request") == "omnimon_hosts":
                         # Respond with our host information
@@ -485,13 +893,15 @@ class SceneConnect:
                             "pet_count": len(self.pets)
                         }
                         udp_socket.sendto(json.dumps(response).encode(), addr)
-                        runtime_globals.game_console.log(f"[SceneConnect] Sent discovery response to {addr}")
+                        runtime_globals.game_console.log(f"[SceneConnect] Sent discovery response to {addr}: {response}")
                         
                 except socket.timeout:
                     continue
                 except Exception as e:
                     runtime_globals.game_console.log(f"[SceneConnect] Discovery response error: {e}")
+                    runtime_globals.game_console.log(f"[SceneConnect] Traceback: {traceback.format_exc()}")
                     
+            runtime_globals.game_console.log("[SceneConnect] UDP discovery listener stopped")
             udp_socket.close()
             
         except Exception as e:
@@ -507,12 +917,24 @@ class SceneConnect:
             
             discovery_message = json.dumps({"type": "discovery", "request": "omnimon_hosts"})
             
+            runtime_globals.game_console.log("[SceneConnect] Starting device discovery...")
+            
             # Try to discover devices for 10 seconds
             start_time = time.time()
             while time.time() - start_time < 10 and self.phase == "joining":
                 try:
-                    # Broadcast discovery message
+                    # Broadcast discovery message to multiple targets
+                    # Try localhost first (for same machine testing)
+                    broadcast_sock.sendto(discovery_message.encode(), ('127.0.0.1', 12346))
+                    # Try broadcast address for network
                     broadcast_sock.sendto(discovery_message.encode(), ('<broadcast>', 12346))
+                    # Try specific subnet broadcast (e.g., 192.168.1.255)
+                    try:
+                        broadcast_sock.sendto(discovery_message.encode(), ('255.255.255.255', 12346))
+                    except:
+                        pass
+                    
+                    runtime_globals.game_console.log("[SceneConnect] Sent discovery broadcasts, waiting for responses...")
                     
                     # Listen for responses
                     data, addr = broadcast_sock.recvfrom(1024)
@@ -551,14 +973,29 @@ class SceneConnect:
             runtime_globals.game_console.log(f"[SceneConnect] Discovery setup error: {e}")
 
     def create_device_list_menu(self) -> None:
-        """Creates the device selection menu."""
+        """Creates the device selection menu using modern Menu component."""
         if self.discovered_devices:
+            runtime_globals.game_console.log(f"[SceneConnect] Creating device list menu with {len(self.discovered_devices)} devices")
+            
+            # Create menu if it doesn't exist
+            if not self.device_list_menu:
+                self.device_list_menu = Menu(width=160, height=120)
+                self.ui_manager.add_component(self.device_list_menu)
+            
+            # Format device options
             device_options = [f"{device['host_code']} ({device['pet_count']} pets)" for device in self.discovered_devices]
-            self.device_list_menu = WindowMenu()
+            
+            # Open with callbacks
             self.device_list_menu.open(
-                position=((constants.SCREEN_WIDTH - int(200 * constants.UI_SCALE)) // 2, (constants.SCREEN_HEIGHT - int(150 * constants.UI_SCALE)) // 2),
-                options=device_options
+                options=device_options,
+                on_select=self._on_device_selected,
+                on_cancel=self._on_device_list_cancel
             )
+            
+            # Set as active menu
+            self.ui_manager.active_menu = self.device_list_menu
+            
+            runtime_globals.game_console.log("[SceneConnect] Device list menu created and opened")
 
     def connect_to_device(self, device_info: dict) -> None:
         """Connects to a selected device."""
@@ -581,13 +1018,15 @@ class SceneConnect:
             self.client_socket.send(json.dumps(battle_data).encode())
             
             if self.check_module_compatibility(self.enemy_modules):
-                self.phase = "battle_confirm"
+                self.set_phase("battle_confirm")
+                self._show_phase_components("battle_confirm")
                 self.connection_established = True
                 # Set the connection socket for later use
                 self.connection_socket = self.client_socket
                 runtime_globals.game_console.log("[SceneConnect] Module compatibility check passed - ready for battle")
             else:
-                self.phase = "module_check"
+                self.set_phase("module_check")
+                self._show_phase_components("module_check")
                 self.connection_established = False
                 if self.client_socket:
                     self.client_socket.close()
@@ -596,7 +1035,8 @@ class SceneConnect:
                 
         except Exception as e:
             runtime_globals.game_console.log(f"[SceneConnect] Connection error: {e}")
-            self.phase = "device_list"
+            runtime_globals.game_console.log(f"[SceneConnect] Traceback: {traceback.format_exc()}")
+            self.set_phase("device_list")
             if self.client_socket:
                 try:
                     self.client_socket.close()

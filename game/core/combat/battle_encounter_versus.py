@@ -5,12 +5,14 @@ from core.combat.battle_encounter import BattleEncounter, GameBattle
 from core.combat.sim.battle_simulator import BattleSimulator, BattleProtocol
 from core.animation import PetFrame
 from core.combat.sim.models import Digimon
-import game.core.constants as constants
-from core.utils.pygame_utils import blit_with_shadow
+import core.constants as constants
 from core.utils.scene_utils import change_scene
 from core import runtime_globals
 from core.utils.utils_unlocks import unlock_item
-
+import components.ui.ui_constants as ui_constants
+from components.ui.image import Image
+from components.ui.label import Label
+from components.ui.component import UIComponent
 
 class BattleEncounterVersus(BattleEncounter):
     def __init__(self, pet1, pet2, protocol: BattleProtocol):
@@ -21,13 +23,17 @@ class BattleEncounterVersus(BattleEncounter):
         self.pet2 = pet2
         self.pet2.x = 2 * (constants.SCREEN_WIDTH / 240)
         self.protocol = protocol
-        # Call the base class initializer
+        
+        # Set pvp_mode flag before calling parent init
+        self.pvp_mode = True
+        
+        # Call the base class initializer with module="DMC"
         module = "DMC"
 
-        super().__init__(module, 0, 0)
+        super().__init__(module, 0, 0, pvp_mode=True)
         self.enemy_entry_counter = 0
 
-        # Initialize the BattlePlayer with the two pets
+        # Override the BattlePlayer with the two pets for versus mode
         self.battle_player = GameBattle([pet1], [pet2], 0, 0, self.module)
         fixed_hp = None
         if protocol in [BattleProtocol.DMC_BS]:
@@ -63,9 +69,24 @@ class BattleEncounterVersus(BattleEncounter):
             self.battle_player.team1_max_total_hp = team1hp
             self.battle_player.team2_max_total_hp = team2hp
 
+        self.alert_sprite = self.ui_manager.load_sprite_integer_scaling("Battle", "VersusFrame", "")
+
+        # Setup persistent UI components for the alert phase (image + labels)
+        # These components are added to the UI manager so the manager will
+        # handle scaling and drawing automatically.
+        self.setup_alert_components()
+
         # Initialize the BattleSimulator with the given protocol
         self.simulator = BattleSimulator(protocol)
 
+        # Configure the global HPBar for versus mode and initialize totals
+        self.hp_bar.set_mode('versus')
+        self.hp_bar.set_totals(self.battle_player.team2_total_hp, self.battle_player.team1_total_hp)
+        self.hp_bar.set_values(self.battle_player.team2_total_hp, self.battle_player.team1_total_hp)
+        
+        # Initialize result timer
+        self.result_timer = 0
+        
         # Set initial state
         self.phase = "alert"
 
@@ -73,7 +94,59 @@ class BattleEncounterVersus(BattleEncounter):
         self.simulate_combat()
 
         self.process_battle_results()
-        runtime_globals.game_sound.play("battle_online")
+        
+
+    def setup_alert_components(self):
+        """
+        Create persistent UI components for the alert phase and register them
+        with the UI manager so the UI system handles scaling/drawing.
+
+        Components created:
+        - self.alert_image : Image(0,0,240,240) using self.alert_sprite
+        - self.left_label  : Label(27,186) left-aligned, fixed_width=170, font size 48
+        - self.right_label : Label(280,245) right-aligned, fixed_width=170, font size 48
+        """
+        # Create alert image component (base UI coords covering the UI area)
+        self.alert_image = Image(0, 0, 240, 240, image_surface=self.alert_sprite)
+        # Add to UI manager so it gets scaled and drawn automatically
+        self.ui_manager.add_component(self.alert_image)
+
+        # Pet portrait images: left (above name) and right (below name)
+        # Use IDLE1 frame by default. We swap which pet is shown on each side
+        # so left will show pet2 (flipped to face right) and right will show pet1.
+        left_sprite = None
+        right_sprite = None
+        # Left side shows pet2 (flip so it faces toward the center)
+        left_sprite = self.pet2.get_sprite(PetFrame.IDLE1.value) if hasattr(self.pet2, 'get_sprite') else None
+        if left_sprite:
+            left_sprite = pygame.transform.flip(left_sprite, True, False)
+
+        # Right side shows pet1 (no flip)
+        right_sprite = self.pet1.get_sprite(PetFrame.IDLE1.value) if hasattr(self.pet1, 'get_sprite') else None
+
+        # Create Image components for pet portraits (base coords)
+        # Left portrait above the left label
+        # Position: center of top-left quadrant on 240x240 base -> center (60,60)
+        # With size 70x70, top-left = (60-35, 60-35) = (25,25)
+        self.left_pet_image = Image(25, 15, 70, 70, image_surface=left_sprite)
+        self.ui_manager.add_component(self.left_pet_image)
+
+        # Right portrait below the right label
+        # Position: center of bottom-right quadrant on 240x240 base -> center (180,180)
+        # With size 70x70, top-left = (180-35, 180-35) = (145,145)
+        self.right_pet_image = Image(145, 155, 70, 70, image_surface=right_sprite)
+        self.ui_manager.add_component(self.right_pet_image)
+
+        # Left label (left aligned) - now shows pet2's name
+        self.left_label = Label(13, 99, text=getattr(self.pet2, 'name', ''), is_title=False, align_right=False, fixed_width=85, color_override=ui_constants.ANIM_BLACK)
+        # Force a 24px font for this label instance regardless of manager defaults
+        self.left_label.get_font = lambda font_type, custom_size=None: UIComponent.get_font(self.left_label, font_type, custom_size=24)
+        self.ui_manager.add_component(self.left_label)
+
+        # Right label (right aligned) - now shows pet1's name
+        self.right_label = Label(140, 130, text=getattr(self.pet1, 'name', ''), is_title=False, align_right=True, fixed_width=85, color_override=ui_constants.ANIM_BLACK)
+        self.right_label.get_font = lambda font_type, custom_size=None: UIComponent.get_font(self.right_label, font_type, custom_size=24)
+        self.ui_manager.add_component(self.right_label)
 
     def simulate_combat(self):
         strength_bonus = 3
@@ -138,7 +211,7 @@ class BattleEncounterVersus(BattleEncounter):
         """
         Handles the alert phase, transitioning to the battle phase.
         """
-        if self.frame_counter > 60:  # Wait for 1 second (assuming 60 FPS)
+        if self.frame_counter > constants.FRAME_RATE * 3:  # Wait for 3 seconds
             self.frame_counter = 0
             self.phase = "battle"
             self.calculate_combat_for_pairs()
@@ -148,12 +221,12 @@ class BattleEncounterVersus(BattleEncounter):
         Handles the result phase, displaying the winner and transitioning back to the main scene.
         """
         self.result_timer += 1
+        if self.result_timer == 2:
+            runtime_globals.game_sound.play("happy")
         if self.result_timer > 90:  # Wait for 1.5 seconds (assuming 60 FPS)
             # Process the result
             winner = self.pet1 if self.global_battle_log.winner == "device1" else self.pet2
             loser = self.pet2 if winner == self.pet1 else self.pet1
-
-            runtime_globals.game_sound.play("happy")
 
             winner.finish_versus(True)
             loser.finish_versus(False)
@@ -161,71 +234,82 @@ class BattleEncounterVersus(BattleEncounter):
             # Versus unlock logic: modules may declare unlocks of type 'versus'
             # with conditions such as making two pets of the same module battle
             # where one has version >= specified version.
-            try:
-                module_unlocks = getattr(self.module, 'unlocks', []) or []
-                for unlock in module_unlocks:
-                    if unlock.get('type') == 'versus':
-                        # Requirement: two participants of same module and
-                        # one of them meets the version requirement.
-                        ver_req = unlock.get('version', None)
-                        # If ver_req is specified and one of the two pets has
-                        # at least that version, award to both participants
-                        if ver_req is not None:
-                            if (getattr(self.pet1, 'module', None) == getattr(self.pet2, 'module', None)):
-                                if getattr(self.pet1, 'version', 0) >= ver_req or getattr(self.pet2, 'version', 0) >= ver_req:
-                                    unlock_item(self.module.name, 'versus', unlock.get('name'))
-            except Exception as e:
-                runtime_globals.game_console.log(f"[Versus] Error processing versus unlocks: {e}")
+            module_unlocks = getattr(self.module, 'unlocks', []) or []
+            for unlock in module_unlocks:
+                if unlock.get('type') == 'versus':
+                    # Requirement: two participants of same module and
+                    # one of them meets the version requirement.
+                    ver_req = unlock.get('version', None)
+                    # If ver_req is specified and one of the two pets has
+                    # at least that version, award to both participants
+                    if ver_req is not None:
+                        if (getattr(self.pet1, 'module', None) == getattr(self.pet2, 'module', None)):
+                            if getattr(self.pet1, 'version', 0) >= ver_req or getattr(self.pet2, 'version', 0) >= ver_req:
+                                unlock_item(self.module.name, 'versus', unlock.get('name'))
             # Return to the main scene
             change_scene("game")
 
     def draw_result(self, surface: pygame.Surface):
         """
-        Draws the result phase, showing the winner or indicating a draw.
+        Draws the result phase, showing the winner or indicating a draw with AnimatedSprite component.
         """
-        # Determine winner and loser
+        # Start versus result animation if not already playing
+        if not self.animated_sprite.is_animation_playing():
+            self.animated_sprite.play_versus_result(duration_seconds=3.0)
+        
+        # Draw the animated sprite background
+        self.animated_sprite.draw(surface)
+        
+        # Determine which pet won and should be displayed
         if self.global_battle_log.winner == "device1":
-            result_text = f"Winner: {self.pet1.name}"
-            color = constants.FONT_COLOR_GREEN
+            winner_pet = self.pet1
         elif self.global_battle_log.winner == "device2":
-            result_text = f"Winner: {self.pet2.name}"
-            color = constants.FONT_COLOR_GREEN
+            winner_pet = self.pet2
         else:
-            result_text = "Draw"
-            color = constants.FONT_COLOR_YELLOW
-
-        # Render the result text
-        result_render = self.font.render(result_text, True, color).convert_alpha()
-        blit_with_shadow(surface, result_render, (constants.SCREEN_WIDTH // 2 - result_render.get_width() // 2, int(30 * constants.UI_SCALE)))
-
-        # Draw sprites for both battlers
-        sprite_width = constants.PET_WIDTH // 2
-        sprite_height = constants.PET_HEIGHT // 2
-        spacing = int(20 * constants.UI_SCALE)
-
-        # Position for pet1 (left side)
-        pet1_x = constants.SCREEN_WIDTH // 4 - sprite_width // 2
-        pet1_y = constants.SCREEN_HEIGHT // 2 - sprite_height // 2
-
-        # Position for pet2 (right side)
-        pet2_x = 3 * constants.SCREEN_WIDTH // 4 - sprite_width // 2
-        pet2_y = constants.SCREEN_HEIGHT // 2 - sprite_height // 2
-
-        # Animate pet1
-        anim_toggle = (self.frame_counter // (15 * constants.FRAME_RATE // 30)) % 2
-        if self.global_battle_log.winner == "device1":
-            frame_id = PetFrame.HAPPY.value if anim_toggle == 0 else PetFrame.IDLE1.value
+            winner_pet = None  # Draw for tie case
+        
+        # Animate winner pet sprite centered on screen
+        # Toggle between IDLE1 and HAPPY every half second
+        anim_toggle = (self.frame_counter // (constants.FRAME_RATE // 2)) % 2
+        
+        if winner_pet:
+            # Get the frame (IDLE1 or HAPPY)
+            frame_id = PetFrame.IDLE1.value if anim_toggle == 0 else PetFrame.HAPPY.value
+            pet_sprite = winner_pet.get_sprite(frame_id)
+            
+            # Center the sprite on screen
+            pet_x = constants.SCREEN_WIDTH // 2 - pet_sprite.get_width() // 2
+            pet_y = constants.SCREEN_HEIGHT // 2 - pet_sprite.get_height() // 2
+            
+            surface.blit(pet_sprite, (pet_x, pet_y))
         else:
-            frame_id = PetFrame.LOSE.value
-        pet1_sprite = self.pet1.get_sprite(frame_id)
-        pet1_sprite = pygame.transform.scale(pet1_sprite, (sprite_width, sprite_height))
-        blit_with_shadow(surface, pet1_sprite, (pet1_x, pet1_y))
+            # Draw both pets for a tie (smaller and side by side)
+            sprite_width = constants.PET_WIDTH // 2
+            sprite_height = constants.PET_HEIGHT // 2
+            
+            # Both pets animate between IDLE1 and HAPPY
+            frame_id = PetFrame.IDLE1.value if anim_toggle == 0 else PetFrame.HAPPY.value
+            
+            # Position for pet1 (left side)
+            pet1_x = constants.SCREEN_WIDTH // 4 - sprite_width // 2
+            pet1_y = constants.SCREEN_HEIGHT // 2 - sprite_height // 2
+            pet1_sprite = self.pet1.get_sprite(frame_id)
+            pet1_sprite = pygame.transform.scale(pet1_sprite, (sprite_width, sprite_height))
+            surface.blit(pet1_sprite, (pet1_x, pet1_y))
+            
+            # Position for pet2 (right side)
+            pet2_x = 3 * constants.SCREEN_WIDTH // 4 - sprite_width // 2
+            pet2_y = constants.SCREEN_HEIGHT // 2 - sprite_height // 2
+            pet2_sprite = self.pet2.get_sprite(frame_id)
+            pet2_sprite = pygame.transform.scale(pet2_sprite, (sprite_width, sprite_height))
+            surface.blit(pet2_sprite, (pet2_x, pet2_y))
 
-        # Animate pet2
-        if self.global_battle_log.winner == "device2":
-            frame_id = PetFrame.HAPPY.value if anim_toggle == 0 else PetFrame.IDLE1.value
-        else:
-            frame_id = PetFrame.LOSE.value
-        pet2_sprite = self.pet2.get_sprite(frame_id)
-        pet2_sprite = pygame.transform.scale(pet2_sprite, (sprite_width, sprite_height))
-        blit_with_shadow(surface, pet2_sprite, (pet2_x, pet2_y))
+    def draw_alert(self, surface):
+        """
+        Draws the alert phase overlay.
+        """
+        # Fill the entire screen (or UI area) with the combat blue color.
+        # The UI manager will draw the persistent Image and Label components
+        # that were registered in `setup_alert_components`.
+        surface.fill(ui_constants.COMBAT_BLUE)
+        self.ui_manager.draw(surface)

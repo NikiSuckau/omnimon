@@ -5,8 +5,7 @@ import pygame
 import math
 from components.ui.component import UIComponent
 from core import runtime_globals
-from core.utils.pet_utils import get_selected_pets
-from game.core.animation import PetFrame
+from core.animation import PetFrame
 
 
 class PetSelector(UIComponent):
@@ -16,7 +15,16 @@ class PetSelector(UIComponent):
         # Pet data
         self.pets = []
         self.enabled_pets = []  # List of pet indices that are enabled
-        self.selected_pets = []  # List of pet indices that are selected
+        self._selected_pets = []  # List of pet indices that are selected (internal)
+        
+        # Custom theme overrides for specific pets {pet_index: theme_name}
+        self.pet_custom_themes = {}
+        
+        # Callback for custom activation behavior
+        self.activation_callback = None
+        
+        # Mouse interaction state
+        self._clicked_cell = None  # Stores the cell that was clicked (for mouse activation)
         
         # Base visual settings (will be scaled by manager)
         self.base_cell_size = 48  # Base hexagon size
@@ -30,8 +38,11 @@ class PetSelector(UIComponent):
         
         # State
         self.hovered_cell = -1
-        self.focused_cell = -1
+        self.focused_cell = 0  # Start with first pet focused
         self.is_interactive = False  # Can be toggled for different scenes
+        self.focusable = True  # Make component focusable for keyboard navigation
+        self.focused = False  # Track focus state for highlighting
+        self.armor_mode = False  # Special mode for armor evolution visual feedback
         
         # Layout (positions in base coordinates)
         self.cell_positions = []
@@ -43,9 +54,26 @@ class PetSelector(UIComponent):
         # Setup initial layout
         self.update_layout()
         
+    @property
+    def selected_pets(self):
+        """Get the list of selected pet indices"""
+        return self._selected_pets
+        
+    @selected_pets.setter
+    def selected_pets(self, value):
+        """Set the list of selected pet indices and invalidate cache"""
+        if self._selected_pets != value:
+            self._selected_pets = value[:]  # Make a copy to avoid reference issues
+            self.needs_redraw = True
+        
+    def get_activation_cell(self):
+        """Get the cell that should be activated (clicked cell for mouse, focused cell for keyboard)"""
+        return self._clicked_cell if self._clicked_cell is not None else self.focused_cell
+        
     def get_highlight_shape(self):
-        """Return custom hexagonal highlight shape for the focused pet"""
-        if not self.is_interactive or self.focused_cell < 0 or self.focused_cell >= len(self.cell_positions):
+        """Return custom hexagonal highlight shape for the focused pet - only when component has focus"""
+        if (not self.is_interactive or not self.focused or 
+            self.focused_cell < 0 or self.focused_cell >= len(self.cell_positions)):
             return None
             
         # Get the focused cell position and radius
@@ -76,7 +104,7 @@ class PetSelector(UIComponent):
         """Set the list of pets to display"""
         self.pets = pets[:]
         self.enabled_pets = list(range(len(pets)))  # All enabled by default
-        self.selected_pets = []
+        self._selected_pets = []
         self.needs_layout_update = True
         self.needs_redraw = True
         
@@ -90,7 +118,12 @@ class PetSelector(UIComponent):
         self.is_interactive = interactive
         if not interactive:
             self.hovered_cell = -1
-            self.focused_cell = -1
+            # Don't reset focused_cell - preserve it for when interactivity is re-enabled
+        else:
+            # When re-enabling, ensure we have a valid focused cell
+            if self.focused_cell < 0 and self.pets:
+                self.focused_cell = 0
+        self.needs_redraw = True
             
     def update_layout(self):
         """Calculate positions and sizes for all hexagonal cells in base coordinates"""
@@ -189,26 +222,62 @@ class PetSelector(UIComponent):
         
 
         
+    def set_pet_custom_theme(self, pet_index, theme_name):
+        """Set a custom theme for a specific pet"""
+        if theme_name:
+            self.pet_custom_themes[pet_index] = theme_name
+        elif pet_index in self.pet_custom_themes:
+            del self.pet_custom_themes[pet_index]
+        self.needs_redraw = True
+    
+    def clear_custom_themes(self):
+        """Clear all custom pet themes"""
+        self.pet_custom_themes.clear()
+        self.needs_redraw = True
+    
+    def set_armor_mode(self, enabled):
+        """Enable/disable armor mode for special visual feedback"""
+        if self.armor_mode != enabled:
+            self.armor_mode = enabled
+            self.needs_redraw = True
+    
+    def is_armor_mode(self):
+        """Check if armor mode is enabled"""
+        return self.armor_mode
+    
+    def get_pet_theme_colors(self, pet_index, theme_name=None):
+        """Get theme colors for a specific pet"""
+        if not self.manager:
+            return None
+            
+        # Use custom theme if specified, otherwise fall back to manager's theme
+        if theme_name:
+            # Import theme colors from ui_constants
+            from components.ui.ui_constants import (
+                GREEN_DARK, GREEN, GREEN_LIGHT,
+                BLUE_DARK, BLUE, BLUE_LIGHT,
+                BLACK, GREY
+            )
+            
+            if theme_name == "GREEN":
+                return {"bg": GREEN_DARK, "fg": GREEN, "highlight": GREEN_LIGHT, "black": BLACK, "grey": GREY}
+            elif theme_name == "BLUE":  
+                return {"bg": BLUE_DARK, "fg": BLUE, "highlight": BLUE_LIGHT, "black": BLACK, "grey": GREY}
+            # Add more themes as needed
+        
+        return self.manager.get_theme_colors()
+    
     def update_colors_from_theme(self):
         """Update colors based on current UI theme"""
         if self.manager:
             theme_colors = self.manager.get_theme_colors()
-            # Use theme's background color for hexagon fill
-            self.hexagon_color = theme_colors.get("bg", (40, 40, 80))
-            # Use theme's foreground color for enabled borders  
-            self.enabled_color = theme_colors.get("fg", (255, 255, 255))
-            # Use grey for disabled borders
-            self.disabled_color = theme_colors.get("grey", (128, 128, 128))
-            # Use black for main borders
-            self.border_color = theme_colors.get("black", (0, 0, 0))
-            # Use theme's highlight color for selection
-            self.selected_color = theme_colors.get("highlight", (255, 255, 0))
-            # Create hover color as slightly brighter version of hexagon color
-            self.hover_color = (
-                min(255, self.hexagon_color[0] + 40),
-                min(255, self.hexagon_color[1] + 40), 
-                min(255, self.hexagon_color[2] + 40)
-            )
+            # Use theme colors directly
+            self.hexagon_color = theme_colors.get("bg", (40, 40, 80))  # Background for non-selected hexagons
+            self.enabled_color = theme_colors.get("fg", (255, 255, 255))  # Border for enabled (non-focused) hexagons
+            self.disabled_color = theme_colors.get("grey", (128, 128, 128))  # For disabled hexagons
+            self.border_color = theme_colors.get("fg", (255, 255, 255))  # Default border color
+            self.selected_color = theme_colors.get("bg", (40, 40, 80))  # Background for selected hexagons
+            self.highlight_color = theme_colors.get("highlight", (255, 255, 0))  # Border for focused hexagon
             self.needs_redraw = True
             
     def on_manager_set(self):
@@ -236,9 +305,14 @@ class PetSelector(UIComponent):
         if not self.is_interactive or not self.cell_positions:
             return -1
             
-        # Convert to local coordinates
-        local_x = pos[0] - self.rect.x
-        local_y = pos[1] - self.rect.y
+        # Convert to component-relative coordinates using screen coordinates
+        # (pos is already in screen coordinates from mouse)
+        relative_x = pos[0] - self.rect.x
+        relative_y = pos[1] - self.rect.y
+        
+        # Check if mouse is within component bounds
+        if not (0 <= relative_x < self.rect.width and 0 <= relative_y < self.rect.height):
+            return -1
         
         # Check each hexagon using distance calculation
         radius = (self.calculated_cell_size // 2) if hasattr(self, 'calculated_cell_size') else (self.base_cell_size // 2)
@@ -248,15 +322,18 @@ class PetSelector(UIComponent):
             scaled_radius = radius
             
         for i, base_pos in enumerate(self.cell_positions):
-            # Convert base position to screen coordinates
+            # Scale base position to component-relative scaled coordinates
+            # (just scale the values, don't add UI offsets)
             if self.manager:
-                screen_pos = self.manager.scale_position(base_pos[0], base_pos[1])
+                scaled_x = self.manager.scale_value(base_pos[0])
+                scaled_y = self.manager.scale_value(base_pos[1])
             else:
-                screen_pos = base_pos
+                scaled_x = base_pos[0]
+                scaled_y = base_pos[1]
                 
-            # Calculate distance from click to hexagon center
-            dx = local_x - screen_pos[0]
-            dy = local_y - screen_pos[1]
+            # Calculate distance from mouse to hexagon center (both in component-relative coordinates)
+            dx = relative_x - scaled_x
+            dy = relative_y - scaled_y
             distance = (dx * dx + dy * dy) ** 0.5
             
             # Use a slightly smaller radius for better click detection
@@ -271,9 +348,17 @@ class PetSelector(UIComponent):
         """Handle mouse motion for hover effects"""
         if not self.is_interactive:
             return False
+        
+        # Disable mouse hover during drag to prevent focus changes
+        if hasattr(runtime_globals.game_input, 'is_dragging') and runtime_globals.game_input.is_dragging():
+            return False
             
         old_hovered = self.hovered_cell
         self.hovered_cell = self.get_cell_at_position(pos)
+        
+        # Update focused_cell to match mouse position when component has focus
+        if self.focused and self.hovered_cell != -1:
+            self.focused_cell = self.hovered_cell
         
         if old_hovered != self.hovered_cell:
             self.needs_redraw = True
@@ -285,15 +370,31 @@ class PetSelector(UIComponent):
         if not self.is_interactive:
             return False
             
-        cell = self.get_cell_at_position(pos)
+        cell = self.get_cell_at_position(pos)       
         if cell != -1 and cell in self.enabled_pets:
-            # Toggle selection
-            if cell in self.selected_pets:
-                self.selected_pets.remove(cell)
+            # Set focus to the clicked cell for visual feedback
+            self.focused_cell = cell
+            
+            # Use the same logic as keyboard activation for consistency
+            if self.activation_callback:
+                # Store the clicked cell and call the callback
+                self._clicked_cell = cell
+                result = self.activation_callback()
+                self._clicked_cell = None  # Clear after use
+                # Force cache invalidation to ensure visual update
+                self.cached_surface = None
+                self.needs_redraw = True
+                return result
             else:
-                self.selected_pets.append(cell)
-            self.needs_redraw = True
-            return True
+                # Default behavior: toggle selection (same as keyboard)
+                if cell in self._selected_pets:
+                    self._selected_pets.remove(cell)
+                    runtime_globals.game_sound.play("cancel")
+                else:
+                    self._selected_pets.append(cell)
+                    runtime_globals.game_sound.play("menu")
+                self.needs_redraw = True
+                return True
             
         return False
         
@@ -309,29 +410,61 @@ class PetSelector(UIComponent):
         radius = (self.calculated_cell_size // 2) if hasattr(self, 'calculated_cell_size') else (self.base_cell_size // 2)
         
         # Draw each pet cell
-        for i, pet in enumerate(self.pets):
-            if i >= len(self.cell_positions):
+        for pet_index, pet in enumerate(self.pets):
+            if pet_index >= len(self.cell_positions):
                 continue
                 
-            base_center = self.cell_positions[i]
-            is_enabled = i in self.enabled_pets
-            is_selected = i in self.selected_pets
-            is_hovered = i == self.hovered_cell and self.is_interactive
-            is_focused = i == self.focused_cell and self.is_interactive
+            base_center = self.cell_positions[pet_index]
+            is_enabled = pet_index in self.enabled_pets
+            is_selected = pet_index in self._selected_pets
+            is_hovered = pet_index == self.hovered_cell and self.is_interactive
+            is_focused = pet_index == self.focused_cell and self.is_interactive and self.focused
             
-            # Determine colors
-            if is_selected:
-                fill_color = self.selected_color
-                border_color = self.border_color
-            elif is_hovered or is_focused:
-                fill_color = self.hover_color
-                border_color = self.border_color
-            elif is_enabled:
+            # Determine visual highlight state - only show highlight when component has focus
+            is_highlighted = (pet_index == self.focused_cell and self.focused and self.is_interactive)
+            
+            # Determine colors based on state priority: disabled -> selected -> highlighted -> enabled
+            if not is_enabled:
+                # Disabled: grey background, grey border, semi-transparent
+                fill_color = self.disabled_color
+                border_color = self.disabled_color
+                alpha = 128  # Semi-transparent
+            elif is_selected and self.armor_mode:
+                # Armor mode: selected pets use theme's fg color as background
+                if self.manager:
+                    theme_colors = self.manager.get_theme_colors()
+                    fill_color = theme_colors.get("fg", self.enabled_color)
+                    border_color = self.highlight_color if is_highlighted else self.enabled_color
+                else:
+                    fill_color = self.enabled_color
+                    border_color = self.highlight_color if is_highlighted else self.enabled_color
+                alpha = 255
+            elif is_selected and pet_index in self.pet_custom_themes:
+                # Selected with custom theme (normal mode)
+                custom_theme = self.pet_custom_themes[pet_index]
+                theme_colors = self.get_pet_theme_colors(pet_index, custom_theme)
+                if theme_colors:
+                    fill_color = theme_colors.get("bg", self.hexagon_color)
+                    border_color = theme_colors.get("highlight", self.highlight_color) if is_highlighted else theme_colors.get("fg", self.enabled_color)
+                else:
+                    fill_color = self.hexagon_color
+                    border_color = self.highlight_color if is_highlighted else self.enabled_color
+                alpha = 255
+            elif is_selected:
+                # Selected without custom theme (normal mode)
+                fill_color = self.hexagon_color
+                border_color = self.highlight_color if is_highlighted else self.enabled_color
+                alpha = 255
+            elif is_highlighted:
+                # Focused/highlighted: highlight border (only when component has focus)
+                fill_color = self.hexagon_color
+                border_color = self.highlight_color
+                alpha = 255
+            else:
+                # Default enabled state
                 fill_color = self.hexagon_color
                 border_color = self.enabled_color
-            else:
-                fill_color = self.disabled_color
-                border_color = self.enabled_color
+                alpha = 255
                 
             # Convert base center to local surface coordinates 
             # (base_center is relative to component, we need scaled coordinates for local surface)
@@ -347,17 +480,27 @@ class PetSelector(UIComponent):
             
             # Calculate hexagon points for local surface
             points = []
-            for i in range(6):
-                angle = (math.pi / 3 * i) + (math.pi / 6)  # 60 degrees * i + 30 degrees rotation
+            for j in range(6):
+                angle = (math.pi / 3 * j) + (math.pi / 6)  # 60 degrees * j + 30 degrees rotation
                 x = scaled_center[0] + scaled_radius * math.cos(angle)
                 y = scaled_center[1] + scaled_radius * math.sin(angle)
                 points.append((int(x), int(y)))
             
             # Draw filled hexagon on local surface
             if len(points) >= 3:
-                pygame.draw.polygon(surface, fill_color, points)
-                if border_color:
-                    pygame.draw.polygon(surface, border_color, points, scaled_border_width)
+                # Create a temporary surface for alpha blending if needed
+                if alpha < 255:
+                    temp_surface = pygame.Surface((scaled_radius * 2 + 4, scaled_radius * 2 + 4), pygame.SRCALPHA)
+                    temp_points = [(p[0] - scaled_center[0] + scaled_radius + 2, p[1] - scaled_center[1] + scaled_radius + 2) for p in points]
+                    pygame.draw.polygon(temp_surface, fill_color, temp_points)
+                    if border_color:
+                        pygame.draw.polygon(temp_surface, border_color, temp_points, scaled_border_width)
+                    temp_surface.set_alpha(alpha)
+                    surface.blit(temp_surface, (scaled_center[0] - scaled_radius - 2, scaled_center[1] - scaled_radius - 2))
+                else:
+                    pygame.draw.polygon(surface, fill_color, points)
+                    if border_color:
+                        pygame.draw.polygon(surface, border_color, points, scaled_border_width)
 
             # Draw pet sprite
             if hasattr(pet, 'get_sprite'):
@@ -398,27 +541,90 @@ class PetSelector(UIComponent):
                         surface.blit(sprite, sprite_rect)
                 except Exception as e:
                     # Fallback if sprite loading fails
-                    runtime_globals.game_console.log(f"[PetSelector] Failed to load sprite for pet {i}: {e}")
+                    runtime_globals.game_console.log(f"[PetSelector] Failed to load sprite for pet {pet_index}: {e}")
                     pass
                 
         return surface
         
     def handle_event(self, event):
+        """Handle input events"""
+        if isinstance(event, str):
+            return self.handle_input_action(event)
+        elif hasattr(event, 'type'):
+            return self.handle_pygame_event(event)
+        return False
+        
+    def handle_pygame_event(self, event):
         """Handle pygame events"""
         if not self.is_interactive:
             return False
             
         if event.type == pygame.MOUSEMOTION:
             return self.handle_mouse_motion(event.pos)
-        elif event.type == pygame.MOUSEBUTTONDOWN:
-            if event.button == 1:  # Left click
-                return self.handle_mouse_click(event.pos, event.button)
+        #elif event.type == pygame.MOUSEBUTTONDOWN:
+        #    if event.button == 1:  # Left click
+        #        return self.handle_mouse_click(event.pos, event.button)
                 
+        return False
+    
+    def handle_input_action(self, action):
+        """Handle input actions for navigation and selection"""
+        if not self.is_interactive or not self.focused:
+            return False
+            
+        if action == "LEFT":
+            return self.navigate_left()
+        elif action == "RIGHT":
+            return self.navigate_right()
+        elif action == "A":
+            return self.activate_focused_pet()
+        elif action in ["UP", "DOWN"]:
+            # Allow UP/DOWN to move focus to other components (don't handle it here)
+            return False
+        return False
+    
+    def navigate_left(self):
+        """Navigate to previous pet"""
+        if self.focused_cell > 0:
+            self.focused_cell -= 1
+            self.needs_redraw = True
+            runtime_globals.game_sound.play("menu")
+            return True
+        return False
+    
+    def navigate_right(self):
+        """Navigate to next pet"""
+        if self.focused_cell < len(self.pets) - 1:
+            self.focused_cell += 1
+            self.needs_redraw = True
+            runtime_globals.game_sound.play("menu")
+            return True
+        return False
+    
+    def activate_focused_pet(self):
+        """Activate (select/deselect) the currently focused pet"""
+        if self.focused_cell >= 0 and self.focused_cell < len(self.pets):
+            if self.focused_cell in self.enabled_pets:
+                # Use custom callback if available
+                if self.activation_callback:
+                    result = self.activation_callback()
+                    self.needs_redraw = True
+                    return result
+                else:
+                    # Default behavior: toggle selection
+                    if self.focused_cell in self._selected_pets:
+                        self._selected_pets.remove(self.focused_cell)
+                        runtime_globals.game_sound.play("cancel")
+                    else:
+                        self._selected_pets.append(self.focused_cell)
+                        runtime_globals.game_sound.play("menu")
+                    self.needs_redraw = True
+                    return True
         return False
         
     def get_selected_pets(self):
         """Get list of currently selected pets"""
-        return [self.pets[i] for i in self.selected_pets if i < len(self.pets)]
+        return [self.pets[i] for i in self._selected_pets if i < len(self.pets)]
         
     def get_enabled_pets(self):
         """Get list of currently enabled pets"""
@@ -426,13 +632,28 @@ class PetSelector(UIComponent):
         
     def clear_selection(self):
         """Clear all selections"""
-        if self.selected_pets:
-            self.selected_pets = []
+        if self._selected_pets:
+            self._selected_pets = []
             self.needs_redraw = True
             
     def select_all_enabled(self):
         """Select all enabled pets"""
-        old_selection = self.selected_pets[:]
-        self.selected_pets = self.enabled_pets[:]
-        if old_selection != self.selected_pets:
+        old_selection = self._selected_pets[:]
+        self._selected_pets = self.enabled_pets[:]
+        if old_selection != self._selected_pets:
             self.needs_redraw = True
+            
+    def on_focus_gained(self):
+        """Called when component gains focus"""
+        self.focused = True
+        self.needs_redraw = True
+        # Ensure we have a valid focused cell
+        if self.focused_cell < 0 or self.focused_cell >= len(self.pets):
+            self.focused_cell = 0
+        # Clear hover state when gaining keyboard focus
+        self.hovered_cell = -1
+        
+    def on_focus_lost(self):
+        """Called when component loses focus"""
+        self.focused = False
+        self.needs_redraw = True

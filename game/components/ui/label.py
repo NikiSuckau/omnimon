@@ -4,11 +4,9 @@ Label Component - Text display with optional color override
 import pygame
 from components.ui.component import UIComponent
 from core.utils.pygame_utils import blit_with_cache, blit_with_shadow
-from core import runtime_globals
-
 
 class Label(UIComponent):
-    def __init__(self, x, y, text, is_title=False, color_override=None, align_right=False, fixed_width=None, tooltip_text=None, scroll_text=False):
+    def __init__(self, x, y, text, is_title=False, color_override=None, align_right=False, fixed_width=None, tooltip_text=None, scroll_text=False, shadow_mode="disabled", custom_size=None):
         super().__init__(x, y, 1, 1)  # Width/height will be set after rendering
         self.text = text
         self.is_title = is_title
@@ -17,8 +15,10 @@ class Label(UIComponent):
         self.fixed_width = fixed_width
         self.tooltip_text = tooltip_text
         self.scroll_text = scroll_text
+        self.shadow_mode = shadow_mode  # Use consistent shadow system
         self.focusable = bool(tooltip_text)  # Only focusable if it has a tooltip
         self.needs_redraw = True
+        self.custom_size = custom_size
         
         # Scrolling animation variables
         self.scroll_offset = 0
@@ -67,10 +67,16 @@ class Label(UIComponent):
                 self.last_update_time = current_time
                 
                 # Get text width to determine if scrolling is needed
-                if self.is_title:
-                    font = self.get_font("title")
+                if self.custom_size:
+                    if self.is_title:
+                        font = self.get_font("title", custom_size=self.custom_size)
+                    else:
+                        font = self.get_font("text", custom_size=self.custom_size)
                 else:
-                    font = self.get_font("text")
+                    if self.is_title:
+                        font = self.get_font("title")
+                    else:
+                        font = self.get_font("text")
                 
                 text_surface = font.render(self.text, True, (255, 255, 255))  # Color doesn't matter for width
                 text_width = text_surface.get_width()
@@ -103,10 +109,16 @@ class Label(UIComponent):
         
     def render(self):
         # Choose font based on type using centralized font method
-        if self.is_title:
-            font = self.get_font("title")
+        if self.custom_size:
+            if self.is_title:
+                font = self.get_font("title", custom_size=self.custom_size)
+            else:
+                font = self.get_font("text", custom_size=self.custom_size)
         else:
-            font = self.get_font("text")
+            if self.is_title:
+                font = self.get_font("title")
+            else:
+                font = self.get_font("text")
         
         # Get color
         if self.color_override:
@@ -197,7 +209,7 @@ class Label(UIComponent):
         else:
             # Handle truncation for fixed width without scrolling
             if self.fixed_width and not self.scroll_text:
-                scaled_width = self.manager.scale_value(self.fixed_width)
+                scaled_width = self.manager.scale_value(self.fixed_width) if self.manager else self.fixed_width
                 if text_surface.get_width() > scaled_width:
                     # Truncate the text
                     truncated_surface = pygame.Surface((scaled_width, text_surface.get_height()), pygame.SRCALPHA)
@@ -211,6 +223,18 @@ class Label(UIComponent):
                 self.rect.width = scaled_width
                 self.rect.height = text_surface.get_height()
             else:
+                # Check if we should render with shadow
+                if self.manager and self.manager.should_render_shadow(self, "text"):
+                    # Create a surface with extra space for shadow
+                    shadow_offset = (2, 2)
+                    shadow_surface = pygame.Surface(
+                        (text_surface.get_width() + shadow_offset[0], 
+                         text_surface.get_height() + shadow_offset[1]), 
+                        pygame.SRCALPHA
+                    )
+                    blit_with_shadow(shadow_surface, text_surface, (0, 0), offset=shadow_offset)
+                    text_surface = shadow_surface
+                
                 # Update component screen size (don't modify base_rect)
                 self.rect.width = text_surface.get_width()
                 self.rect.height = text_surface.get_height()

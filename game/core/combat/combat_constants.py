@@ -1,4 +1,4 @@
-import game.core.constants as constants
+import core.constants as constants
 
 
 ALERT_DURATION_FRAMES = int(50 * (constants.FRAME_RATE / 30))
@@ -25,7 +25,7 @@ def update_combat_constants():
     global ALERT_FRAME_DELAY, AFTER_ATTACK_DELAY_FRAMES, LEVEL_DURATION_FRAMES
     global READY_FRAME_COUNTER, ALERT_FRAME_COUNTER
 
-    ALERT_DURATION_FRAMES = int(50 * (constants.FRAME_RATE / 30))
+    ALERT_DURATION_FRAMES = int(60 * (constants.FRAME_RATE / 30))
     WAIT_AFTER_BAR_FRAMES = int(30 * (constants.FRAME_RATE / 30))
     IMPACT_DURATION_FRAMES = int(60 * (constants.FRAME_RATE / 30))
     WAIT_ATTACK_READY_FRAMES = int(20 * (constants.FRAME_RATE / 30))

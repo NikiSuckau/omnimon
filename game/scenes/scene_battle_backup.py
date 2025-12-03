@@ -53,7 +53,7 @@ class SceneBattle:
 
         # Track selected area/round per module (do not overwrite game_globals.battle_area/battle_round)
         self.selected_area = {}
-        self.selected_round = {}
+        self.selected_round = {} 
         self.area_round_counts = {}  # <-- Store area/round limits per module
 
         for module in runtime_globals.game_modules.values():

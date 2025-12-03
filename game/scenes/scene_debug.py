@@ -1,21 +1,25 @@
 """
 Scene Debug
 A debug scene with various testing and debugging options for pets.
+Refactored to use the new UI system with button components.
 """
 import pygame
 import random
 
+from components.ui.ui_manager import UIManager
+from components.ui.background import Background
+from components.ui.button import Button
+from components.ui.title_scene import TitleScene
+from components.ui.pet_selector import PetSelector
+from components.ui.ui_constants import BASE_RESOLUTION
 from components.window_background import WindowBackground
-from components.window_petview import WindowPetList
 from core import game_globals, runtime_globals
-import game.core.constants as constants
+import core.constants as constants
 from core.utils.scene_utils import change_scene
 from core.utils.pet_utils import get_selected_pets
 from core.utils.module_utils import get_module
-from game.core.game_quest import QuestStatus
-from game.core.utils.pygame_utils import blit_with_shadow, get_font
-from game.core.utils.quest_event_utils import force_complete_quest, generate_daily_quests, get_hourly_random_event
-from core.game_pet import GamePet
+from core.utils.quest_event_utils import force_complete_quest, generate_daily_quests, get_hourly_random_event
+
 
 #=====================================================================
 # SceneDebug
@@ -23,24 +27,29 @@ from core.game_pet import GamePet
 class SceneDebug:
     """
     Debug scene with various testing options for pets and game systems.
+    Refactored to use UI system with button grid and page navigation.
     """
 
     def __init__(self) -> None:
         """
-        Initializes the debug scene.
+        Initializes the debug scene with UI components.
         """
-        self.background = WindowBackground()
-        self.pet_view = WindowPetList(lambda: game_globals.pet_list)
+        # Global background (old system)
+        self.window_background = WindowBackground()
         
-        # Menu navigation with scrolling
-        self.current_row = 0
-        self.current_col = 0
-        self.scroll_offset = 0  # For vertical scrolling
+        # UI Manager for component handling (Gray theme)
+        self.ui_manager = UIManager(theme="GRAY")
+        
+        # Connect input manager to UI manager for mouse handling
+        self.ui_manager.set_input_manager(runtime_globals.game_input)
+        
+        # Current page for button options
+        self.current_page = 0
         
         # Counter for each debug action
         self.action_counters = {}
         
-        # Define debug options - order matters for display
+        # Define debug options - will be split into pages of 6
         self.debug_options = [
             ("+60min", self._add_60min, "Add 60 minutes to pet timers"),
             ("Sick", self._add_sickness, "Add sickness and injuries"), 
@@ -74,239 +83,204 @@ class SceneDebug:
         for option_name, _, _ in self.debug_options:
             self.action_counters[option_name] = 0
         
-        # Grid layout configuration - horizontal scrolling grid
-        self.grid_cols = 2  # Visible columns at once
-        self.grid_rows = 3  # Fixed 3 rows
-        self.total_cols = (len(self.debug_options) + self.grid_rows - 1) // self.grid_rows  # Total columns needed
-
-        # Cache system
-        self._last_cache = None
-        self._last_cache_key = None
+        # Calculate total pages (6 options per page in 2x3 grid)
+        self.options_per_page = 6
+        self.total_pages = (len(self.debug_options) + self.options_per_page - 1) // self.options_per_page
         
-        runtime_globals.game_console.log("[SceneDebug] Debug scene initialized.")
+        # UI Components
+        self.background = None
+        self.title_scene = None
+        self.pet_selector = None
+        self.option_buttons = []  # 6 buttons for options
+        self.left_button = None
+        self.exit_button = None
+        self.right_button = None
+        
+        self._setup_ui()
+        
+        runtime_globals.game_console.log("[SceneDebug] Debug scene initialized with UI system (Gray theme).")
+
+    def _setup_ui(self):
+        """Setup UI components for the debug scene."""
+        ui_width = ui_height = BASE_RESOLUTION
+        
+        # Background
+        self.background = Background(ui_width, ui_height)
+        self.background.set_regions([(0, ui_height, "black")])
+        self.ui_manager.add_component(self.background)
+        
+        # Title
+        title_text = f"DEBUG ({self.current_page + 1}/{self.total_pages})"
+        self.title_scene = TitleScene(0, 5, title_text)
+        self.ui_manager.add_component(self.title_scene)
+        
+        # Grid layout for 2x3 option buttons
+        button_width = 110
+        button_height = 28
+        button_spacing_x = 8
+        button_spacing_y = 4
+        
+        # Starting position (below title)
+        start_x = 8
+        start_y = 52  # Moved up to make room for pet selector
+        
+        # Create 6 option buttons in 2x3 grid (2 columns, 3 rows)
+        for row in range(3):
+            for col in range(2):
+                button_index = row * 2 + col
+                x = start_x + col * (button_width + button_spacing_x)
+                y = start_y + row * (button_height + button_spacing_y)
+                
+                button = Button(
+                    x, y, button_width, button_height,
+                    "",  # Text will be set when updating buttons
+                    lambda idx=button_index: self._on_option_selected(idx),
+                    cut_corners={'tl': False, 'tr': False, 'bl': True, 'br': False}
+                )
+                self.option_buttons.append(button)
+                self.ui_manager.add_component(button)
+        
+        # Navigation buttons
+        nav_button_width = 66
+        nav_button_height = 25
+        nav_y = 148  # Moved up
+        
+        # Left button
+        self.left_button = Button(
+            9, nav_y, nav_button_width, nav_button_height,
+            "< PREV",
+            self._on_prev_page,
+            cut_corners={'tl': False, 'tr': False, 'bl': True, 'br': False}
+        )
+        self.ui_manager.add_component(self.left_button)
+        
+        # Exit button (center)
+        exit_x = 9 + nav_button_width + 10
+        self.exit_button = Button(
+            exit_x, nav_y, nav_button_width, nav_button_height,
+            "EXIT",
+            self._on_exit,
+            cut_corners={'tl': False, 'tr': False, 'bl': False, 'br': False}
+        )
+        self.ui_manager.add_component(self.exit_button)
+        
+        # Right button
+        right_x = exit_x + nav_button_width + 10
+        self.right_button = Button(
+            right_x, nav_y, nav_button_width, nav_button_height,
+            "NEXT >",
+            self._on_next_page,
+            cut_corners={'tl': False, 'tr': False, 'bl': False, 'br': True}
+        )
+        self.ui_manager.add_component(self.right_button)
+        
+        # Pet selector at bottom
+        self.pet_selector = PetSelector(8, 180, 224, 52)
+        self.pet_selector.is_interactive = False  # Read-only display, no selection
+        self.pet_selector.set_pets(get_selected_pets())  # Set selected pets
+        self.pet_selector.selected_pets = []  # No selection highlighting needed
+        self.ui_manager.add_component(self.pet_selector)
+        
+        # Update button texts for first page
+        self._update_button_texts()
+        
+        # Set mouse mode and initial focus
+        self.ui_manager.set_mouse_mode()
+        if self.option_buttons:
+            self.ui_manager.set_focused_component(self.option_buttons[0])
+
+    def _update_button_texts(self):
+        """Update button texts based on current page."""
+        start_index = self.current_page * self.options_per_page
+        
+        for i, button in enumerate(self.option_buttons):
+            option_index = start_index + i
+            
+            if option_index < len(self.debug_options):
+                option_name, _, _ = self.debug_options[option_index]
+                counter = self.action_counters[option_name]
+                button.text = f"{option_name} x{counter}"
+                button.visible = True
+                button.focusable = True
+                button.needs_redraw = True  # Force redraw
+            else:
+                # Hide buttons that don't have options
+                button.text = ""
+                button.visible = False
+                button.focusable = False
+                button.needs_redraw = True  # Force redraw
+        
+        # Update navigation button states
+        self.left_button.enabled = self.current_page > 0
+        self.right_button.enabled = self.current_page < self.total_pages - 1
+        
+        # Update page indicator in title
+        page_info = f" ({self.current_page + 1}/{self.total_pages})"
+        if hasattr(self.title_scene, 'set_title'):
+            self.title_scene.set_title(f"DEBUG{page_info}")
+            self.title_scene.needs_redraw = True  # Force title redraw
+
+    def _on_option_selected(self, button_index):
+        """Handle option button press."""
+        option_index = self.current_page * self.options_per_page + button_index
+        
+        if option_index < len(self.debug_options):
+            option_name, action_func, description = self.debug_options[option_index]
+            success = action_func()
+            
+            if success:
+                self.action_counters[option_name] += 1
+                runtime_globals.game_sound.play("menu")
+                runtime_globals.game_console.log(f"[SceneDebug] Executed: {option_name} - {description}")
+                # Update button text to show new counter
+                self._update_button_texts()
+            else:
+                runtime_globals.game_sound.play("cancel")
+
+    def _on_prev_page(self):
+        """Navigate to previous page."""
+        if self.current_page > 0:
+            self.current_page -= 1
+            self._update_button_texts()
+            runtime_globals.game_sound.play("menu")
+
+    def _on_next_page(self):
+        """Navigate to next page."""
+        if self.current_page < self.total_pages - 1:
+            self.current_page += 1
+            self._update_button_texts()
+            runtime_globals.game_sound.play("menu")
+
+    def _on_exit(self):
+        """Exit debug scene."""
+        runtime_globals.game_sound.play("cancel")
+        change_scene("game")
 
     def update(self) -> None:
-        """
-        Updates the debug scene.
-        """
-        pass  # No constant updates needed, cache invalidated on input
+        """Updates the debug scene."""
+        # Update pet selector with current selected pets
+        if self.pet_selector:
+            current_pets = get_selected_pets()
+            self.pet_selector.set_pets(current_pets)
+        
+        self.ui_manager.update()
 
     def draw(self, surface: pygame.Surface) -> None:
-        """
-        Draws the debug scene with caching similar to egg selection.
-        """
-        # Draw background
-        self.background.draw(surface)
+        """Draws the debug scene."""
+        # Draw global background layer
+        self.window_background.draw(surface)
         
-        # Create cache key
-        cache_key = (
-            self.current_row,
-            self.current_col,
-            self.scroll_offset,
-            tuple(self.action_counters.values()),
-            len(runtime_globals.selected_pets) if runtime_globals.selected_pets else 0,
-            constants.SCREEN_WIDTH,
-            constants.SCREEN_HEIGHT,
-            constants.UI_SCALE
-        )
-        
-        # Use cached surface if unchanged
-        if self._last_cache_key != cache_key or self._last_cache is None:
-            cached_surface = pygame.Surface((constants.SCREEN_WIDTH, constants.SCREEN_HEIGHT), pygame.SRCALPHA)
-            
-            # Draw title
-            self._draw_title(cached_surface)
-            
-            # Draw pet view
-            self.pet_view.draw(cached_surface)
-            
-            # Draw debug menu grid
-            self._draw_debug_menu(cached_surface)
-            
-            self._last_cache = cached_surface
-            self._last_cache_key = cache_key
-        
-        # Blit cached content
-        surface.blit(self._last_cache, (0, 0))
+        # Draw UI components (includes pet selector)
+        self.ui_manager.draw(surface)
 
-    def _draw_title(self, surface: pygame.Surface) -> None:
-        """
-        Draws the "Debug Menu" title.
-        """
-        title_font = get_font(constants.FONT_SIZE_LARGE)
-        title_text = title_font.render("Debug Menu", True, constants.FONT_COLOR_ORANGE)
-        title_x = constants.SCREEN_WIDTH // 2 - title_text.get_width() // 2
-        title_y = int(8 * constants.UI_SCALE)
-        blit_with_shadow(surface, title_text, (title_x, title_y))
-
-    def _draw_debug_menu(self, surface: pygame.Surface) -> None:
-        """
-        Draws the debug options grid with scrolling, similar to egg selection.
-        Also draws the cursor highlight for the currently selected option.
-        """
-        start_y = int(30 * constants.UI_SCALE) + int(15 * constants.UI_SCALE)
-        col_width = constants.SCREEN_WIDTH // self.grid_cols
-        option_width = col_width - int(8 * constants.UI_SCALE)  # Padding
-        option_height = int(28 * constants.UI_SCALE)
-        font = get_font(constants.FONT_SIZE_SMALL)
-
-        # Draw only visible options (within scroll range)
-        for index, (option_name, _, description) in enumerate(self.debug_options):
-            col = index // self.grid_rows  # Column based on rows per column
-            row = index % self.grid_rows   # Row within the column
-
-            # Skip options outside visible range
-            if not (self.scroll_offset <= col < self.scroll_offset + self.grid_cols):
-                continue
-
-            # Calculate position
-            visible_col = col - self.scroll_offset
-            x = (col_width * visible_col) + (col_width - option_width) // 2
-            y = start_y + (row * (option_height + int(4 * constants.UI_SCALE)))
-
-            # Create option rectangle
-            option_rect = pygame.Rect(x, y, option_width, option_height)
-
-            # Draw grey background with border
-            pygame.draw.rect(surface, (64, 64, 64), option_rect)
-            pygame.draw.rect(surface, (128, 128, 128), option_rect, 2)
-
-            # Draw option text with counter
-            counter = self.action_counters[option_name]
-            option_text = f"{option_name} x{counter}"
-            text_color = constants.FONT_COLOR_GREEN if counter > 0 else constants.FONT_COLOR_DEFAULT
-            text_surface = font.render(option_text, True, text_color)
-
-            # Center text in rectangle
-            text_x = x + (option_width - text_surface.get_width()) // 2
-            text_y = y + (option_height - text_surface.get_height()) // 2
-
-            blit_with_shadow(surface, text_surface, (text_x, text_y))
-
-            # Draw cursor highlight if this is the selected option
-            if (
-                row == self.current_row and col == self.current_col
-                and self.scroll_offset <= col < self.scroll_offset + self.grid_cols
-            ):
-                highlight_rect = pygame.Rect(x - 2, y - 2, option_width + 4, option_height + 4)
-                pygame.draw.rect(surface, constants.FONT_COLOR_YELLOW, highlight_rect, 3)
-
-    def handle_event(self, input_action) -> None:
-        """
-        Handles keyboard and GPIO button inputs in the debug scene.
-        """
-        if not input_action:
+    def handle_event(self, event) -> None:
+        """Handles keyboard, mouse, and GPIO button inputs in the debug scene."""
+        if not event:
             return
-            
-        # Invalidate cache on any input
-        self._last_cache = None
-        self._last_cache_key = None
         
-        if input_action == "B":  # Back to main menu
-            runtime_globals.game_sound.play("cancel")
-            change_scene("game")
+        # Handle pygame events (mouse, keyboard) through UI manager first
+        if self.ui_manager.handle_event(event):
             return
-
-        self._handle_menu_input(input_action)
-
-    def _handle_menu_input(self, input_action) -> None:
-        """
-        Handles menu navigation with proper grid movement and scrolling.
-        """
-        if input_action == "LEFT":
-            runtime_globals.game_sound.play("menu")
-            if self.current_col == 0:
-                # Wrap to rightmost column
-                self.current_col = self.total_cols - 1
-            else:
-                self.current_col -= 1
-            self.adjust_scroll()
-
-        elif input_action == "RIGHT":
-            runtime_globals.game_sound.play("menu")
-            if self.current_col == self.total_cols - 1:
-                # Wrap to leftmost column
-                self.current_col = 0
-            else:
-                self.current_col += 1
-            self.adjust_scroll()
-
-        elif input_action == "UP":
-            runtime_globals.game_sound.play("menu")
-            if self.current_row == 0:
-                self.current_row = self.grid_rows - 1
-            else:
-                self.current_row -= 1
-            # Check if position is valid, if not find a valid position
-            if self.is_empty(self.current_col, self.current_row):
-                # Try to find a valid row in this column, prefer staying in same row
-                found = False
-                # First try rows from current position upward
-                for row in range(self.current_row, -1, -1):
-                    if not self.is_empty(self.current_col, row):
-                        self.current_row = row
-                        found = True
-                        break
-                # If not found, try downward
-                if not found:
-                    for row in range(self.current_row + 1, self.grid_rows):
-                        if not self.is_empty(self.current_col, row):
-                            self.current_row = row
-                            found = True
-                            break
-
-        elif input_action == "DOWN":
-            runtime_globals.game_sound.play("menu")
-            if self.current_row == self.grid_rows - 1:
-                self.current_row = 0
-            else:
-                self.current_row += 1
-            # Check if position is valid, if not find a valid position
-            if self.is_empty(self.current_col, self.current_row):
-                # Try to find a valid row in this column, prefer staying in same row
-                found = False
-                # First try rows from current position downward
-                for row in range(self.current_row, self.grid_rows):
-                    if not self.is_empty(self.current_col, row):
-                        self.current_row = row
-                        found = True
-                        break
-                # If not found, try upward
-                if not found:
-                    for row in range(self.current_row - 1, -1, -1):
-                        if not self.is_empty(self.current_col, row):
-                            self.current_row = row
-                            found = True
-                            break
-
-        elif input_action == "A":
-            # Execute selected debug option
-            current_index = self.current_row + (self.current_col * self.grid_rows)
-            if 0 <= current_index < len(self.debug_options):
-                option_name, action_func, description = self.debug_options[current_index]
-                success = action_func()
-                if success:
-                    self.action_counters[option_name] += 1
-                    runtime_globals.game_sound.play("menu")
-                    runtime_globals.game_console.log(f"[SceneDebug] Executed: {option_name} - {description}")
-                else:
-                    runtime_globals.game_sound.play("cancel")
-
-    def is_empty(self, col, row):
-        """Check if a grid position is empty (no option available)."""
-        index = row + (col * self.grid_rows)
-        return index >= len(self.debug_options)
-
-    def adjust_scroll(self):
-        """Adjust scroll offset to keep current selection visible."""
-        if self.current_col < self.scroll_offset:
-            self.scroll_offset = self.current_col
-        elif self.current_col >= self.scroll_offset + self.grid_cols:
-            self.scroll_offset = self.current_col - self.grid_cols + 1
-        
-        # Ensure scroll offset is within bounds
-        max_scroll = max(0, self.total_cols - self.grid_cols)
-        self.scroll_offset = max(0, min(self.scroll_offset, max_scroll))
 
     # Debug action methods
     def _add_60min(self) -> bool:
@@ -318,6 +292,7 @@ class SceneDebug:
         for pet in selected_pets:
             pet.timer += constants.FRAME_RATE * 60 * 60  # 60 minutes
             pet.age_timer += constants.FRAME_RATE * 60 * 60
+            pet.edited = True
         return True
 
     def _add_sickness(self) -> bool:
@@ -329,6 +304,7 @@ class SceneDebug:
         for pet in selected_pets:
             pet.sick += 1
             pet.injuries += 1
+            pet.edited = True
         return True
 
     def _add_mistake(self) -> bool:
@@ -343,6 +319,7 @@ class SceneDebug:
                     pet.condition_hearts -= 1
             else:
                 pet.mistakes += 1
+            pet.edited = True
         return True
 
     def _add_effort(self) -> bool:
@@ -353,6 +330,7 @@ class SceneDebug:
             
         for pet in selected_pets:
             pet.effort += 1
+            pet.edited = True
         return True
 
     def _add_overfeed(self) -> bool:
@@ -363,6 +341,7 @@ class SceneDebug:
             
         for pet in selected_pets:
             pet.overfeed += 1
+            pet.edited = True
         return True
 
     def _special_encounter_on(self) -> bool:
@@ -373,6 +352,7 @@ class SceneDebug:
             
         for pet in selected_pets:
             pet.special_encounter = True
+            pet.edited = True
         return True
 
     def _special_encounter_off(self) -> bool:
@@ -383,6 +363,7 @@ class SceneDebug:
             
         for pet in selected_pets:
             pet.special_encounter = False
+            pet.edited = True
         return True
 
     def _add_experience(self) -> bool:
@@ -393,6 +374,7 @@ class SceneDebug:
             
         for pet in selected_pets:
             pet.add_experience(100)
+            pet.edited = True
         return True
 
     def _add_level(self) -> bool:
@@ -404,6 +386,7 @@ class SceneDebug:
         for pet in selected_pets:
             if pet.level < 10:
                 pet.level += 1
+            pet.edited = True
         return True
 
     def _add_quest_count(self) -> bool:
@@ -414,6 +397,7 @@ class SceneDebug:
             
         for pet in selected_pets:
             pet.quests_completed += 1
+            pet.edited = True
         return True
 
     def _reset_weight(self) -> bool:
@@ -424,6 +408,7 @@ class SceneDebug:
             
         for pet in selected_pets:
             pet.weight = pet.min_weight
+            pet.edited = True
         return True
 
     def _add_trophy(self) -> bool:
@@ -434,6 +419,7 @@ class SceneDebug:
             
         for pet in selected_pets:
             pet.trophies += 1
+            pet.edited = True
         return True
 
     def _add_vital_values(self) -> bool:
@@ -444,6 +430,7 @@ class SceneDebug:
             
         for pet in selected_pets:
             pet.vital_values = min(9999, pet.vital_values + 1000)
+            pet.edited = True
         return True
 
     def _add_stage5_kill(self) -> bool:
@@ -454,6 +441,7 @@ class SceneDebug:
             
         for pet in selected_pets:
             pet.enemy_kills[5] += 1
+            pet.edited = True
         return True
 
     def _add_sleep_disturbance(self) -> bool:
@@ -464,6 +452,7 @@ class SceneDebug:
             
         for pet in selected_pets:
             pet.sleep_disturbances += 1
+            pet.edited = True
         return True
 
     def _add_battle_win(self) -> bool:
@@ -477,6 +466,7 @@ class SceneDebug:
             pet.totalBattles += 1
             pet.win += 1
             pet.totalWin += 1
+            pet.edited = True
         return True
 
     def _add_battle_lose(self) -> bool:
@@ -488,6 +478,7 @@ class SceneDebug:
         for pet in selected_pets:
             pet.battles += 1
             pet.totalBattles += 1
+            pet.edited = True
         return True
 
     def _reset_dp(self) -> bool:
@@ -498,6 +489,7 @@ class SceneDebug:
             
         for pet in selected_pets:
             pet.dp = pet.energy
+            pet.edited = True
         return True
 
     def _force_nap(self) -> bool:
@@ -507,6 +499,7 @@ class SceneDebug:
             
         for pet in game_globals.pet_list:
             pet.set_state("nap")
+            pet.edited = True
         return True
 
     def _force_poop(self) -> bool:
@@ -516,6 +509,7 @@ class SceneDebug:
             
         for pet in game_globals.pet_list:
             pet.force_poop()
+            pet.edited = True
         return True
 
     def _kill_pets(self) -> bool:
@@ -526,6 +520,7 @@ class SceneDebug:
             
         for pet in selected_pets:
             pet.set_state("dead")
+            pet.edited = True
         return True
 
     def _add_traited_egg(self) -> bool:

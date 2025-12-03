@@ -1,7 +1,5 @@
 import json
-import os
 import pygame
-import platform
 
 #=====================================================================
 # Pygame Version Compatibility
@@ -159,18 +157,18 @@ BACKGROUND_COLOR = (198, 203, 173)
 #=====================================================================
 MODULES_FOLDER = "modules"
 ARROW_IMAGE_PATH = "assets/Arrow.png"
-FOOD_SHEET_PATH = "assets/FoodVitamin.png"
+#FOOD_SHEET_PATH = "assets/FoodVitamin.png"
 ATK_FOLDER = "assets/atk"
 
 #=====================================================================
 # Paths: UI Sprites
 #=====================================================================
-SELECTION_OFF_PATH = "assets/SelectionOff.png"
-SELECTION_ON_PATH = "assets/SelectionOn.png"
-MENU_BACKGROUND_PATH = "assets/MenuBackground.png"
-PET_SELECTION_BACKGROUND_PATH = "assets/PetSelectionBack.png"
-PET_SELECTION_SMALL_ON_PATH = "assets/PetSelectionSmallOn.png"
-PET_SELECTION_SMALL_OFF_PATH = "assets/PetSelectionSmallOff.png"
+#SELECTION_OFF_PATH = "assets/SelectionOff.png"
+#SELECTION_ON_PATH = "assets/SelectionOn.png"
+#MENU_BACKGROUND_PATH = "assets/MenuBackground.png"
+#PET_SELECTION_BACKGROUND_PATH = "assets/PetSelectionBack.png"
+#PET_SELECTION_SMALL_ON_PATH = "assets/PetSelectionSmallOn.png"
+#PET_SELECTION_SMALL_OFF_PATH = "assets/PetSelectionSmallOff.png"
 GIFT_PATH = "assets/Gift.png"
 ALERT_ICON_PATH = "assets/Alert.png"
 CALL_SIGN_INVERSE_PATH = "assets/CallSignInverted.png"
@@ -178,23 +176,23 @@ CALL_SIGN_INVERSE_PATH = "assets/CallSignInverted.png"
 #=====================================================================
 # Paths: Battle & Training Sprites
 #=====================================================================
-BATTLE_BACKGROUND_PATH = "assets/BattleBackground.png"
-TRAINING_BACKGROUND_PATH = "assets/TrainingBackground.png"
+#BATTLE_BACKGROUND_PATH = "assets/BattleBackground.png"
+#TRAINING_BACKGROUND_PATH = "assets/TrainingBackground.png"
 HEADTRAINING_PATH = "assets/HeadTraining.png"
 VS_PATH = "assets/Vs.png"
-STRIKES_BACK_PATH = "assets/StrikesBar.png"
-STRIKE_PATH = "assets/Strike.png"
-BATTLE_ICON_PATH = "assets/BattleIcon.png"
-NEXT_BATTLE_ICON_PATH = "assets/NextBattle.png"
-RESTART_BATTLE_ICON_PATH = "assets/RestartBattle.png"
-HEAD_TRAINING_ICON_PATH = "assets/HeadTrainingIcon.png"
-VERSUS_BATTLE_ICON_PATH = "assets/VersusBattle.png"
-JOGRESS_ICON_PATH = "assets/Jogress.png"
-ARMOR_EVOLUTION_ICON_PATH = "assets/ArmorEvolution.png"
-DUMMY_TRAINING_ICON_PATH = "assets/BagIcon.png"
-SHAKE_MATCH_ICON_PATH = "assets/CountTrainingIcon.png"
-EXCITE_MATCH_ICON_PATH = "assets/ExciteTrainingIcon.png"
-PUNCH_MATCH_ICON_PATH = "assets/PunchTrainingIcon.png"
+#STRIKES_BACK_PATH = "assets/StrikesBar.png"
+#STRIKE_PATH = "assets/Strike.png"
+#BATTLE_ICON_PATH = "assets/BattleIcon.png"
+#NEXT_BATTLE_ICON_PATH = "assets/NextBattle.png"
+#RESTART_BATTLE_ICON_PATH = "assets/RestartBattle.png"
+#HEAD_TRAINING_ICON_PATH = "assets/HeadTrainingIcon.png"
+#VERSUS_BATTLE_ICON_PATH = "assets/VersusBattle.png"
+#JOGRESS_ICON_PATH = "assets/Jogress.png"
+#ARMOR_EVOLUTION_ICON_PATH = "assets/ArmorEvolution.png"
+#DUMMY_TRAINING_ICON_PATH = "assets/BagIcon.png"
+#SHAKE_MATCH_ICON_PATH = "assets/CountTrainingIcon.png"
+#EXCITE_MATCH_ICON_PATH = "assets/ExciteTrainingIcon.png"
+#PUNCH_MATCH_ICON_PATH = "assets/PunchTrainingIcon.png"
 XAIARROW_ICON_PATH = "assets/XaiArrow.png"
 BOSS_MULTIPLIER = 1.5 
 
@@ -202,23 +200,23 @@ BOSS_MULTIPLIER = 1.5
 # Paths: Pet Sprites
 #=====================================================================
 DEAD_FRAME_PATH = "assets/Dead.png"
-AGE_ICON_PATH = "assets/Age.png"
-WEIGHT_ICON_PATH = "assets/Scale.png"
-MODULE_ICON_PATH = "assets/Module.png"
-VERSION_ICON_PATH = "assets/Version.png"
-MISTAKES_ICON_PATH = "assets/Mistakes.png"
-TRAITED_ICON_PATH = "assets/Traited.png"
-SPECIAL_ICON_PATH = "assets/Special.png"
-SHINY_ICON_PATH = "assets/Shiny.png"
-SHOOK_ICON_PATH = "assets/Shook.png"
-OVERFEED_ICON_PATH = "assets/Overfeed.png"
-SICK_ICON_PATH = "assets/Sick1.png"
-SLEEP_DISTURBANCES_ICON_PATH = "assets/SleepDisturbances.png"
+#AGE_ICON_PATH = "assets/Age.png"
+#WEIGHT_ICON_PATH = "assets/Scale.png"
+#MODULE_ICON_PATH = "assets/Module.png"
+#VERSION_ICON_PATH = "assets/Version.png"
+#MISTAKES_ICON_PATH = "assets/Mistakes.png"
+#TRAITED_ICON_PATH = "assets/Traited.png"
+#SPECIAL_ICON_PATH = "assets/Special.png"
+#SHINY_ICON_PATH = "assets/Shiny.png"
+#SHOOK_ICON_PATH = "assets/Shook.png"
+#OVERFEED_ICON_PATH = "assets/Overfeed.png"
+#SICK_ICON_PATH = "assets/Sick1.png"
+#SLEEP_DISTURBANCES_ICON_PATH = "assets/SleepDisturbances.png"
 XAI_ICON_PATH = "assets/Xai.png"
 TROPHIES_ICON_PATH = "assets/Trophies.png"
-VITAL_VALUES_ICON_PATH = "assets/vitalvalues.png"
-DIGIDEX_ICON_PATH = "assets/DigidexIcon.png"
-FREEZER_ICON_PATH = "assets/FreezerIcon.png"
+#VITAL_VALUES_ICON_PATH = "assets/vitalvalues.png"
+#DIGIDEX_ICON_PATH = "assets/DigidexIcon.png"
+#FREEZER_ICON_PATH = "assets/FreezerIcon.png"
 
 
 #=====================================================================
@@ -227,26 +225,26 @@ FREEZER_ICON_PATH = "assets/FreezerIcon.png"
 HEART_EMPTY_ICON_PATH = "assets/Heart Empty.png"
 HEART_HALF_ICON_PATH = "assets/Heart Half.png"
 HEART_FULL_ICON_PATH = "assets/Heart Full.png"
-ENERGY_BAR_ICON_PATH = "assets/Energy Bar Count - Green.png"
-ENERGY_BAR_BACK_ICON_PATH = "assets/Energy Bar.png"
-LEVEL_ICON_PATH = "assets/Level.png"
-EXP_ICON_PATH = "assets/Exp.png"
+#ENERGY_BAR_ICON_PATH = "assets/Energy Bar Count - Green.png"
+#ENERGY_BAR_BACK_ICON_PATH = "assets/Energy Bar.png"
+#LEVEL_ICON_PATH = "assets/Level.png"
+#EXP_ICON_PATH = "assets/Exp.png"
 
 #=====================================================================
 # Paths: Scene Backgrounds
 #=====================================================================
 SPLASH_PATH = "assets/Splash.png"
 MAIN_MENU_PATH = "assets/Menu.png"
-DIGIDEX_BACKGROUND_PATH = "assets/Digidex.png"
+#DIGIDEX_BACKGROUND_PATH = "assets/Digidex.png"
 
 #=====================================================================
 # Paths: Battle Scene Sprites
 #=====================================================================
-BATTLE_SPRITE_PATH = "assets/Battle.png"
-BATTLE_LEVEL_SPRITE_PATH = "assets/BattleLevel.png"
-BAR_BACK_PATH = "assets/StrengthBarBack.png"
-BAR_PIECE_PATH = "assets/StrengthBar.png"
-TRAINING_MAX_PATH = "assets/TrainingMax.png"
+#BATTLE_SPRITE_PATH = "assets/Battle.png"
+#BATTLE_LEVEL_SPRITE_PATH = "assets/BattleLevel.png"
+#BAR_BACK_PATH = "assets/StrengthBarBack.png"
+#BAR_PIECE_PATH = "assets/StrengthBar.png"
+#TRAINING_MAX_PATH = "assets/TrainingMax.png"
 
 # Themed dummy charge bar sprites
 BAR_PIECE_GREEN_PATH = "assets/DummyBar_Green.png"
@@ -259,15 +257,15 @@ BAR_BACK_RED_PATH = "assets/DummyBarBack_Red.png"
 HEADTRAINING_BACK_PATH = "assets/HeadTraining_Back.png"
 HEADTRAINING_STRIKE_PATH = "assets/HeadTraining_Strike.png"
 
-ALERT_SPRITE_PATH = "assets/Alert.png"
-GO_SPRITE_PATH = "assets/Go.png"
-BAD_SPRITE_PATH = "assets/Bad.png"
-GOOD_SPRITE_PATH = "assets/Good.png"
-GREAT_SPRITE_PATH = "assets/Great.png"
-EXCELLENT_SPRITE_PATH = "assets/Excellent.png"
-READY_SPRITE_PATH = "assets/Ready.png"
-BATTLE1_PATH = "assets/Battle1.png"
-BATTLE2_PATH = "assets/Battle2.png"
+#ALERT_SPRITE_PATH = "assets/Alert.png"
+#GO_SPRITE_PATH = "assets/Go.png"
+#BAD_SPRITE_PATH = "assets/Bad.png"
+#GOOD_SPRITE_PATH = "assets/Good.png"
+#GREAT_SPRITE_PATH = "assets/Great.png"
+#EXCELLENT_SPRITE_PATH = "assets/Excellent.png"
+#READY_SPRITE_PATH = "assets/Ready.png"
+#BATTLE1_PATH = "assets/Battle1.png"
+#BATTLE2_PATH = "assets/Battle2.png"
 BAG1_PATH = "assets/Bag1.png"
 BAG2_PATH = "assets/Bag2.png"
 BRICK1_PATH = "assets/Brick1.png"
@@ -276,6 +274,13 @@ ROCK1_PATH = "assets/Rock1.png"
 ROCK2_PATH = "assets/Rock2.png"
 TREE1_PATH = "assets/Tree1.png"
 TREE2_PATH = "assets/Tree2.png"
+MOGERA1_PATH = "assets/Mogera1.png"
+MOGERA2_PATH = "assets/Mogera2.png"
+MOGERA3_PATH = "assets/Mogera3.png"
+ANTIG1_PATH = "assets/AntiG1.png"
+ANTIG2_PATH = "assets/AntiG2.png"
+TRAININGHIT1_PATH = "assets/TrainingHit1.png"
+TRAININGHIT2_PATH = "assets/TrainingHit2.png"
 
 #=====================================================================
 # Paths: Training Sprites
@@ -356,7 +361,7 @@ def update_resolution_constants(width, height):
 
     # Also update combat constants
     try:
-        import game.core.combat.combat_constants as battle_constants
+        import core.combat.combat_constants as battle_constants
         if hasattr(battle_constants, "update_combat_constants"):
             battle_constants.update_combat_constants()
     except ImportError:

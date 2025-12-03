@@ -1,6 +1,4 @@
-import random
-from game.core import constants
-from game.core.combat import combat_constants
+from core import constants
 
 class GameBattle:
     def __init__(self, team1, team2, hp_buff, attack_buff, module):

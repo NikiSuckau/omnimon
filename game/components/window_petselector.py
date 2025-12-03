@@ -1,6 +1,6 @@
 import pygame
 from core import game_globals, runtime_globals
-import game.core.constants as constants
+import core.constants as constants
 from core.utils.pygame_utils import blit_with_shadow, get_font
 from core.utils.scene_utils import change_scene
 

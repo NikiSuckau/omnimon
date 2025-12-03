@@ -1,5 +1,5 @@
 from core import game_globals, runtime_globals
-from game.core import constants
+from core import constants
 
 def get_selected_pets():
     """

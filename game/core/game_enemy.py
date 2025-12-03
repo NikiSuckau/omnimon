@@ -3,8 +3,8 @@ import os
 from dataclasses import dataclass
 
 from core.animation import PetFrame
-import game.core.constants as constants
-from game.core.utils.sprite_utils import convert_sprites_to_list, load_enemy_sprites
+import core.constants as constants
+from core.utils.sprite_utils import convert_sprites_to_list, load_enemy_sprites
 
 
 @dataclass

@@ -2,7 +2,7 @@ import pygame
 
 from components.scrolling_text import ScrollingText
 from core import runtime_globals
-import game.core.constants as constants
+import core.constants as constants
 from core.utils.module_utils import get_module
 from core.utils.pygame_utils import blit_with_cache, blit_with_shadow, get_font, sprite_load_percent
 

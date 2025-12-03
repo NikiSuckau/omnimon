@@ -11,12 +11,14 @@ import sys
 import json
 
 import sys, os
+
+from game.core import constants
+from game.core.utils.document_utils import build_module_documentation
 sys.stderr = open(os.devnull, 'w')
 
 # Add game directory to Python path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'game'))
 
-from game.core import constants
 from game.vpet import VirtualPetGame
 from game.core.constants import *
 
@@ -224,7 +226,6 @@ def main():
         
         # Build module documentation
         try:
-            from game.core.utils.document_utils import build_module_documentation
             project_root = os.path.dirname(__file__)
             print("[Init] Building module documentation...")
             build_module_documentation(project_root)
@@ -241,7 +242,6 @@ def main():
             # Handle pygame events
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
-                    from game.core import game_globals
                     game.save()
                     running = False
                 else:

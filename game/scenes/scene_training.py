@@ -11,18 +11,16 @@ from components.ui.button import Button
 from components.ui.pet_selector import PetSelector
 from components.ui.background import Background
 from components.window_background import WindowBackground
-from components.window_horizontalmenu import WindowHorizontalMenu
-from components.window_petview import WindowPetList
-from components.window_xai import WindowXai
+
 from core import game_globals, runtime_globals
 from core.combat.count_training import CountMatchTraining
 from core.combat.dummy_training import DummyTraining
 from core.combat.excite_training import ExciteTraining
 from core.combat.head_training import HeadToHeadTraining
-from game.core.combat.shake_training import ShakeTraining
-import game.core.constants as constants
+from core.combat.mogera_training import MogeraTraining
+from core.combat.shake_training import ShakeTraining
+import core.constants as constants
 from core.utils.pet_utils import get_training_targets
-from core.utils.pygame_utils import get_font, sprite_load_percent
 from core.utils.scene_utils import change_scene
 from components.ui.ui_constants import BASE_RESOLUTION, GREEN
 
@@ -44,6 +42,7 @@ class SceneTraining:
         self.count_button = None
         self.excite_button = None
         self.punch_button = None
+        self.mogera_button = None
         self.exit_button = None
         
         # Training phase UI components
@@ -116,9 +115,9 @@ class SceneTraining:
             
             # Create training type buttons (56x56) arranged in 2 rows of 3
             button_size = 54
-            button_spacing = 10
-            start_x = 26  # Left margin
-            start_y = 40  # Below title
+            button_spacing = 2
+            start_x = 36  # Left margin
+            start_y = 25  # Below title
             
             # Row 1: Dummy, Head-to-Head, Count Match
             self.dummy_button = Button(
@@ -145,7 +144,7 @@ class SceneTraining:
             )
             self.ui_manager.add_component(self.count_button)
 
-            # Row 2: Excite, Punch, Exit
+            # Row 2: Excite, Punch, Mogera
             row2_y = start_y + button_size + button_spacing
 
             # Excite button has two decorators: Excite and current XAI number
@@ -166,8 +165,19 @@ class SceneTraining:
             )
             self.ui_manager.add_component(self.punch_button)
 
-            self.exit_button = Button(
+            self.mogera_button = Button(
                 start_x + (button_size + button_spacing) * 2, row2_y, button_size, button_size,
+                "", self.on_mogera_training,
+                cut_corners={'tl': True, 'tr': False, 'bl': False, 'br': True},
+                decorators=["Mogera"]
+            )
+            self.ui_manager.add_component(self.mogera_button)
+
+            # Row 3: Exit (under Punch)
+            row3_y = row2_y + button_size + button_spacing
+
+            self.exit_button = Button(
+                start_x + (button_size + button_spacing), row3_y, button_size, button_size,
                 "EXIT", self.on_exit_training,
                 cut_corners={'tl': True, 'tr': False, 'bl': False, 'br': True}
             )
@@ -248,6 +258,19 @@ class SceneTraining:
             self.mode = ShakeTraining(self.ui_manager)
             self.create_training_exit_button()  # Create exit button for training phase
             runtime_globals.game_console.log("Starting Shake Training.")
+            for pet in get_training_targets():
+                pet.check_disturbed_sleep()
+        else:
+            runtime_globals.game_sound.play("cancel")
+            
+    def on_mogera_training(self):
+        """Handle Mogera training button press."""
+        if len(get_training_targets()) > 0:
+            runtime_globals.game_sound.play("menu")
+            self.phase = "mogera"
+            self.mode = MogeraTraining(self.ui_manager)
+            self.create_training_exit_button()  # Create exit button for training phase
+            runtime_globals.game_console.log("Starting Mogera Training.")
             for pet in get_training_targets():
                 pet.check_disturbed_sleep()
         else:
@@ -367,18 +390,13 @@ class SceneTraining:
 
     def handle_menu_input(self, input_action):
         # Handle pygame events through UI manager first
-        if hasattr(input_action, 'type'):
-            if self.ui_manager.handle_event(input_action):
-                return
+        if self.ui_manager.handle_event(input_action):
+            return
         
         # Handle string action events (from input manager)
         elif isinstance(input_action, str):
             if input_action == "B":
                 runtime_globals.game_sound.play("cancel")
                 change_scene("game")
-                return
-
-            # Let UI manager handle navigation and other input actions
-            if self.ui_manager.handle_input_action(input_action):
                 return
 

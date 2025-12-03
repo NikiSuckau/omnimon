@@ -413,8 +413,29 @@ class BaseList(UIComponent):
                 return True
                 
         elif action == "LCLICK":
-            # Handle LCLICK as pure selection without activation
-            return False  # Don't consume the event, let it be handled as mouse click
+            # Handle mouse click on list items
+            # Check if mouse is over an item (mouse_over_index is set by _handle_mouse_hover)
+            if self.mouse_over_index >= 0 and self.mouse_over_index < len(self.items):
+                # Check if clicking on already selected item
+                was_already_selected = (self.selected_index == self.mouse_over_index)
+                
+                # Update selection indices
+                old_active = self.active_index
+                self.active_index = self.mouse_over_index
+                self.selected_index = self.mouse_over_index
+                self.last_mouse_click_time = pygame.time.get_ticks()
+                
+                # Notify subclasses of selection change
+                if old_active != self.active_index:
+                    self._on_selection_changed(old_active, self.active_index)
+                
+                # Notify subclasses of click
+                self._on_item_clicked(self.mouse_over_index, was_already_selected)
+                runtime_globals.game_sound.play("menu")
+                self.needs_redraw = True
+                return True
+            # Click not over an item - do nothing
+            return False
                 
         return False
         
@@ -486,6 +507,9 @@ class BaseList(UIComponent):
             item_index = int(item_pos // (self.item_size + self.item_spacing))
             
             if 0 <= item_index < len(self.items):
+                # Check if clicking on already selected item
+                was_already_selected = (self.selected_index == item_index)
+                
                 # Mouse click sets SELECTION (active_index) and NAVIGATION (selected_index)
                 old_active = self.active_index
                 self.active_index = item_index  # Set selection state (persistent)
@@ -496,8 +520,8 @@ class BaseList(UIComponent):
                 if old_active != self.active_index:
                     self._on_selection_changed(old_active, self.active_index)
                     
-                # Notify subclasses of click
-                self._on_item_clicked(item_index)
+                # Notify subclasses of click with the selection state
+                self._on_item_clicked(item_index, was_already_selected)
                 runtime_globals.game_sound.play("menu")
                 self.needs_redraw = True
                 return True

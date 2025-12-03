@@ -3,7 +3,6 @@ Numeric Meter Component - Shows icon and numeric value for stats like trophies, 
 """
 import pygame
 from components.ui.component import UIComponent
-from core import runtime_globals
 from core.utils.pygame_utils import blit_with_cache
 
 

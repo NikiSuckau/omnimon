@@ -147,6 +147,19 @@ namespace OmnimonModuleEditor.docgenerators
                     versusDesc.Append(".");
                     return versusDesc.ToString();
 
+                case "battle":
+                    var battleDesc = new StringBuilder("Unlocked by completing");
+                    if (unlock.Amount.HasValue && unlock.Amount > 0)
+                    {
+                        battleDesc.Append($" {unlock.Amount} battles in this module's adventure mode");
+                    }
+                    else
+                    {
+                        battleDesc.Append(" battles in this module's adventure mode");
+                    }
+                    battleDesc.Append(".");
+                    return battleDesc.ToString();
+
                 default:
                     var genericDesc = new StringBuilder($"Unlocked not yet available");
                     

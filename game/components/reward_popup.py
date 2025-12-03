@@ -7,8 +7,8 @@ import os
 from typing import List, Dict, Optional
 
 from core import runtime_globals
-import game.core.constants as constants
-from game.core.utils.pygame_utils import blit_with_shadow, get_font
+import core.constants as constants
+from core.utils.pygame_utils import blit_with_shadow, get_font
 from core.game_quest import RewardType
 
 

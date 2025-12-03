@@ -1,7 +1,7 @@
 import pygame
 import os
 from core import game_globals
-import game.core.constants as constants
+import core.constants as constants
 
 #=====================================================================
 # GameSound - Sound management (loading and playing sounds)

@@ -3,7 +3,6 @@ DP Bar Component - Shows DP (Discipline Points) as a row of filled/empty indicat
 """
 import pygame
 from components.ui.component import UIComponent
-from core import runtime_globals
 from core.utils.pygame_utils import blit_with_cache
 
 

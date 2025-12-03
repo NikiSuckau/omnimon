@@ -6,7 +6,7 @@ from core import runtime_globals, game_globals
 from core.game_quest import GameQuest, QuestType, QuestStatus, RewardType
 from core.game_event import GameEvent, EventType
 from core.quest_event_data import QuestData, EventData
-from game.core.utils.inventory_utils import add_to_inventory, get_item_by_name
+from core.utils.inventory_utils import add_to_inventory, get_item_by_name
 
 
 def get_all_available_quest_data() -> List[QuestData]:
@@ -132,28 +132,51 @@ def create_event_instance_from_data(event_data: EventData, module_name: str) -> 
 def generate_daily_quests() -> List[GameQuest]:
     """
     Generate 3 random daily quests for the player.
+    Attempts to select quests with different types when possible.
     This should be called once per day.
         
     Returns:
         List of 3 randomly selected quest instances
     """
     all_quest_data = get_all_available_quest_data()
-    if len(all_quest_data) < 3:
-        # Convert all available quest data to instances
-        selected_instances = []
-        for quest_data in all_quest_data:
-            # Find the module name for this quest
-            module_name = "Unknown"
-            for mod_name, module in runtime_globals.game_modules.items():
-                mod_quest_data = module.load_quests_json()
-                if any(q.id == quest_data.id for q in mod_quest_data):
-                    module_name = mod_name
-                    break
-            selected_instances.append(create_quest_instance_from_data(quest_data, module_name))
-        return selected_instances
     
-    # Randomly select 3 quest data templates
-    selected_quest_data = random.sample(all_quest_data, 3)
+    if not all_quest_data:
+        return []
+    
+    # Organize quests by type
+    quests_by_type = {}
+    for quest_data in all_quest_data:
+        quest_type = quest_data.type
+        if quest_type not in quests_by_type:
+            quests_by_type[quest_type] = []
+        quests_by_type[quest_type].append(quest_data)
+    
+    # Get list of available types
+    available_types = list(quests_by_type.keys())
+    
+    selected_quest_data = []
+    used_types = []
+    
+    # Select 3 quests, preferring different types
+    for i in range(3):
+        # If we have unused types, pick from them
+        if available_types:
+            selected_type = random.choice(available_types)
+            available_types.remove(selected_type)
+        # If all types are used, reuse from already used types
+        elif used_types:
+            selected_type = random.choice(used_types)
+        # Fallback: pick any type (shouldn't happen if we have data)
+        else:
+            selected_type = random.choice(list(quests_by_type.keys()))
+        
+        # Pick a random quest from the selected type
+        quest_data = random.choice(quests_by_type[selected_type])
+        selected_quest_data.append(quest_data)
+        
+        # Track this type as used
+        if selected_type not in used_types:
+            used_types.append(selected_type)
     
     # Convert to quest instances and set assignment date
     current_date = datetime.now().strftime("%Y-%m-%d")

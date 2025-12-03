@@ -1,8 +1,6 @@
 import pygame
 from components.ui.ui_manager import UIManager
-from core import runtime_globals
 import core.constants as constants
-from core.utils.pygame_utils import blit_with_shadow
 
 
 class ShakeDetector:
@@ -107,7 +105,7 @@ class CountMatch:
     Handles the visual display and input for the counting phase.
     """
     
-    def __init__(self, ui_manager: UIManager, pet=None):
+    def __init__(self, ui_manager: UIManager, pet=None, animated_sprite=None):
         """Initialize the count match minigame."""
         self.ui_manager = ui_manager
         if self.ui_manager is None:
@@ -118,88 +116,27 @@ class CountMatch:
         self.press_counter = 0
         self.rotation_index = 3
         
+        # Use the provided AnimatedSprite component instead of loading our own sprites
+        self.animated_sprite = animated_sprite
+        
         # Shake detection for mouse/touch fallback
         self.shake_detector = ShakeDetector()
-        
-        # Load and cache sprites with integer scaling
-        self._sprite_cache = {}
-        # Cache for scaled semi-transparent overlay sprites
-        self._overlay_cache = {}
-        self.load_sprites()
 
-    def load_sprites(self):
-        """Load ready and count sprites using UI manager for integer scaling."""
-        # Load ready sprites using UI manager (Ready0, Ready1, Ready2, Ready3 for different attributes)
-        self._sprite_cache['ready'] = {}
-        ready_names = ["Ready0", "Ready1", "Ready2", "Ready3"]
-        for i, name in enumerate(ready_names):
-            sprite = self.ui_manager.load_sprite_integer_scaling(name=name, prefix="Training")
-            self._sprite_cache['ready'][i] = sprite
-        
-        # Load count sprites using UI manager (Count1, Count2, Count3, Count4 for different states)
-        self._sprite_cache['count'] = {}
-        count_names = ["Count1", "Count2", "Count3", "Count4"]
-        for i, name in enumerate(count_names, 1):
-            sprite = self.ui_manager.load_sprite_integer_scaling(name=name, prefix="Training")
-            self._sprite_cache['count'][i] = sprite
-
-    def _draw_overlay_background(self, surface: pygame.Surface, base_sprite: pygame.Surface, cache_key: str):
-        """Draw a semi-transparent, proportionally scaled overlay of the given sprite to cover the screen.
-        - Only active when ui scale >= 2
-        - Cached per (cache_key, screen size)
-        - Applies blur effect for atmospheric background
-        """
-        try:
-            if not base_sprite or not self.ui_manager or getattr(self.ui_manager, 'ui_scale', 1) < 2:
-                return
-
-            key = (cache_key, constants.SCREEN_WIDTH, constants.SCREEN_HEIGHT)
-            overlay = self._overlay_cache.get(key)
-            if overlay is None:
-                sw, sh = base_sprite.get_width(), base_sprite.get_height()
-                if sw <= 0 or sh <= 0:
-                    return
-                scale = max(constants.SCREEN_WIDTH / sw, constants.SCREEN_HEIGHT / sh)
-                new_size = (int(sw * scale), int(sh * scale))
-                overlay = pygame.transform.smoothscale(base_sprite, new_size)
-                
-                # Apply blur effect by downscaling and upscaling multiple times
-                blur_iterations = 4
-                blur_factor = 0.15  # Scale down to 15% for blur effect
-                
-                for _ in range(blur_iterations):
-                    # Downscale for blur
-                    blur_w = max(1, int(overlay.get_width() * blur_factor))
-                    blur_h = max(1, int(overlay.get_height() * blur_factor))
-                    overlay = pygame.transform.smoothscale(overlay, (blur_w, blur_h))
-                    # Upscale back to original size
-                    overlay = pygame.transform.smoothscale(overlay, new_size)
-                
-                # Set 50% opacity
-                overlay = overlay.convert_alpha()
-                overlay.set_alpha(128)
-                self._overlay_cache[key] = overlay
-
-            rect = overlay.get_rect(center=(constants.SCREEN_WIDTH // 2, constants.SCREEN_HEIGHT // 2))
-            surface.blit(overlay, rect)
-        except Exception as e:
-            runtime_globals.game_console.log(f"[CountMatch] Overlay draw error for {cache_key}: {e}")
-
-    def get_pet_attribute_color(self):
-        """Get the color index (1-3) based on pet's attribute to match Ready1-Ready3 sprites."""
+    def get_pet_attribute_ready_frame(self):
+        """Get the ready frame index (0-3) based on pet's attribute to match Ready0-Ready3 sprites."""
         if not self.pet:
-            return 1
+            return 0
             
         attr = getattr(self.pet, "attribute", "")
         
         if attr in ["", "Va"]:
-            return 1  # Default/Vaccine -> Ready1
+            return 0  # Default/Vaccine -> Ready0
         elif attr == "Da":
-            return 2  # Data -> Ready2
+            return 1  # Data -> Ready1
         elif attr == "Vi":
-            return 3  # Virus -> Ready3
+            return 2  # Virus -> Ready2
         else:
-            return 1
+            return 0
 
     def set_phase(self, phase):
         """Set the current phase (ready or count)."""
@@ -208,6 +145,16 @@ class CountMatch:
             # Reset counters when starting count phase
             self.press_counter = 0
             self.rotation_index = 3
+            # Setup count mode in animated sprite
+            if self.animated_sprite:
+                self.animated_sprite.setup_countdown_count()
+                self.animated_sprite.current_frame = 3  # Start with Count4 (index 3)
+        elif phase == "ready":
+            # Setup ready mode in animated sprite
+            if self.animated_sprite:
+                self.animated_sprite.setup_countdown_ready()
+                ready_frame = self.get_pet_attribute_ready_frame()
+                self.animated_sprite.current_frame = ready_frame
 
     def handle_event(self, input_action):
         """Handle input events for the minigame."""
@@ -217,6 +164,15 @@ class CountMatch:
                 self.rotation_index -= 1
                 if self.rotation_index < 1:
                     self.rotation_index = 3
+            
+            # Update animated sprite frame based on rotation_index
+            if self.animated_sprite:
+                # Map rotation_index (1,2,3) to frame index (0,1,2) for Count1,Count2,Count3
+                # When rotation_index is 3, we want Count4 which is at index 3
+                if self.rotation_index == 3:
+                    self.animated_sprite.current_frame = 3  # Count4
+                else:
+                    self.animated_sprite.current_frame = self.rotation_index - 1  # Count1,Count2,Count3
             return True
         return False
         
@@ -252,45 +208,17 @@ class CountMatch:
         return self.rotation_index
 
     def draw(self, surface):
-        """Draw the count match minigame components."""
-        # Background is handled by the caller (training class)
+        """Draw the count match minigame components using AnimatedSprite."""
+        # Only draw if we have a valid phase
+        if self.phase in ["ready", "count"] and self.animated_sprite:
+            self.animated_sprite.draw(surface)
         
-        if self.phase == "ready":
-            self.draw_ready(surface)
-        elif self.phase == "count":
-            self.draw_count(surface)
-
     def draw_ready(self, surface):
-        """Draw the ready sprite based on pet attribute."""
-        attr_color = self.get_pet_attribute_color()
-        
-        if attr_color not in self._sprite_cache['ready']:
-            return
-            
-        sprite = self._sprite_cache['ready'][attr_color]
-        
-        if sprite:
-            # Draw semi-transparent background overlay at high UI scales
-            self._draw_overlay_background(surface, sprite, f'ready_{attr_color}')
-            
-            # Center the sprite on screen
-            x = (constants.SCREEN_WIDTH - sprite.get_width()) // 2
-            y = (constants.SCREEN_HEIGHT - sprite.get_height()) // 2
-            
-            blit_with_shadow(surface, sprite, (x, y))
+        """Draw the ready sprite using AnimatedSprite component."""
+        if self.animated_sprite:
+            self.animated_sprite.draw(surface)
 
     def draw_count(self, surface):
-        """Draw the count sprite based on current rotation."""
-        # Use count sprite 4 if no presses yet, otherwise use rotation index
-        sprite_index = 4 if self.press_counter == 0 else self.rotation_index
-        sprite = self._sprite_cache['count'][sprite_index]
-        
-        if sprite:
-            # Draw semi-transparent background overlay at high UI scales
-            self._draw_overlay_background(surface, sprite, f'count_{sprite_index}')
-            
-            # Center the sprite on screen
-            x = (constants.SCREEN_WIDTH - sprite.get_width()) // 2
-            y = (constants.SCREEN_HEIGHT - sprite.get_height()) // 2
-            
-            blit_with_shadow(surface, sprite, (x, y))
+        """Draw the count sprite using AnimatedSprite component.""" 
+        if self.animated_sprite:
+            self.animated_sprite.draw(surface)

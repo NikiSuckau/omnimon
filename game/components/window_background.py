@@ -3,7 +3,7 @@ import time
 import os
 
 from core import runtime_globals, game_globals
-import game.core.constants as constants
+import core.constants as constants
 from core.utils.module_utils import get_module
 from core.utils.pygame_utils import blit_with_cache, sprite_load_percent
 

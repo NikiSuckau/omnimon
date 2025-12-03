@@ -3,7 +3,6 @@ Background Component - Provides themed backgrounds with configurable regions
 """
 import pygame
 from components.ui.component import UIComponent
-import core.constants as constants
 
 
 class Background(UIComponent):
@@ -49,6 +48,9 @@ class Background(UIComponent):
                 color = colors["black"]
             else:
                 color = colors["bg"]  # Fallback
+
+            if isinstance(color_type, tuple) and len(color_type) == 3:
+                color = color_type  # Direct RGB value
             
             # Scale region coordinates
             scaled_y_start = self.manager.scale_value(y_start)

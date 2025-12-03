@@ -1,6 +1,6 @@
 import pygame
 from core.utils.pygame_utils import blit_with_shadow
-from game.core import constants
+from core import constants
 
 class ScrollingText:
     def __init__(self, text_surface, max_width, speed=1):

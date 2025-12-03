@@ -3,7 +3,6 @@ Status Carousel Component - A horizontally scrolling carousel of status boxes
 Each box shows an icon and value, with auto-scrolling and manual navigation
 """
 import pygame
-import math
 from components.ui.component import UIComponent
 from core import runtime_globals
 from core.utils.pygame_utils import blit_with_cache

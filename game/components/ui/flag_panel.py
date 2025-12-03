@@ -4,7 +4,6 @@ Flag Panel Component - Shows pet attribute and status flags from right to left
 
 import pygame
 from components.ui.component import UIComponent
-from core import runtime_globals
 from core.utils.pygame_utils import blit_with_cache
 
 

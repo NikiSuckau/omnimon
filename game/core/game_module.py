@@ -5,7 +5,7 @@ from typing import List, Optional
 import pygame
 
 from core import runtime_globals
-import game.core.constants as constants
+import core.constants as constants
 from core.game_enemy import GameEnemy
 import copy
 

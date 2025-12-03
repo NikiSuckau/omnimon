@@ -3,7 +3,6 @@ Title Scene Component - A scene title with background sprite and left-aligned te
 """
 import pygame
 from components.ui.component import UIComponent
-from components.ui.ui_constants import TEXT_FONT, TITLE_FONT
 from core import runtime_globals
 
 
@@ -29,10 +28,13 @@ class TitleScene(UIComponent):
         # Sprites will be loaded when manager is set
         self.yellow_background_sprite = None
         self.blue_background_sprite = None
+        self.green_background_sprite = None
+        self.red_background_sprite = None
+        self.gray_background_sprite = None
         self.font = None
         
-        # Animation properties for background fade
-        self.current_mode = "sleep"  # "sleep" or "wake"
+        # Animation properties for background fade (used by sleep scene)
+        self.current_mode = None  # "sleep", "wake", or None (use theme directly)
         self.is_animating = False
         self.animation_alpha = 255  # 0-255 for fade effect
         
@@ -44,7 +46,11 @@ class TitleScene(UIComponent):
         self.yellow_background_sprite = self.manager.load_sprite_integer_scaling("Sleep", "Title", "Yellow")
         self.blue_background_sprite = self.manager.load_sprite_integer_scaling("Sleep", "Title", "Blue")
         self.green_background_sprite = self.manager.load_sprite_integer_scaling("Sleep", "Title", "Green")
+        self.red_background_sprite = self.manager.load_sprite_integer_scaling("Sleep", "Title", "Red")
         self.gray_background_sprite = self.manager.load_sprite_integer_scaling("Sleep", "Title", "Gray")
+        self.cyan_background_sprite = self.manager.load_sprite_integer_scaling("Sleep", "Title", "Cyan")
+        self.yellow_bright_background_sprite = self.manager.load_sprite_integer_scaling("Sleep", "Title", "Yellow_Bright")
+        self.lime_background_sprite = self.manager.load_sprite_integer_scaling("Sleep", "Title", "Lime")
 
         # Get title font using centralized method with proper scaling
         # Manager already handles scaling through get_title_font_size()
@@ -56,7 +62,7 @@ class TitleScene(UIComponent):
         self.needs_redraw = True
         
     def set_mode(self, mode):
-        """Set the background mode (sleep=yellow, wake=blue)"""
+        """Set the background mode (sleep=blue, wake=yellow) - used by sleep scene for animations"""
         if mode != self.current_mode:
             self.current_mode = mode
             self.needs_redraw = True
@@ -70,21 +76,42 @@ class TitleScene(UIComponent):
         """Render the title scene component"""
         surface = pygame.Surface((self.rect.width, self.rect.height), pygame.SRCALPHA)
         
-        # Draw appropriate background sprite based on current mode and theme
-        if self.manager and hasattr(self.manager, 'theme'):
-            theme = self.manager.theme
-            if theme == "GRAY":
-                surface.blit(self.gray_background_sprite, (0, 0))
-            elif self.current_mode == "wake":
-                surface.blit(self.yellow_background_sprite, (0, 0))
-            elif self.current_mode == "sleep":
-                surface.blit(self.blue_background_sprite, (0, 0))
-        else:
-            # Fallback to original behavior
+        # Choose background sprite based on current mode (for sleep scene animation) or theme
+        background_sprite = None
+        
+        if self.current_mode is not None:
+            # Special mode behavior for sleep scene animations
             if self.current_mode == "wake":
-                surface.blit(self.yellow_background_sprite, (0, 0))
+                background_sprite = self.yellow_background_sprite
             elif self.current_mode == "sleep":
-                surface.blit(self.blue_background_sprite, (0, 0))
+                background_sprite = self.blue_background_sprite
+        else:
+            # Use theme to determine background sprite for other scenes
+            if self.manager and hasattr(self.manager, 'theme'):
+                theme = self.manager.theme
+                if theme == "BLUE":
+                    background_sprite = self.blue_background_sprite
+                elif theme == "YELLOW":
+                    background_sprite = self.yellow_background_sprite
+                elif theme == "GREEN":
+                    background_sprite = self.green_background_sprite
+                elif theme == "RED":
+                    background_sprite = self.red_background_sprite
+                elif theme == "GRAY":
+                    background_sprite = self.gray_background_sprite
+                elif theme == "YELLOW_BRIGHT":
+                    background_sprite = self.yellow_bright_background_sprite
+                elif theme == "CYAN":
+                    background_sprite = self.cyan_background_sprite
+                elif theme == "LIME":
+                    background_sprite = self.lime_background_sprite
+                else:
+                    # Fallback to blue if unknown theme
+                    background_sprite = self.blue_background_sprite
+        
+        # Draw the selected background sprite
+        if background_sprite:
+            surface.blit(background_sprite, (0, 0))
         
         # Draw title text with left margin and proper theme color
         if self.font and self.title_text:

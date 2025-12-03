@@ -2,7 +2,7 @@ import math
 import pygame
 import random
 from core import runtime_globals
-import game.core.constants as constants
+import core.constants as constants
 from core.utils.pygame_utils import get_font, get_font_alt, sprite_load_percent
 from core.utils.scene_utils import change_scene
 

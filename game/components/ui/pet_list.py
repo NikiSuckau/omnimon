@@ -3,9 +3,7 @@ Horizontal Pet List Component - Scrollable horizontal list for pet selection
 """
 import pygame
 import os
-import traceback
 from components.ui.component import UIComponent
-from components.ui.ui_constants import TEXT_FONT
 from core import runtime_globals
 from core.animation import PetFrame
 from core.utils.pygame_utils import blit_with_cache
@@ -783,7 +781,7 @@ class PetList(UIComponent):
         )
     
     def render(self):
-        """Render the PetList with static/dynamic layer optimization and animated highlight"""
+        """Render the PetList with static/dynamic layer optimization"""
         # Get static layer (cached)
         if self.static_layer is None:
             self.static_layer = self.render_static_layer()
@@ -795,29 +793,34 @@ class PetList(UIComponent):
         scaled_pets_start_x = self.manager.scale_value(self.base_arrow_width + self.base_margin)
         scaled_item_width = self.manager.scale_value(self.item_width)
         
-        # Draw selected/focused pet with animation on dynamic layer
-        if self.selected_index < len(self.pets):
-            x_pos = scaled_pets_start_x + (self.selected_index - self.first_visible_pet) * scaled_item_width - self.current_scroll_offset
-            # Only show keyboard focus highlight when the component actually has focus
-            is_keyboard_focused = self.focused
-            self.draw_pet_slot(surface, x_pos, self.selected_index, scaled_item_width, is_focused=is_keyboard_focused)
+        # Dynamic layer: Collect unique pet indices that need special rendering
+        # Use a set to avoid drawing the same pet multiple times
+        pets_to_redraw = set()
         
-        # Also draw active pet if it's different from selected (to ensure animation)
-        if self.active_index != self.selected_index and self.active_index < len(self.pets):
-            # Check if active pet is visible
-            if self.first_visible_pet <= self.active_index < self.first_visible_pet + self.visible_pets:
-                x_pos = scaled_pets_start_x + (self.active_index - self.first_visible_pet) * scaled_item_width - self.current_scroll_offset
-                self.draw_pet_slot(surface, x_pos, self.active_index, scaled_item_width, is_focused=False)
-
-        # Draw hover highlight for pet under mouse (independent of keyboard focus)
+        # Add active pet (persistent selection with swapped colors)
+        if 0 <= self.active_index < len(self.pets):
+            pets_to_redraw.add(self.active_index)
+        
+        # Add selected pet (keyboard navigation position)
+        if 0 <= self.selected_index < len(self.pets):
+            pets_to_redraw.add(self.selected_index)
+        
+        # Add hovered pet (mouse hover)
         if 0 <= self.hover_index < len(self.pets):
-            if self.first_visible_pet <= self.hover_index < self.first_visible_pet + self.visible_pets:
-                x_pos = scaled_pets_start_x + (self.hover_index - self.first_visible_pet) * scaled_item_width - self.current_scroll_offset
-                # Force focus highlight for hovered pet
-                self.draw_pet_slot(surface, x_pos, self.hover_index, scaled_item_width, is_focused=True)
+            pets_to_redraw.add(self.hover_index)
         
+        # Draw each collected pet only once, with all states combined
+        for pet_index in pets_to_redraw:
+            if self.first_visible_pet <= pet_index < self.first_visible_pet + self.visible_pets:
+                x_pos = scaled_pets_start_x + (pet_index - self.first_visible_pet) * scaled_item_width - self.current_scroll_offset
+                # draw_pet_slot will check all states internally (active, selected, hovered)
+                # Pass keyboard focus state for selected index ONLY if not currently hovering with mouse
+                # This prevents showing keyboard highlight when mouse is active elsewhere
+                is_keyboard_focused = (self.focused and pet_index == self.selected_index and self.hover_index == -1)
+                self.draw_pet_slot(surface, x_pos, pet_index, scaled_item_width, is_focused=is_keyboard_focused)
+        
+        # Redraw EXIT button if selected
         if self.selected_index == len(self.pets):
-            # EXIT button is selected, redraw it with selection/click state
             scaled_arrow_width = self.manager.scale_value(self.base_arrow_width)
             scaled_exit_width = self.manager.scale_value(self.base_exit_width)
             scaled_margin = self.manager.scale_value(self.base_margin)
@@ -825,9 +828,6 @@ class PetList(UIComponent):
                                    0, scaled_exit_width, self.rect.height)
             self.draw_exit_button(surface, exit_rect)
         
-        # Don't draw local animated highlight - using global highlight system instead
-        # self.draw_animated_highlight(surface)
-
         return surface
         
     def select_item(self):
@@ -875,21 +875,26 @@ class PetList(UIComponent):
         elif event == "UP":
             # Allow UP to move focus to previous component (don't handle it here)
             return False
-        elif event in ["A", "LCLICK"]:
+        elif event == "A":
+            # Keyboard activation: set both active_index and selected_index (like LEFT/RIGHT do)
             self.clicked = True
             self.click_time = pygame.time.get_ticks()
             runtime_globals.game_sound.play("menu")
             
-            # For keyboard activation (A/Enter), set the selection to the focused item
             if self.selected_index < len(self.pets):
-                self.set_active_pet(self.selected_index)
-                if self.on_item_click:
+                # Set both indices (matching BaseList behavior and LEFT/RIGHT handling)
+                old_active = self.active_index
+                self.active_index = self.selected_index  # Set selection state (persistent)
+                self.static_layer = None  # Rebuild static layer
+                self.needs_redraw = True
+                
+                # Notify callback if selection changed
+                if old_active != self.active_index and self.on_item_click:
                     self.on_item_click(self.pets[self.selected_index])
             else:
-                # Handle EXIT button activation
-                self.handle_action_button()
+                # EXIT button selected
+                self.select_item()
                 
-            self.needs_redraw = True
             return True
         elif event == "B" or event == "RCLICK":
             runtime_globals.game_sound.play("cancel")
