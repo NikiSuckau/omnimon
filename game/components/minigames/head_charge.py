@@ -146,16 +146,26 @@ class HeadCharge:
                     return True
             return False
         
-        # Handle string action events
-        if isinstance(input_action, str) and self.phase == "charge":
-            if input_action == "UP":
-                self.player_input = "B"
-                self.start_attack()
-                return True
-            elif input_action == "DOWN":
-                self.player_input = "A"
-                self.start_attack()
-                return True
+        # Handle string action events (keyboard/controller/mouse abstractions)
+        if isinstance(input_action, str):
+            if input_action == "LCLICK" and runtime_globals.game_input.is_mouse_enabled():
+                mouse_pos = pygame.mouse.get_pos()
+                if self.up_button.rect.collidepoint(mouse_pos):
+                    self.handle_button_press("UP")
+                    return True
+                elif self.down_button.rect.collidepoint(mouse_pos):
+                    self.handle_button_press("DOWN")
+                    return True
+
+            if self.phase == "charge":
+                if input_action == "UP":
+                    self.player_input = "B"
+                    self.start_attack()
+                    return True
+                elif input_action == "DOWN":
+                    self.player_input = "A"
+                    self.start_attack()
+                    return True
         return False
 
     def start_attack(self):
@@ -197,9 +207,9 @@ class HeadCharge:
         for atk in self.attack_positions:
             sprite, (x, y) = atk
             if x < target_x:
-                x += combat_constants.ATTACK_SPEED
+                x += combat_constants.ATTACK_SPEED * (30 / constants.FRAME_RATE)
             elif x > target_x:
-                x -= combat_constants.ATTACK_SPEED
+                x -= combat_constants.ATTACK_SPEED * (30 / constants.FRAME_RATE)
             atk[1] = (x, y)
         left_x = self.attack_positions[0][1][0]
         right_x = self.attack_positions[1][1][0]

@@ -196,11 +196,37 @@ class SceneTraining:
         if self.dummy_button:
             self.ui_manager.set_focused_component(self.dummy_button)
             
+    def hide_menu_buttons(self):
+        """Hide all menu buttons when entering training phase."""
+        buttons = [
+            self.dummy_button, self.head_button, self.count_button,
+            self.excite_button, self.punch_button, self.mogera_button,
+            self.exit_button, self.pet_selector, self.title_scene, self.background
+        ]
+        for button in buttons:
+            if button:
+                button.visible = False
+                button.focusable = False
+    
+    def show_menu_buttons(self):
+        """Show all menu buttons when returning to menu phase."""
+        buttons = [
+            self.dummy_button, self.head_button, self.count_button,
+            self.excite_button, self.punch_button, self.mogera_button,
+            self.exit_button, self.pet_selector, self.title_scene, self.background
+        ]
+        for button in buttons:
+            if button:
+                button.visible = True
+                if button != self.pet_selector and button != self.title_scene and button != self.background:
+                    button.focusable = True
+
     # Button callback methods that preserve existing training logic
     def on_dummy_training(self):
         """Handle Dummy training button press."""
         if len(get_training_targets()) > 0:
             runtime_globals.game_sound.play("menu")
+            self.hide_menu_buttons()
             self.phase = "dummy"
             self.mode = DummyTraining(self.ui_manager)
             self.create_training_exit_button()  # Create exit button for training phase
@@ -214,6 +240,7 @@ class SceneTraining:
         """Handle Head-to-Head training button press."""
         if len(get_training_targets()) > 1:
             runtime_globals.game_sound.play("menu")
+            self.hide_menu_buttons()
             self.phase = "headtohead"
 
             self.mode = HeadToHeadTraining(self.ui_manager)
@@ -228,6 +255,7 @@ class SceneTraining:
         """Handle Count Match training button press."""
         if len(get_training_targets()) > 0:
             runtime_globals.game_sound.play("menu")
+            self.hide_menu_buttons()
             self.phase = "count"
             self.mode = CountMatchTraining(self.ui_manager)
             self.create_training_exit_button()  # Create exit button for training phase
@@ -241,6 +269,7 @@ class SceneTraining:
         """Handle Excite training button press."""
         if len(get_training_targets()) > 0:
             runtime_globals.game_sound.play("menu")
+            self.hide_menu_buttons()
             self.phase = "excite"
             self.mode = ExciteTraining(self.ui_manager)
             self.create_training_exit_button()  # Create exit button for training phase
@@ -254,6 +283,7 @@ class SceneTraining:
         """Handle Punch training button press."""
         if len(get_training_targets()) > 0:
             runtime_globals.game_sound.play("menu")
+            self.hide_menu_buttons()
             self.phase = "punch"
             self.mode = ShakeTraining(self.ui_manager)
             self.create_training_exit_button()  # Create exit button for training phase
@@ -267,6 +297,7 @@ class SceneTraining:
         """Handle Mogera training button press."""
         if len(get_training_targets()) > 0:
             runtime_globals.game_sound.play("menu")
+            self.hide_menu_buttons()
             self.phase = "mogera"
             self.mode = MogeraTraining(self.ui_manager)
             self.create_training_exit_button()  # Create exit button for training phase
@@ -317,9 +348,11 @@ class SceneTraining:
     def remove_training_exit_button(self):
         """Remove the training exit button."""
         if self.training_exit_button:
-            # Remove from UI manager components list
+            # Remove from UI manager components list and focusable list
             if self.training_exit_button in self.ui_manager.components:
                 self.ui_manager.components.remove(self.training_exit_button)
+            if self.training_exit_button in self.ui_manager.focusable_components:
+                self.ui_manager.focusable_components.remove(self.training_exit_button)
             self.training_exit_button = None
 
     def update(self):
@@ -342,6 +375,7 @@ class SceneTraining:
                 self.phase = "menu"
                 self.mode = None
                 self.remove_training_exit_button()
+                self.show_menu_buttons()
 
     def draw(self, surface: pygame.Surface):
         # Always draw the window background first (all states)
@@ -373,17 +407,22 @@ class SceneTraining:
             if self.phase == "menu":
                 self.handle_menu_input(input_action)
             elif self.mode:
-                # Handle training exit button events through UI manager
-                if (self.training_exit_button and 
-                    runtime_globals.game_input.is_mouse_enabled() and
-                    hasattr(input_action, 'type') and 
-                    input_action.type == pygame.MOUSEBUTTONDOWN and 
-                    input_action.button == 1):
-                    
-                    mouse_pos = input_action.pos
-                    if self.training_exit_button.rect.collidepoint(mouse_pos):
-                        self.on_training_exit()
-                        return
+                # Handle training exit button through UI manager for proper scaling
+                if self.training_exit_button and runtime_globals.game_input.is_mouse_enabled():
+                    # Let UI manager handle the button event
+                    if hasattr(input_action, 'type'):  # pygame event
+                        if self.ui_manager.handle_event(input_action):
+                            return  # Button was clicked
+                    elif isinstance(input_action, str) and input_action == "LCLICK":
+                        # Handle LCLICK string event for button
+                        mouse_pos = pygame.mouse.get_pos()
+                        if self.training_exit_button.rect.collidepoint(mouse_pos):
+                            self.on_training_exit()
+                            return
+                
+                # For pygame events, check if training mode has handle_pygame_event method
+                if hasattr(input_action, 'type') and hasattr(self.mode, 'handle_pygame_event'):
+                    self.mode.handle_pygame_event(input_action)
                 
                 # Pass event to training mode
                 self.mode.handle_event(input_action)

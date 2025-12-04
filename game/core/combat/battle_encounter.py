@@ -648,7 +648,7 @@ class BattleEncounter:
             # DMC ruleset: Dummy charge minigame
             self.bar_level = 14
             self.battle_player.reset_frame_counters()
-            self.dummy_charge = DummyCharge(self.ui_manager)
+            self.dummy_charge = DummyCharge(self.ui_manager, "RED")
         elif self.module.ruleset == "dmx":
             # DMX ruleset: XAI roll and bar
             self.xai_phase = 1  # Start Xai roll

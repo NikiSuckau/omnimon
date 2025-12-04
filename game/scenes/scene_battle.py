@@ -120,6 +120,18 @@ class SceneBattle:
     
     def handle_event(self, event):
         """Handle input events."""
+        # For MOUSEMOTION events, let the view handle them first (for minigame shake detection)
+        # Then let UI manager handle them for cursor updates
+        if hasattr(event, 'type') and event.type == pygame.MOUSEMOTION:
+            if self.current_view:
+                try:
+                    self.current_view.handle_event(event)
+                except Exception as e:
+                    runtime_globals.game_console.log(f"[SceneBattle] ERROR handling event in view {self.current_view_name}: {e}")
+            # Let UI manager also handle for cursor/hover effects
+            self.ui_manager.handle_event(event)
+            return
+        
         # Handle pygame events through UI manager first
         if self.ui_manager.handle_event(event):
             return  # Event was handled by UI manager

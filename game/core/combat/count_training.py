@@ -7,7 +7,7 @@ from components.ui.ui_manager import UIManager
 from components.minigames.count_match import CountMatch
 from core.combat import combat_constants
 import core.constants as constants
-from core.utils.pygame_utils import blit_with_cache, blit_with_shadow, sprite_load_percent
+from core.utils.pygame_utils import blit_with_shadow
 from core.utils.scene_utils import change_scene
 
 class CountMatchTraining(Training):
@@ -25,9 +25,8 @@ class CountMatchTraining(Training):
         
         # Initialize the count match minigame with our AnimatedSprite component
         self.count_match = None
-        if self.pets:
-            pet = self.pets[0]
-            self.count_match = CountMatch(self.ui_manager, pet, self.animated_sprite)
+        pet = self.pets[0]
+        self.count_match = CountMatch(self.ui_manager, pet, self.animated_sprite)
 
     def update(self):
         """Override base update to include minigame updates."""
@@ -42,7 +41,7 @@ class CountMatchTraining(Training):
             self.rotation_index = self.count_match.get_rotation_index()
 
     def update_charge_phase(self):
-        if self.frame_counter == 1:
+        if self.count_match.phase != "count":
             self.start_count_phase()
         # Use frame-rate independent timing (3 seconds)
         if self.frame_counter > int(3 * constants.FRAME_RATE):
@@ -53,11 +52,10 @@ class CountMatchTraining(Training):
     def start_count_phase(self):
         self.phase = "charge"
         self.press_counter = 0
-        self.rotation_index = 3
+        self.rotation_index = 4  # Start at 4 so first shake goes to 3
         
         # Set minigame to count phase
-        if self.count_match:
-            self.count_match.set_phase("count")
+        self.count_match.set_phase("count")
 
     def handle_event(self, input_action):
         if self.phase in "charge" and input_action in ("Y", "SHAKE"):
@@ -108,8 +106,12 @@ class CountMatchTraining(Training):
             hits = 0
         else:
             color = self.final_color
-            # Note: rotation_index uses 1-3, but we need to map to 0-2 for comparison
-            color_mapped = color if color > 0 else 0
+            # Map rotation_index (1-4) to color (0-2): 
+            # 4->undefined (shouldn't happen), 1->0, 2->1, 3->2
+            if color == 4:
+                color_mapped = 0  # Failsafe if somehow still on Count4
+            else:
+                color_mapped = color - 1  # 1->0, 2->1, 3->2
             correct_color = self.correct_color
             
             if attr_type in ("", "Va"):
@@ -182,14 +184,11 @@ class CountMatchTraining(Training):
 
     def draw_alert(self, surface):
         # Use the count match minigame to handle ready sprite drawing via AnimatedSprite
-        if self.count_match:
-            self.count_match.set_phase("ready")
-            self.count_match.draw(surface)
+        self.count_match.draw(surface)
 
     def draw_charge(self, surface):
         # Use the count match minigame to handle count sprite drawing via AnimatedSprite
-        if self.count_match:
-            self.count_match.draw(surface)
+        self.count_match.draw(surface)
 
     def draw_attack_move(self, surface):
         self.draw_pets(surface)

@@ -6,7 +6,7 @@ from core.utils.pygame_utils import blit_with_shadow
 
 class DummyCharge:
 
-    def __init__(self, ui_manager: UIManager):
+    def __init__(self, ui_manager: UIManager, theme: str = "GREEN") -> None:
         self.strength = 0
         self.bar_level = 14
         self._holding = False
@@ -14,7 +14,6 @@ class DummyCharge:
         self.ui_manager = ui_manager
         
         # Determine theme-based sprites
-        theme = ui_manager.theme.upper()
         is_green_theme = "GREEN" in theme
         is_red_theme = "RED" in theme
         

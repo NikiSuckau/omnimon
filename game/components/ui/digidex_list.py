@@ -1,7 +1,6 @@
 import pygame
 
 from components.ui.component import UIComponent
-from components.window_petselector import WindowPetSelector
 from core import runtime_globals
 from core.utils.sprite_utils import load_pet_sprites
 from core.utils.module_utils import get_module
@@ -21,7 +20,6 @@ class DigidexList(UIComponent):
     """
     def __init__(self, x, y, width, height, unknown_sprite, sprite_size=None):
         super().__init__(x, y, width, height)
-        self.selector = WindowPetSelector()  # Keep for compatibility
         self.pets = []
         self.unknown_sprite = unknown_sprite
         self.sprite_size = sprite_size or int(48 * constants.UI_SCALE)
@@ -43,7 +41,6 @@ class DigidexList(UIComponent):
 
     def set_pets(self, pets):
         self.pets = pets
-        self.selector.pets = pets
         self.selected_index = min(self.selected_index, len(pets) - 1) if pets else 0
         self.needs_redraw = True
 
@@ -51,14 +48,12 @@ class DigidexList(UIComponent):
         """Navigate up in the list"""
         if self.selected_index > 0:
             self.selected_index -= 1
-            self.selector.selected_index = self.selected_index
             self.needs_redraw = True
     
     def navigate_down(self):
         """Navigate down in the list"""
         if self.selected_index < len(self.pets) - 1:
             self.selected_index += 1
-            self.selector.selected_index = self.selected_index
             self.needs_redraw = True
 
     def update_sprite_cache(self):
@@ -184,7 +179,6 @@ class DigidexList(UIComponent):
             # Only change selection on hover if not in keyboard mode
             if self.selected_index != item_index:
                 self.selected_index = item_index
-                self.selector.selected_index = item_index
                 self.needs_redraw = True
         
         if old_hover != self.hover_index:

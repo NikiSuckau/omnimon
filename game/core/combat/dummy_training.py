@@ -115,7 +115,7 @@ class DummyTraining(Training):
 
     def handle_event(self, event):
         """Forward input events to the bar component."""
-        if self.minigame.handle_event(event):
+        if self.phase == "charge" and self.minigame.handle_event(event):
             return
         
         if isinstance(event, str):
@@ -124,6 +124,7 @@ class DummyTraining(Training):
                 change_scene("game")
             elif event in ("A", "B") and self.phase != "result":
                 runtime_globals.game_sound.play("cancel")
+                self.animated_sprite.stop()
                 self.phase = "result"
 
     def draw_attack_move(self, surface):
@@ -157,6 +158,7 @@ class DummyTraining(Training):
             # Use AnimatedSprite component with predefined result animations
             if not self.animated_sprite.is_animation_playing():
                 duration = combat_constants.RESULT_SCREEN_FRAMES / constants.FRAME_RATE
+                
                 
                 # Choose which result animation to play
                 if self.strength < 10:

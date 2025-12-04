@@ -26,8 +26,17 @@ class MogeraCounter:
         self.countered_attacks = 0
         self.attacks = self._generate_attacks()
         self.current_attack_index = 0
-        self.attack_x = 0
-        self.attack_speed = 4 * constants.UI_SCALE  # Match head_charge speed
+        self.attack_x = -1000  # Start off screen, will be set to 0 after delay
+        
+        # Frame-rate independent speeds (baseline 30fps, pixels per second approach)
+        # At 30fps: 3 pixels per frame = 90 pixels per second
+        # Scale to actual frame rate: pixels_per_second * (1 / frame_rate)
+        self.attack_speed = 4 * constants.UI_SCALE * (30.0 / constants.FRAME_RATE)  # Slightly slower for more reaction time
+        self.counter_attack_speed = 4 * constants.UI_SCALE * (30.0 / constants.FRAME_RATE)
+        
+        # Attack delay system - wait between attacks
+        self.attack_delay_timer = 0
+        self.attack_delay_duration = int(1.0 * constants.FRAME_RATE)  # 1 second delay between attacks at any frame rate
         
         # Pet state - stays in TRAIN1 until input, then TRAIN2 while counter attack moves
         self.pet_frame = PetFrame.TRAIN1
@@ -37,7 +46,6 @@ class MogeraCounter:
         self.counter_attack_sprite = None
         self.counter_attack_x = 0
         self.counter_attack_y = 0
-        self.counter_attack_speed = 4 * constants.UI_SCALE
         self.is_counter_attack_moving = False
         self.counter_attack_lane = None  # 'top' or 'bottom' to track collision lane
         self.counter_input_locked = False  # Prevent multiple inputs per attack
@@ -45,7 +53,7 @@ class MogeraCounter:
         # Hit animation
         self.last_attack_result = None  # "hit", "miss", or None
         self.hit_animation_timer = 0
-        self.hit_animation_duration = int(15 * (constants.FRAME_RATE / 30))
+        self.hit_animation_duration = int(15 * (constants.FRAME_RATE / 30))  # 0.5 seconds at any frame rate
         self.hit_x = 0
         self.hit_y = 0
         
@@ -125,8 +133,17 @@ class MogeraCounter:
             self.phase = "complete"
             return
         
-        # Move incoming attack from left to right
-        self.attack_x += self.attack_speed
+        # Handle attack delay timer - wait before showing next attack
+        if self.attack_delay_timer > 0:
+            self.attack_delay_timer -= 1
+            # When delay finishes, start the attack from the left edge
+            if self.attack_delay_timer == 0:
+                self.attack_x = 0
+            return  # Don't update anything during delay
+        
+        # Move incoming attack from left to right (only if it's on screen)
+        if self.attack_x >= 0:
+            self.attack_x += self.attack_speed
         
         # Calculate pet position for collision detection
         pet_size = int(48 * constants.UI_SCALE)
@@ -224,7 +241,11 @@ class MogeraCounter:
         """Move to the next attack"""
         runtime_globals.game_console.log(f"[DEBUG] NEXT ATTACK - Moving from #{self.current_attack_index + 1} to #{self.current_attack_index + 2}")
         self.current_attack_index += 1
-        self.attack_x = 0
+        
+        # Set attack off screen and start delay timer
+        self.attack_x = -1000  # Off screen
+        self.attack_delay_timer = self.attack_delay_duration  # Start delay before next attack
+        
         self.has_countered_current = False
         self.counter_input_locked = False
         # Reset to TRAIN1 for the next incoming attack
@@ -294,8 +315,12 @@ class MogeraCounter:
         if self.has_countered_current or self.counter_input_locked:
             return False
         
+        # Can't input during delay or before attack appears
+        if self.attack_delay_timer > 0 or self.attack_x < 0:
+            return False
+        
         # Player can input from when attack appears until it hits
-        if self.attack_x > 0:
+        if self.attack_x >= 0:
             current_attack = self.attacks[self.current_attack_index]
             lane_from_direction = "top" if direction.upper() == "UP" else "bottom"
             
@@ -386,8 +411,8 @@ class MogeraCounter:
             except:
                 pass  # Give up if even IDLE1 doesn't work
         
-        # Draw current attack if active
-        if self.current_attack_index < self.total_attacks and self.attack_x > 0:
+        # Draw current attack if active (not during delay, not off screen)
+        if self.current_attack_index < self.total_attacks and self.attack_x >= 0 and self.attack_delay_timer == 0:
             current_attack = self.attacks[self.current_attack_index]
             attack_sprite = self.antigrav1_sprite if current_attack == "top" else self.antigrav2_sprite
             

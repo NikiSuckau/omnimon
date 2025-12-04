@@ -91,6 +91,7 @@ class Training:
         if self.frame_counter == int(30 * (constants.FRAME_RATE / 30)):
             runtime_globals.game_sound.play("happy")
         if self.frame_counter >= combat_constants.ALERT_DURATION_FRAMES:
+            self.animated_sprite.stop()
             self.phase = "charge"
             self.frame_counter = 0
             self.bar_timer = pygame.time.get_ticks()
@@ -143,6 +144,7 @@ class Training:
     def update_impact_phase(self):
         self.flash_frame += 1
         if self.flash_frame >= combat_constants.IMPACT_DURATION_FRAMES:
+            self.animated_sprite.stop()
             self.phase = "result"
             self.frame_counter = 0
 

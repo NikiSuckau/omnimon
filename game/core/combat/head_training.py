@@ -46,7 +46,7 @@ class HeadToHeadTraining(Training):
             self.frame_counter = 0
             
 
-    def draw(self, surface: pygame.Surface):
+    def draw_charge(self, surface: pygame.Surface):
         """Draw the head-to-head training"""
         if not (self.left_pet and self.right_pet) or not self.head_charge:
             return
@@ -58,12 +58,22 @@ class HeadToHeadTraining(Training):
         if self.phase == "result" and self.check_victory():
             self.draw_trophy_notification(surface)
 
+    def draw_result(self, surface):
+        self.head_charge.draw(surface)
+        
+        # Draw trophy notification if won and in result phase
+        if self.phase == "result" and self.check_victory():
+            self.draw_trophy_notification(surface)
+
     def handle_event(self, input_action):
         """Handle input events - delegate to minigame or handle exit"""
         # Handle pygame events (like mouse clicks)
-        if hasattr(input_action, 'type'):
-            if self.head_charge and self.head_charge.handle_event(input_action):
-                return  # Minigame handled the pygame event
+            # Let UI manager process scaled components first (buttons, etc.)
+        if self.ui_manager and self.ui_manager.handle_event(input_action):
+            return
+
+        if self.head_charge and self.head_charge.handle_event(input_action):
+             return  # Minigame handled the pygame event
         # Handle string action events
         elif isinstance(input_action, str):
             if self.head_charge and self.head_charge.handle_event(input_action):

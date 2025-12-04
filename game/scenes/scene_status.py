@@ -170,7 +170,7 @@ class SceneStatus:
             flag_height = 20  # Height for flag sprites
             flag_x = margin + column_width + column_gap + 10  # Right column with some offset
             
-            self.flag_panel = FlagPanel(flag_x, current_y - 9, flag_width, flag_height)
+            self.flag_panel = FlagPanel(flag_x, current_y, flag_width, flag_height)
             self.flag_panel.set_tooltip("Pet attributes and status flags")
             self.ui_manager.add_component(self.flag_panel)
             

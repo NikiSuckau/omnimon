@@ -12,9 +12,9 @@ class ShakeDetector:
     def __init__(self):
         self.positions = []  # Store recent mouse positions
         self.max_history = 10  # Keep last 10 positions
-        self.shake_threshold = 50  # Minimum distance for shake detection
+        self.shake_threshold = 100  # Minimum distance for shake detection (increased to avoid false positives)
         self.direction_changes = 0  # Count direction changes
-        self.min_direction_changes = 3  # Minimum changes to detect shake
+        self.min_direction_changes = 2  # Minimum changes to detect shake (lowered from 3 to 2)
         self.last_direction = None
         self.shake_cooldown = 0  # Prevent too frequent shake detection
         
@@ -122,6 +122,8 @@ class CountMatch:
         # Shake detection for mouse/touch fallback
         self.shake_detector = ShakeDetector()
 
+        self.set_phase("ready")
+
     def get_pet_attribute_ready_frame(self):
         """Get the ready frame index (0-3) based on pet's attribute to match Ready0-Ready3 sprites."""
         if not self.pet:
@@ -141,10 +143,11 @@ class CountMatch:
     def set_phase(self, phase):
         """Set the current phase (ready or count)."""
         self.phase = phase
+        self.animated_sprite.stop()
         if phase == "count":
             # Reset counters when starting count phase
             self.press_counter = 0
-            self.rotation_index = 3
+            self.rotation_index = 4  # Start at 4 so first shake goes to 3
             # Setup count mode in animated sprite
             if self.animated_sprite:
                 self.animated_sprite.setup_countdown_count()
@@ -161,15 +164,21 @@ class CountMatch:
         if self.phase == "count" and input_action in ("Y", "SHAKE"):
             self.press_counter += 1
             if self.press_counter % 2 == 0:
-                self.rotation_index -= 1
-                if self.rotation_index < 1:
+                # First press (counter=2): move from Count4 to Count3
+                # After that, cycle through 3->2->1->3->2->1...
+                if self.rotation_index == 4:
                     self.rotation_index = 3
+                else:
+                    self.rotation_index -= 1
+                    if self.rotation_index < 1:
+                        self.rotation_index = 3  # Cycle back to 3, never 4
             
             # Update animated sprite frame based on rotation_index
             if self.animated_sprite:
-                # Map rotation_index (1,2,3) to frame index (0,1,2) for Count1,Count2,Count3
-                # When rotation_index is 3, we want Count4 which is at index 3
-                if self.rotation_index == 3:
+                # Map rotation_index to frame index:
+                # rotation_index 4 -> frame 3 (Count4) - only at start
+                # rotation_index 1-3 -> frame 0-2 (Count1-Count3)
+                if self.rotation_index == 4:
                     self.animated_sprite.current_frame = 3  # Count4
                 else:
                     self.animated_sprite.current_frame = self.rotation_index - 1  # Count1,Count2,Count3
@@ -210,15 +219,12 @@ class CountMatch:
     def draw(self, surface):
         """Draw the count match minigame components using AnimatedSprite."""
         # Only draw if we have a valid phase
-        if self.phase in ["ready", "count"] and self.animated_sprite:
-            self.animated_sprite.draw(surface)
+        self.animated_sprite.draw(surface)
         
     def draw_ready(self, surface):
         """Draw the ready sprite using AnimatedSprite component."""
-        if self.animated_sprite:
-            self.animated_sprite.draw(surface)
+        self.animated_sprite.draw(surface)
 
     def draw_count(self, surface):
         """Draw the count sprite using AnimatedSprite component.""" 
-        if self.animated_sprite:
-            self.animated_sprite.draw(surface)
+        self.animated_sprite.draw(surface)

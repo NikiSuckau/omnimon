@@ -23,7 +23,7 @@ from game.vpet import VirtualPetGame
 from game.core.constants import *
 
 # Game Version
-VERSION = "0.9.8"
+VERSION = "0.9.9"
 
 # Check Pygame version for compatibility
 PYGAME_VERSION = tuple(map(int, pygame.version.ver.split('.')))
