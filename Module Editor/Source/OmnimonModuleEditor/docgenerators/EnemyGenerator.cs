@@ -1,5 +1,5 @@
-﻿using OmnimonModuleEditor.Models;
-using OmnimonModuleEditor.Utils;
+﻿using OmnipetModuleEditor.Models;
+using OmnipetModuleEditor.Utils;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Imaging;
@@ -7,7 +7,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 
-namespace OmnimonModuleEditor.docgenerators
+namespace OmnipetModuleEditor.docgenerators
 {
     internal class EnemyGenerator
     {

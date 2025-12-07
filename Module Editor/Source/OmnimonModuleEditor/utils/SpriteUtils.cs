@@ -6,7 +6,7 @@ using System.IO.Compression;
 using System.Linq;
 using System.Reflection;
 
-namespace OmnimonModuleEditor.Utils
+namespace OmnipetModuleEditor.Utils
 {
     /// <summary>
     /// Sprite loading utilities for pets and enemies with fallback support and zip file compatibility.

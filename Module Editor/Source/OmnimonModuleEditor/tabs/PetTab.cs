@@ -1,6 +1,6 @@
-using OmnimonModuleEditor.Controls;
-using OmnimonModuleEditor.Models;
-using OmnimonModuleEditor.Utils;
+using OmnipetModuleEditor.Controls;
+using OmnipetModuleEditor.Models;
+using OmnipetModuleEditor.Utils;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -11,7 +11,7 @@ using System.Linq;
 using System.Text.Json;
 using System.Windows.Forms;
 
-namespace OmnimonModuleEditor.Tabs
+namespace OmnipetModuleEditor.Tabs
 {
     /// <summary>
     /// Tab for managing and editing pets in the module.
@@ -299,7 +299,7 @@ namespace OmnimonModuleEditor.Tabs
             {
                 if (dlg.ShowDialog(this) == DialogResult.OK && dlg.SelectedStage >= 0 && dlg.SelectedStage <= 8)
                 {
-                    var template = OmnimonModuleEditor.Models.PetTemplates.ByStage[dlg.SelectedStage];
+                    var template = OmnipetModuleEditor.Models.PetTemplates.ByStage[dlg.SelectedStage];
                     var newPet = PetUtils.ClonePet(template);
                     newPet.Name = Properties.Resources.PetTab_NewPetName ?? "New Pet";
                     newPet.Stage = dlg.SelectedStage;
@@ -756,11 +756,11 @@ namespace OmnimonModuleEditor.Tabs
                 TxtSpecialKey = new TextBox(); TxtSpecialKey.Enabled = false;
                 ChkSpecial.CheckedChanged += (s, e) => TxtSpecialKey.Enabled = ChkSpecial.Checked;
                 CmbStage = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList };
-                CmbStage.Items.AddRange(Enum.GetNames(typeof(OmnimonModuleEditor.Models.StageEnum)));
+                CmbStage.Items.AddRange(Enum.GetNames(typeof(OmnipetModuleEditor.Models.StageEnum)));
                 NumVersion = new NumericUpDown { Minimum = 0, Value = 1 };
                 NumTime = new NumericUpDown { Minimum = 1, Value = 1, Maximum = 99999 };
                 CmbAttribute = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList };
-                CmbAttribute.Items.AddRange(Enum.GetNames(typeof(OmnimonModuleEditor.Models.AttributeEnum)));
+                CmbAttribute.Items.AddRange(Enum.GetNames(typeof(OmnipetModuleEditor.Models.AttributeEnum)));
                 NumEnergy = new NumericUpDown { Minimum = 0, Value = 0 };
                 TxtSleeps = new MaskedTextBox { Mask = "00:00" };
                 CmbAtkMain = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList };

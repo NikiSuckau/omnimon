@@ -5,7 +5,7 @@ using System.Linq;
 using System.Reflection;
 using System.Windows.Forms;
 
-namespace OmnimonModuleEditor
+namespace OmnipetModuleEditor
 {
     /// <summary>
     /// Form for selecting, creating, editing, and removing module folders.
@@ -23,7 +23,7 @@ namespace OmnimonModuleEditor
             this.StartPosition = FormStartPosition.CenterScreen;
 
             var version = Assembly.GetExecutingAssembly().GetName().Version;
-            this.Text = $"Omnimon Module Editor v{version}";
+            this.Text = $"Omnipet Module Editor v{version}";
 
             // Block resizing
             this.FormBorderStyle = FormBorderStyle.FixedDialog;
@@ -149,11 +149,11 @@ namespace OmnimonModuleEditor
                         if (File.Exists(templatePath))
                         {
                             string json = File.ReadAllText(templatePath);
-                            newModule = System.Text.Json.JsonSerializer.Deserialize<OmnimonModuleEditor.Models.Module>(json);
+                            newModule = System.Text.Json.JsonSerializer.Deserialize<OmnipetModuleEditor.Models.Module>(json);
                         }
                         else
                         {
-                            newModule = new OmnimonModuleEditor.Models.Module();
+                            newModule = new OmnipetModuleEditor.Models.Module();
                         }
                         // Set the name to the folder name
                         newModule.Name = input;

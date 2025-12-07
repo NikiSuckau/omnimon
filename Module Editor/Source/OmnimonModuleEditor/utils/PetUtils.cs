@@ -1,4 +1,4 @@
-using OmnimonModuleEditor.Models;
+using OmnipetModuleEditor.Models;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -7,7 +7,7 @@ using System.Linq;
 using System.Text.Json;
 using System.Windows.Forms;
 
-namespace OmnimonModuleEditor.Utils
+namespace OmnipetModuleEditor.Utils
 {
     /// <summary>
     /// Utility methods for Pet operations and data loading.

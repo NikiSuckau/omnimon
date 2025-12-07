@@ -3559,7 +3559,7 @@
       "evolve": []
     },
     {
-      "name": "Omnimon",
+      "name": "Omnipet",
       "stage": 6,
       "version": 3,
       "special": false,
@@ -3616,7 +3616,7 @@
       "critical_turn": 2,
       "evolve": [
         {
-          "to": "Omnimon",
+          "to": "Omnipet",
           "version": 4,
           "jogress": "MetalGarurumon"
         }
@@ -4733,7 +4733,7 @@
       "critical_turn": 2,
       "evolve": [
         {
-          "to": "Omnimon",
+          "to": "Omnipet",
           "stage": 3,
           "jogress": "WarGreymon"
         }
@@ -4769,7 +4769,7 @@
       "evolve": []
     },
     {
-      "name": "Omnimon",
+      "name": "Omnipet",
       "stage": 6,
       "version": 4,
       "special": false,
@@ -14048,7 +14048,7 @@
           ]
         },
         {
-          "to": "Omnimon Zwart",
+          "to": "Omnipet Zwart",
           "stage": 5,
           "attribute": "Vi",
           "jogress": "PenC"
@@ -14096,7 +14096,7 @@
       "critical_turn": 2,
       "evolve": [
         {
-          "to": "Omnimon Zwart",
+          "to": "Omnipet Zwart",
           "battles": [
             25,
             999999
@@ -14182,7 +14182,7 @@
       "critical_turn": 2,
       "evolve": [
         {
-          "to": "Omnimon Zwart",
+          "to": "Omnipet Zwart",
           "battles": [
             25,
             999999
@@ -14268,7 +14268,7 @@
       "critical_turn": 2,
       "evolve": [
         {
-          "to": "Omnimon Zwart",
+          "to": "Omnipet Zwart",
           "battles": [
             25,
             999999
@@ -14398,13 +14398,13 @@
           "jogress": "PenC"
         },
         {
-          "to": "Omnimon Zwart",
+          "to": "Omnipet Zwart",
           "stage": 5,
           "attribute": "Va",
           "jogress": "PenC"
         },
         {
-          "to": "Omnimon Zwart",
+          "to": "Omnipet Zwart",
           "stage": 5,
           "attribute": "Free",
           "jogress": "PenC"
@@ -14478,7 +14478,7 @@
           ]
         },
         {
-          "to": "Omnimon Zwart",
+          "to": "Omnipet Zwart",
           "stage": 5,
           "attribute": "Vi",
           "jogress": "PenC"
@@ -14526,7 +14526,7 @@
       "critical_turn": 2,
       "evolve": [
         {
-          "to": "Omnimon Zwart",
+          "to": "Omnipet Zwart",
           "version": 13,
           "jogress": "WereGarurumon (Black)"
         }
@@ -14562,7 +14562,7 @@
       "evolve": []
     },
     {
-      "name": "Omnimon Zwart",
+      "name": "Omnipet Zwart",
       "stage": 6,
       "version": 12,
       "special": false,
@@ -15281,7 +15281,7 @@
           ]
         },
         {
-          "to": "Omnimon Zwart",
+          "to": "Omnipet Zwart",
           "stage": 5,
           "attribute": "Vi",
           "jogress": "PenC"
@@ -15329,7 +15329,7 @@
       "critical_turn": 3,
       "evolve": [
         {
-          "to": "Omnimon Zwart",
+          "to": "Omnipet Zwart",
           "battles": [
             25,
             999999
@@ -15453,7 +15453,7 @@
           ]
         },
         {
-          "to": "Omnimon Zwart",
+          "to": "Omnipet Zwart",
           "stage": 5,
           "attribute": "Vi",
           "jogress": "PenC"
@@ -15539,7 +15539,7 @@
           ]
         },
         {
-          "to": "Omnimon Zwart",
+          "to": "Omnipet Zwart",
           "stage": 5,
           "attribute": "Vi",
           "jogress": "PenC"
@@ -15551,7 +15551,7 @@
           "jogress": "PenC"
         },
         {
-          "to": "Omnimon Zwart",
+          "to": "Omnipet Zwart",
           "stage": 5,
           "attribute": "Va",
           "jogress": "PenC"
@@ -15587,7 +15587,7 @@
       "critical_turn": 2,
       "evolve": [
         {
-          "to": "Omnimon Zwart",
+          "to": "Omnipet Zwart",
           "battles": [
             25,
             999999
@@ -15673,7 +15673,7 @@
       "critical_turn": 2,
       "evolve": [
         {
-          "to": "Omnimon Zwart",
+          "to": "Omnipet Zwart",
           "battles": [
             25,
             999999
@@ -15788,14 +15788,14 @@
       "critical_turn": 2,
       "evolve": [
         {
-          "to": "Omnimon Zwart",
+          "to": "Omnipet Zwart",
           "version": 12,
           "jogress": "BlackWarGreymon"
         }
       ]
     },
     {
-      "name": "Omnimon Zwart",
+      "name": "Omnipet Zwart",
       "stage": 6,
       "version": 13,
       "special": true,
@@ -33399,7 +33399,7 @@
       "critical_turn": 2,
       "evolve": [
         {
-          "to": "Omnimon Zwart",
+          "to": "Omnipet Zwart",
           "battles": [
             30,
             999999
@@ -33420,7 +33420,7 @@
       ]
     },
     {
-      "name": "Omnimon",
+      "name": "Omnipet",
       "stage": 6,
       "version": 29,
       "special": false,
@@ -33449,7 +33449,7 @@
       "evolve": []
     },
     {
-      "name": "Omnimon Zwart",
+      "name": "Omnipet Zwart",
       "stage": 6,
       "version": 29,
       "special": true,
@@ -33535,7 +33535,7 @@
       "critical_turn": 2,
       "evolve": [
         {
-          "to": "Omnimon",
+          "to": "Omnipet",
           "battles": [
             30,
             999999
@@ -34578,7 +34578,7 @@
       "critical_turn": 2,
       "evolve": [
         {
-          "to": "Omnimon",
+          "to": "Omnipet",
           "battles": [
             30,
             999999
@@ -34627,7 +34627,7 @@
       "critical_turn": 2,
       "evolve": [
         {
-          "to": "Omnimon Zwart",
+          "to": "Omnipet Zwart",
           "battles": [
             30,
             999999
@@ -34648,7 +34648,7 @@
       ]
     },
     {
-      "name": "Omnimon",
+      "name": "Omnipet",
       "stage": 6,
       "version": 30,
       "special": false,
@@ -34677,7 +34677,7 @@
       "evolve": []
     },
     {
-      "name": "Omnimon Zwart",
+      "name": "Omnipet Zwart",
       "stage": 6,
       "version": 30,
       "special": true,
@@ -35752,14 +35752,14 @@
       "critical_turn": 2,
       "evolve": [
         {
-          "to": "Omnimon Zwart",
+          "to": "Omnipet Zwart",
           "version": 33,
           "jogress": "MetalGarurumon (Black)"
         }
       ]
     },
     {
-      "name": "Omnimon Zwart",
+      "name": "Omnipet Zwart",
       "stage": 6,
       "version": 32,
       "special": false,
@@ -36056,14 +36056,14 @@
       "critical_turn": 2,
       "evolve": [
         {
-          "to": "Omnimon Zwart",
+          "to": "Omnipet Zwart",
           "version": 32,
           "jogress": "BlackWarGreymon"
         }
       ]
     },
     {
-      "name": "Omnimon Zwart",
+      "name": "Omnipet Zwart",
       "stage": 6,
       "version": 33,
       "special": false,

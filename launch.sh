@@ -1,5 +1,5 @@
 #!/bin/bash
-# Launch script for Omnimon Virtual Pet Game
+# Launch script for Omnipet Virtual Pet Game
 # Works on Ubuntu, Batocera, other Linux distributions, and macOS
 # Edit config.json to change fullscreen, screen size, and other settings
 
@@ -9,7 +9,7 @@ export SDL_VIDEO_CENTERED=1
 # Detect the environment
 if [ -f "/usr/bin/batocera-info" ]; then
     echo "Detected Batocera system"
-    export OMNIMON_FULLSCREEN=1
+    export Omnipet_FULLSCREEN=1
     export SDL_VIDEODRIVER=kmsdrm
 elif [ -n "$WAYLAND_DISPLAY" ]; then
     echo "Detected Wayland environment"
@@ -27,7 +27,7 @@ fi
 
 # Check if fullscreen was requested
 if [ "$1" = "--fullscreen" ] || [ "$1" = "-f" ]; then
-    export OMNIMON_FULLSCREEN=1
+    export Omnipet_FULLSCREEN=1
 fi
 
 # Check for Python 3
@@ -51,6 +51,6 @@ $PYTHON_CMD -c "import pygame" 2>/dev/null || {
 cd "$(dirname "$0")"
 
 # Run the game
-echo "Starting Omnimon Virtual Pet Game..."
+echo "Starting Omnipet Virtual Pet Game..."
 echo "Note: You can edit config.json to change display settings"
 $PYTHON_CMD main.py "$@"

@@ -1,11 +1,11 @@
-﻿using OmnimonModuleEditor.controls;
-using OmnimonModuleEditor.Tabs;
+﻿using OmnipetModuleEditor.controls;
+using OmnipetModuleEditor.Tabs;
 using System;
 using System.IO;
 using System.Reflection;
 using System.Windows.Forms;
 
-namespace OmnimonModuleEditor
+namespace OmnipetModuleEditor
 {
     /// <summary>
     /// Main form for editing a module, including tabs for module, pets, battle, and items.
@@ -28,7 +28,7 @@ namespace OmnimonModuleEditor
             InitializeComponent();
 
             var version = Assembly.GetExecutingAssembly().GetName().Version;
-            this.Text = $"Omnimon Module Editor v{version}";
+            this.Text = $"Omnipet Module Editor v{version}";
 
             // Block resizing
             this.FormBorderStyle = FormBorderStyle.FixedDialog;

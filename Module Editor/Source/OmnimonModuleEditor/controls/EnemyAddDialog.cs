@@ -1,10 +1,10 @@
-using OmnimonModuleEditor.Models;
+using OmnipetModuleEditor.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows.Forms;
 
-namespace OmnimonModuleEditor.Controls
+namespace OmnipetModuleEditor.Controls
 {
     /// <summary>
     /// Dialog for adding a new battle enemy, allowing selection of version and pet.

@@ -1,7 +1,7 @@
-﻿using OmnimonModuleEditor.Controls;
-using OmnimonModuleEditor.Models;
-using OmnimonModuleEditor.Properties;
-using OmnimonModuleEditor.Utils;
+﻿using OmnipetModuleEditor.Controls;
+using OmnipetModuleEditor.Models;
+using OmnipetModuleEditor.Properties;
+using OmnipetModuleEditor.Utils;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -11,7 +11,7 @@ using System.Linq;
 using System.Text.Json;
 using System.Windows.Forms;
 
-namespace OmnimonModuleEditor
+namespace OmnipetModuleEditor
 {
     /// <summary>
     /// Editor window for managing pet evolutions visually.

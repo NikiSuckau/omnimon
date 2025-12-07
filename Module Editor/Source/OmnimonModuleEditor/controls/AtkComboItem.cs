@@ -1,6 +1,6 @@
 ﻿using System.Drawing;
 
-namespace OmnimonModuleEditor.Controls
+namespace OmnipetModuleEditor.Controls
 {
     public class AtkComboItem
     {

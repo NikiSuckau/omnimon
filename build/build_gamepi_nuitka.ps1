@@ -1,4 +1,4 @@
-# PowerShell GamePi Nuitka build script for Omnimon Virtual Pet Game
+# PowerShell GamePi Nuitka build script for Omnipet Virtual Pet Game
 # Uses Nuitka for packaging and performance optimization
 # Builds for Raspberry Pi Zero 2W (ARM architecture)
 
@@ -10,7 +10,7 @@ param(
 $SCRIPT_DIR = $PSScriptRoot
 $PROJECT_ROOT = Split-Path $SCRIPT_DIR -Parent
 $RELEASE_DIR = Join-Path $PROJECT_ROOT "Release"
-$BUILD_NAME = "Omnimon_GamePi_Nuitka_ARM_Ver_$Version"
+$BUILD_NAME = "Omnipet_GamePi_Nuitka_ARM_Ver_$Version"
 $TEMP_DIR = Join-Path $PROJECT_ROOT "temp_gamepi_nuitka_build"
 
 function Write-Status {
@@ -80,7 +80,7 @@ try {
     # Building for current platform until ARM toolchain is configured
     python -m nuitka `
         --output-dir="$TEMP_DIR" `
-        --output-filename="omnimon" `
+        --output-filename="omnipet" `
         --include-package="game" `
         --include-package="game.core" `
         --include-package="game.core.combat" `
@@ -123,12 +123,12 @@ try {
     Write-Success "Nuitka ARM compilation completed successfully"
     
     # Check if the compiled ARM binary exists (no .exe extension for Linux)
-    $binaryPath = "$PROJECT_ROOT\omnimon"
+    $binaryPath = "$PROJECT_ROOT\omnipet"
     if (-not (Test-Path $binaryPath)) {
         # Try alternative locations
         $binaryPath = "$PROJECT_ROOT\main_nuitka" 
         if (-not (Test-Path $binaryPath)) {
-            $binaryPath = "$TEMP_DIR\omnimon"
+            $binaryPath = "$TEMP_DIR\omnipet"
             if (-not (Test-Path $binaryPath)) {
                 $binaryPath = "$TEMP_DIR\main_nuitka" 
                 if (-not (Test-Path $binaryPath)) {
@@ -162,7 +162,7 @@ New-Item -ItemType Directory -Path "$TEMP_DIR\$BUILD_NAME" -Force | Out-Null
 Write-Status "Copying compiled binary and dependencies..."
 
 # Copy the main ARM executable (no .exe extension for Linux)
-Copy-Item $binaryPath "$TEMP_DIR\$BUILD_NAME\omnimon" -Force
+Copy-Item $binaryPath "$TEMP_DIR\$BUILD_NAME\omnipet" -Force
 Write-Status "Copied main ARM executable from: $binaryPath"
 
 # Copy any .pyd files (compiled modules) from temp dir

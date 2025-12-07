@@ -902,7 +902,7 @@
       "critical_turn": 0,
       "evolve": [
         {
-          "to": "Omnimon Alter-S",
+          "to": "Omnipet Alter-S",
           "version": 2,
           "jogress": "CresGarurumon"
         }
@@ -938,7 +938,7 @@
       "evolve": []
     },
     {
-      "name": "Omnimon Alter-S",
+      "name": "Omnipet Alter-S",
       "stage": 7,
       "version": 1,
       "special": false,
@@ -1850,7 +1850,7 @@
       "critical_turn": 0,
       "evolve": [
         {
-          "to": "Omnimon Alter-S",
+          "to": "Omnipet Alter-S",
           "version": 1,
           "jogress": "BlitzGreymon"
         }
@@ -1915,7 +1915,7 @@
       "evolve": []
     },
     {
-      "name": "Omnimon Alter-S",
+      "name": "Omnipet Alter-S",
       "stage": 7,
       "version": 2,
       "special": false,

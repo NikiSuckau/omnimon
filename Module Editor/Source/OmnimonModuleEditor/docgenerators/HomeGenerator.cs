@@ -1,9 +1,9 @@
-﻿using OmnimonModuleEditor.Models;
+﻿using OmnipetModuleEditor.Models;
 using System;
 using System.IO;
 using System.Linq;
 
-namespace OmnimonModuleEditor.docgenerators
+namespace OmnipetModuleEditor.docgenerators
 {
     internal class HomeGenerator
     {

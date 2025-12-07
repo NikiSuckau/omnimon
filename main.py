@@ -1,5 +1,5 @@
 """
-Omnimon Virtual Pet Game - Main Entry Point
+Omnipet Virtual Pet Game - Main Entry Point
 Handles pygame initialization, video/audio setup, and display management.
 The game logic is handled by the VirtualPetGame class in game/vpet.py
 """
@@ -12,15 +12,15 @@ import json
 
 import sys, os
 
-from game.core import constants
-from game.core.utils.document_utils import build_module_documentation
+from core import constants
+from core.utils.document_utils import build_module_documentation
 sys.stderr = open(os.devnull, 'w')
 
 # Add game directory to Python path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'game'))
 
-from game.vpet import VirtualPetGame
-from game.core.constants import *
+from vpet import VirtualPetGame
+from core.constants import *
 
 # Game Version
 VERSION = "0.9.9"
@@ -29,7 +29,7 @@ VERSION = "0.9.9"
 PYGAME_VERSION = tuple(map(int, pygame.version.ver.split('.')))
 IS_PYGAME2 = PYGAME_VERSION >= (2, 0, 0)
 
-print(f"[System] Omnimon Virtual Pet v{VERSION}")
+print(f"[System] Omnipet Virtual Pet v{VERSION}")
 print(f"[System] Detected Pygame version: {pygame.version.ver}")
 print(f"[System] Platform: {platform.system()} {platform.release()}")
 
@@ -175,7 +175,8 @@ def setup_display():
             scale_to_screen = False
 
     # Update game constants with base resolution
-    constants.update_resolution_constants(width=screen_width, height=screen_height)
+    from core import runtime_globals
+    runtime_globals.update_resolution_constants(width=screen_width, height=screen_height)
 
     if fullscreen_requested:
         screen_mode = pygame.FULLSCREEN | pygame.DOUBLEBUF
@@ -197,7 +198,7 @@ def setup_display():
     # Create the render surface if scaling
     render_surface = pygame.Surface((screen_width, screen_height)) if scale_to_screen else final_screen
 
-    pygame.display.set_caption(f"Omnimon {VERSION}")
+    pygame.display.set_caption(f"Omnipet {VERSION}")
     pygame.mouse.set_visible(False)
     pygame.event.set_allowed([
         pygame.QUIT, 
@@ -214,7 +215,7 @@ def setup_display():
 
 def main():
     """Main function to initialize and run the game"""
-    print("[Init] Starting Omnimon Virtual Pet Game...")
+    print("[Init] Starting Omnipet Virtual Pet Game...")
     
     # Setup pygame and display
     setup_pygame()

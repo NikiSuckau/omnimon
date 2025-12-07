@@ -1,8 +1,8 @@
-﻿using OmnimonModuleEditor.Models;
+﻿using OmnipetModuleEditor.Models;
 using System.IO;
 using System.Text;
 
-namespace OmnimonModuleEditor.docgenerators
+namespace OmnipetModuleEditor.docgenerators
 {
     internal class UnlockGenerator
     {

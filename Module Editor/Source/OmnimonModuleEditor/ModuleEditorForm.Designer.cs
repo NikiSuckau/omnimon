@@ -1,4 +1,4 @@
-﻿namespace OmnimonModuleEditor
+﻿namespace OmnipetModuleEditor
 {
     partial class ModuleEditorForm
     {

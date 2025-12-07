@@ -1,12 +1,12 @@
-﻿using OmnimonModuleEditor.docgenerators;
-using OmnimonModuleEditor.Models;
+﻿using OmnipetModuleEditor.docgenerators;
+using OmnipetModuleEditor.Models;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
-using Module = OmnimonModuleEditor.Models.Module;
+using Module = OmnipetModuleEditor.Models.Module;
 
-namespace OmnimonModuleEditor.controls
+namespace OmnipetModuleEditor.controls
 {
     internal class HTMLGenerator
     {

@@ -1,5 +1,5 @@
-﻿using OmnimonModuleEditor.Models;
-using OmnimonModuleEditor.Utils;
+﻿using OmnipetModuleEditor.Models;
+using OmnipetModuleEditor.Utils;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -7,7 +7,7 @@ using System.IO;
 using System.Linq;
 using System.Windows.Forms;
 
-namespace OmnimonModuleEditor
+namespace OmnipetModuleEditor
 {
     /// <summary>
     /// Editor window for managing fast enemy areas and rounds.

@@ -1,5 +1,5 @@
-using OmnimonModuleEditor.Models;
-using OmnimonModuleEditor.Utils;
+using OmnipetModuleEditor.Models;
+using OmnipetModuleEditor.Utils;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -8,7 +8,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Windows.Forms;
 
-namespace OmnimonModuleEditor.Controls
+namespace OmnipetModuleEditor.Controls
 {
     /// <summary>
     /// Panel that displays pet sprites and action buttons (Download, Import, Refresh).

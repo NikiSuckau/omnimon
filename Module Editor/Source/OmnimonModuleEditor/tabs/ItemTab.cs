@@ -1,4 +1,4 @@
-using OmnimonModuleEditor.Models;
+using OmnipetModuleEditor.Models;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -7,7 +7,7 @@ using System.Linq;
 using System.Text.Json;
 using System.Windows.Forms;
 
-namespace OmnimonModuleEditor.Tabs
+namespace OmnipetModuleEditor.Tabs
 {
     /// <summary>
     /// Editor tab for managing items in the module.

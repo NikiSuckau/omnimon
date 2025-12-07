@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
-namespace OmnimonModuleEditor.Models
+namespace OmnipetModuleEditor.Models
 {
     public class Pet
     {

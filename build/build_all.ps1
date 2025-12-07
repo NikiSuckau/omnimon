@@ -1,4 +1,4 @@
-# Main PowerShell build script for all Omnimon platforms
+# Main PowerShell build script for all Omnipet platforms
 param(
     [string]$Platform = "all",
     [string]$Version = ""
@@ -39,7 +39,7 @@ if (-not (Test-Path $RELEASE_DIR)) {
 }
 
 Write-Host "==========================================" -ForegroundColor Cyan
-Write-Host "  Omnimon Virtual Pet Build Script v$Version" -ForegroundColor Cyan  
+Write-Host "  Omnipet Virtual Pet Build Script v$Version" -ForegroundColor Cyan  
 # Function to check if a release already exists
 function Check-ReleaseExists {
     param(
@@ -47,18 +47,18 @@ function Check-ReleaseExists {
         [string]$Version,
         [string]$Extension = "zip"
     )
-    $buildName = "Omnimon_${PlatformName}_Ver_${Version}.${Extension}"
+    $buildName = "Omnipet_${PlatformName}_Ver_${Version}.${Extension}"
     if ($PlatformName -eq "Android") {
-        $buildName = "Omnimon_Android_Ver_${Version}.apk"
+        $buildName = "Omnipet_Android_Ver_${Version}.apk"
     }
     if ($PlatformName -eq "Windows") {
-        $buildName = "Omnimon_Windows_Ver_${Version}.zip"
+        $buildName = "Omnipet_Windows_Ver_${Version}.zip"
     }
     if ($PlatformName -eq "GamePi_Nuitka_ARM") {
-        $buildName = "Omnimon_GamePi_Nuitka_ARM_Ver_${Version}.zip"
+        $buildName = "Omnipet_GamePi_Nuitka_ARM_Ver_${Version}.zip"
     }
     if ($PlatformName -eq "Nuitka_Windows") {
-        $buildName = "Omnimon_Nuitka_Windows_Ver_${Version}.zip"
+        $buildName = "Omnipet_Nuitka_Windows_Ver_${Version}.zip"
     }
     
     $releasePath = Join-Path $RELEASE_DIR $buildName
@@ -188,7 +188,7 @@ function Build-Android {
     if (Check-ReleaseExists -PlatformName "Android" -Version $Version -Extension "apk") { return $true }
     Write-Status "Building Android version..."
     try {
-        powershell.exe -File ".\build_android_apk.ps1" -Version $Version
+        powershell.exe -File ".\build_android.ps1" -Version $Version
         if ($LASTEXITCODE -eq 0) {
             Write-Success "Android build completed"
             return $true
@@ -215,8 +215,8 @@ function Clean-Up {
     Remove-Item -Path (Join-Path $PSScriptRoot "temp_*") -Recurse -Force -ErrorAction SilentlyContinue
     
     # Clean up any compiled binaries from Nuitka builds
-    Remove-Item -Path (Join-Path $rootDir "omnimon.exe") -Force -ErrorAction SilentlyContinue
-    Remove-Item -Path (Join-Path $rootDir "omnimon") -Force -ErrorAction SilentlyContinue
+    Remove-Item -Path (Join-Path $rootDir "Omnipet.exe") -Force -ErrorAction SilentlyContinue
+    Remove-Item -Path (Join-Path $rootDir "Omnipet") -Force -ErrorAction SilentlyContinue
     Remove-Item -Path (Join-Path $rootDir "main_nuitka.exe") -Force -ErrorAction SilentlyContinue
     Remove-Item -Path (Join-Path $rootDir "main_nuitka") -Force -ErrorAction SilentlyContinue
     Remove-Item -Path (Join-Path $rootDir "*.pyd") -Force -ErrorAction SilentlyContinue
@@ -229,7 +229,7 @@ $success = $true
 $platformsToBuild = @()
 
 if ($Platform -eq "all") {
-    $platformsToBuild = @("windows", "python_desktop", "gamepi", "gamepi_nuitka", "nuitka_windows", "batocera", "android")
+    $platformsToBuild = @("windows", "python_desktop", "gamepi", "batocera", "android")
 } else {
     $platformsToBuild = @($Platform)
 }

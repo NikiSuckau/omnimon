@@ -1,4 +1,4 @@
-# PowerShell Batocera build script for Omnimon Virtual Pet Game
+# PowerShell Batocera build script for Omnipet Virtual Pet Game
 # Creates a Batocera version
 
 param(
@@ -6,7 +6,7 @@ param(
 )
 
 $RELEASE_DIR = "..\Release"
-$BUILD_NAME = "Omnimon_Batocera_Ver_$Version"
+$BUILD_NAME = "Omnipet_Batocera_Ver_$Version"
 $TEMP_DIR = "..\temp_batocera_build"
 
 function Write-Status {
@@ -30,8 +30,8 @@ if (-not (Test-Path "..\main.py")) {
     exit 1
 }
 
-if (-not (Test-Path "..\omnimon.pygame")) {
-    Write-Error-Message "omnimon.pygame not found"
+if (-not (Test-Path "..\omnipet.pygame")) {
+    Write-Error-Message "omnipet.pygame not found"
     exit 1
 }
 
@@ -63,15 +63,27 @@ Copy-Item "..\config\input_config_batocera.json" "$TEMP_DIR\$BUILD_NAME\config\i
 Write-Status "Copying documentation..."
 Copy-Item -Recurse "..\Documentation" "$TEMP_DIR\$BUILD_NAME\"
 
-# Copy game directory (excluding __pycache__ folders)
-Write-Status "Copying game directory..."
-$gameSource = (Resolve-Path "..\game").Path
-$gameDestination = "$TEMP_DIR\$BUILD_NAME\game"
-robocopy $gameSource $gameDestination /E /XD "__pycache__" /NFL /NDL /NJH /NJS /nc /ns /np | Out-Null
-if ($LASTEXITCODE -ge 8) {
-    Write-Error-Message "Failed to copy game directory using robocopy. Check if robocopy is in your system's PATH."
-    exit 1
-}
+# Copy core directory (excluding __pycache__ folders)
+Write-Status "Copying core directory..."
+$coreSource = (Resolve-Path "..\core").Path
+$coreDestination = "$TEMP_DIR\$BUILD_NAME\core"
+robocopy $coreSource $coreDestination /E /XD "__pycache__" /NFL /NDL /NJH /NJS /nc /ns /np | Out-Null
+
+# Copy components directory
+Write-Status "Copying components directory..."
+$compSource = (Resolve-Path "..\components").Path
+$compDestination = "$TEMP_DIR\$BUILD_NAME\components"
+robocopy $compSource $compDestination /E /XD "__pycache__" /NFL /NDL /NJH /NJS /nc /ns /np | Out-Null
+
+# Copy scenes directory
+Write-Status "Copying scenes directory..."
+$scenesSource = (Resolve-Path "..\scenes").Path
+$scenesDestination = "$TEMP_DIR\$BUILD_NAME\scenes"
+robocopy $scenesSource $scenesDestination /E /XD "__pycache__" /NFL /NDL /NJH /NJS /nc /ns /np | Out-Null
+
+# Copy vpet.py
+Write-Status "Copying vpet.py..."
+Copy-Item "..\vpet.py" "$TEMP_DIR\$BUILD_NAME\"
 
 # Copy modules
 Write-Status "Copying modules..."
@@ -86,7 +98,7 @@ Write-Status "Copying Python files and configuration..."
 Copy-Item "..\__init__.py" "$TEMP_DIR\$BUILD_NAME\"
 Copy-Item "..\LICENSE.txt" "$TEMP_DIR\$BUILD_NAME\"
 Copy-Item "..\main.py" "$TEMP_DIR\$BUILD_NAME\"
-Copy-Item "..\omnimon.pygame" "$TEMP_DIR\$BUILD_NAME\"
+Copy-Item "..\omnipet.pygame" "$TEMP_DIR\$BUILD_NAME\"
 
 # Copy input_test folder from utilities
 Write-Status "Copying input test utilities..."

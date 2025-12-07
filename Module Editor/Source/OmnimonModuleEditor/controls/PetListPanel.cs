@@ -1,8 +1,8 @@
-// OmnimonModuleEditor/Controls/PetListPanel.cs
+// OmnipetModuleEditor/Controls/PetListPanel.cs
 using System.Drawing;
 using System.Windows.Forms;
 
-namespace OmnimonModuleEditor.Controls
+namespace OmnipetModuleEditor.Controls
 {
     /// <summary>
     /// Panel that displays a list of pets and provides Add, Remove, Copy, and Paste buttons.

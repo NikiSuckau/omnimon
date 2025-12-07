@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Text.Json.Serialization;
 
-namespace OmnimonModuleEditor.Models
+namespace OmnipetModuleEditor.Models
 {
     public enum EventType
     {

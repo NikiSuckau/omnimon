@@ -8772,12 +8772,12 @@
       "critical_turn": 0,
       "evolve": [
         {
-          "to": "Omnimon",
+          "to": "Omnipet",
           "version": 5,
           "jogress": "WarGreymon"
         },
         {
-          "to": "Omnimon",
+          "to": "Omnipet",
           "version": 0,
           "jogress": "WarGreymon"
         }
@@ -8839,12 +8839,12 @@
       "critical_turn": 0,
       "evolve": [
         {
-          "to": "Omnimon",
+          "to": "Omnipet",
           "version": 5,
           "jogress": "MetalGarurumon"
         },
         {
-          "to": "Omnimon",
+          "to": "Omnipet",
           "version": 0,
           "jogress": "MetalGarurumon"
         }
@@ -8908,7 +8908,7 @@
       "evolve": []
     },
     {
-      "name": "Omnimon",
+      "name": "Omnipet",
       "stage": 7,
       "version": 5,
       "special": true,
@@ -10787,12 +10787,12 @@
       "critical_turn": 0,
       "evolve": [
         {
-          "to": "Omnimon",
+          "to": "Omnipet",
           "version": 0,
           "jogress": "WarGreymon"
         },
         {
-          "to": "Omnimon",
+          "to": "Omnipet",
           "version": 5,
           "jogress": "WarGreymon"
         }
@@ -10889,12 +10889,12 @@
       "critical_turn": 0,
       "evolve": [
         {
-          "to": "Omnimon",
+          "to": "Omnipet",
           "version": 0,
           "jogress": "MetalGarurumon"
         },
         {
-          "to": "Omnimon",
+          "to": "Omnipet",
           "version": 5,
           "jogress": "MetalGarurumon"
         }
@@ -10930,7 +10930,7 @@
       "evolve": []
     },
     {
-      "name": "Omnimon",
+      "name": "Omnipet",
       "stage": 7,
       "version": 0,
       "special": true,

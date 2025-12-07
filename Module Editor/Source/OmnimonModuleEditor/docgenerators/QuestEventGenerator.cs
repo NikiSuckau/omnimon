@@ -1,10 +1,10 @@
-using OmnimonModuleEditor.Models;
+using OmnipetModuleEditor.Models;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using System.Text.Json;
 
-namespace OmnimonModuleEditor.docgenerators
+namespace OmnipetModuleEditor.docgenerators
 {
     internal class QuestEventGenerator
     {

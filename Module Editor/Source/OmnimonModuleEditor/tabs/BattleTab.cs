@@ -1,6 +1,6 @@
-using OmnimonModuleEditor.Controls;
-using OmnimonModuleEditor.Models;
-using OmnimonModuleEditor.Utils;
+using OmnipetModuleEditor.Controls;
+using OmnipetModuleEditor.Models;
+using OmnipetModuleEditor.Utils;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -9,7 +9,7 @@ using System.Linq;
 using System.Text.Json;
 using System.Windows.Forms;
 
-namespace OmnimonModuleEditor.Tabs
+namespace OmnipetModuleEditor.Tabs
 {
     /// <summary>
     /// Tab for managing and editing battle enemies in the module.
@@ -629,7 +629,7 @@ namespace OmnimonModuleEditor.Tabs
                 TxtName = new TextBox();
                 NumPower = new NumericUpDown { Minimum = 1, Maximum = 999999, Value = 10 };
                 CmbStage = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList };
-                CmbStage.Items.AddRange(Enum.GetNames(typeof(OmnimonModuleEditor.Models.StageEnum)));
+                CmbStage.Items.AddRange(Enum.GetNames(typeof(OmnipetModuleEditor.Models.StageEnum)));
                 CmbAttribute = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList };
                 CmbAttribute.Items.AddRange(new object[] { "Free", "Data", "Virus", "Vaccine" });
                 NumHp = new NumericUpDown { Minimum = 0, Maximum = 999999, Value = 1 };

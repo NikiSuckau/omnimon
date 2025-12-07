@@ -1,4 +1,4 @@
-# PowerShell Windows Nuitka build script for Omnimon Virtual Pet Game
+# PowerShell Windows Nuitka build script for Omnipet Virtual Pet Game
 # Uses Nuitka for packaging and performance optimization
 # Windows testing/production version
 
@@ -10,7 +10,7 @@ param(
 $SCRIPT_DIR = $PSScriptRoot
 $PROJECT_ROOT = Split-Path $SCRIPT_DIR -Parent
 $RELEASE_DIR = Join-Path $PROJECT_ROOT "Release"
-$BUILD_NAME = "Omnimon_Nuitka_Windows_Ver_$Version"
+$BUILD_NAME = "Omnipet_Nuitka_Windows_Ver_$Version"
 $TEMP_DIR = Join-Path $PROJECT_ROOT "temp_nuitka_windows_build"
 
 function Write-Status {
@@ -78,7 +78,7 @@ try {
     # Nuitka build command for Windows
     python -m nuitka `
         --output-dir="$TEMP_DIR" `
-        --output-filename="omnimon" `
+        --output-filename="omnipet" `
         --include-package="game" `
         --include-package="game.core" `
         --include-package="game.core.combat" `
@@ -120,12 +120,12 @@ try {
     Write-Success "Nuitka compilation completed successfully"
     
     # Check if the compiled Windows binary exists
-    $binaryPath = "$PROJECT_ROOT\omnimon.exe"
+    $binaryPath = "$PROJECT_ROOT\omnipet.exe"
     if (-not (Test-Path $binaryPath)) {
         # Try alternative locations
         $binaryPath = "$PROJECT_ROOT\main_nuitka.exe" 
         if (-not (Test-Path $binaryPath)) {
-            $binaryPath = "$TEMP_DIR\omnimon.exe"
+            $binaryPath = "$TEMP_DIR\omnipet.exe"
             if (-not (Test-Path $binaryPath)) {
                 $binaryPath = "$TEMP_DIR\main_nuitka.exe" 
                 if (-not (Test-Path $binaryPath)) {
@@ -156,7 +156,7 @@ New-Item -ItemType Directory -Path "$TEMP_DIR\$BUILD_NAME" -Force | Out-Null
 Write-Status "Copying compiled binary and dependencies..."
 
 # Copy the main Windows executable
-Copy-Item $binaryPath "$TEMP_DIR\$BUILD_NAME\omnimon.exe" -Force
+Copy-Item $binaryPath "$TEMP_DIR\$BUILD_NAME\omnipet.exe" -Force
 Write-Status "Copied main executable from: $binaryPath"
 
 # Copy any .pyd files (compiled modules) from temp dir

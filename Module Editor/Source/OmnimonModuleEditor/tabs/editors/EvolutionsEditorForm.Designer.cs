@@ -1,8 +1,8 @@
-﻿using OmnimonModuleEditor.Models;
+﻿using OmnipetModuleEditor.Models;
 using System.Collections.Generic;
 using System.Windows.Forms;
 
-namespace OmnimonModuleEditor
+namespace OmnipetModuleEditor
 {
     partial class EvolutionsEditorForm : Form
     {

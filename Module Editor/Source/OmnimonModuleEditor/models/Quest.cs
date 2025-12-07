@@ -5,7 +5,7 @@ using System.Text;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
-namespace OmnimonModuleEditor.Models
+namespace OmnipetModuleEditor.Models
 {
     public enum QuestType { Boss, Training, Battle, Feeding, Evolution, Armor_Evolution, Jogress }
     public enum RewardType { Item, Trophy, Experience, Vital_Values }

@@ -1,6 +1,6 @@
-# Omnimon Virtual Pet Game - Build Requirements
+# Omnipet Virtual Pet Game - Build Requirements
 
-This document outlines the requirements for building Omnimon Virtual Pet Game across different platforms and build systems.
+This document outlines the requirements for building Omnipet Virtual Pet Game across different platforms and build systems.
 
 ## Table of Contents
 - [General Requirements](#general-requirements)
@@ -73,7 +73,7 @@ pyinstaller>=5.0
 pip install pyinstaller>=5.0 pygame>=2.0.0 psutil>=5.8.0
 ```
 
-**Build Output**: `Omnimon.exe` (standalone executable)
+**Build Output**: `Omnipet.exe` (standalone executable)
 **Runtime Requirements**: None (includes Python runtime)
 
 ---
@@ -96,7 +96,7 @@ pip install pyinstaller>=5.0 pygame>=2.0.0 psutil>=5.8.0
 pip install nuitka>=1.8.0 pygame>=2.0.0 psutil>=5.8.0
 ```
 
-**Build Output**: `omnimon.exe` (optimized standalone executable)
+**Build Output**: `omnipet.exe` (optimized standalone executable)
 **Runtime Requirements**: None (includes Python runtime)
 **Advantages**: Better performance, smaller file size than PyInstaller
 
@@ -183,7 +183,7 @@ pip install buildozer python-for-android
 sudo apt install -y git zip unzip openjdk-8-jdk python3-pip autoconf libtool pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev libtinfo5 cmake libffi-dev libssl-dev
 ```
 
-**Build Output**: `omnimon.apk`
+**Build Output**: `omnipet.apk`
 **Runtime Requirements**: Android 5.0+ (API level 21+)
 
 ## Quick Setup Commands
@@ -299,14 +299,14 @@ buildozer init
 The following files must be present in the project root for builds to work:
 
 ```
-Omnimon/
+Omnipet/
 ├── .gitattributes         # Git line ending configuration (IMPORTANT)
 ├── main.py                # Standard Python entry point
 ├── main_nuitka.py         # Nuitka-optimized entry point
 ├── launch.sh              # Unix/Linux/macOS launch script
 ├── fix-line-endings.sh    # Quick fix for line ending issues
 ├── pyinstall.spec         # PyInstaller configuration
-├── omnimon.pygame         # Batocera package metadata
+├── omnipet.pygame         # Batocera package metadata
 ├── assets/                # Game assets (sprites, sounds)
 ├── modules/               # Game modules (DMC, etc.)
 ├── config/                # Configuration files

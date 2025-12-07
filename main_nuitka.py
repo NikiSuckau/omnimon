@@ -1,5 +1,5 @@
 """
-Omnimon Virtual Pet Game - Main Entry Point for Nuitka Builds
+Omnipet Virtual Pet Game - Main Entry Point for Nuitka Builds
 Handles pygame initialization with explicit video driver setup for embedded/low-power devices.
 The game logic is handled by the VirtualPetGame class in game/vpet.py
 """
@@ -190,7 +190,7 @@ def setup_display():
     # Create the render surface if scaling
     render_surface = pygame.Surface((screen_width, screen_height)) if scale_to_screen else final_screen
 
-    pygame.display.set_caption(f"Omnimon {VERSION}")
+    pygame.display.set_caption(f"Omnipet {VERSION}")
     pygame.mouse.set_visible(False)
     pygame.event.set_allowed([
         pygame.QUIT, 
@@ -207,7 +207,7 @@ def setup_display():
 
 def main():
     """Main function to initialize and run the game"""
-    logging.info("[Init] Starting Omnimon Virtual Pet Game...")
+    logging.info("[Init] Starting Omnipet Virtual Pet Game...")
     
     # Setup pygame and display
     setup_pygame()
@@ -327,7 +327,7 @@ if __name__ == "__main__":
         # If not frozen, it's running as a script, so the base is the script's directory.
         # BUT: If we're running from a Nuitka executable that doesn't set frozen properly,
         # we need to detect this case
-        if os.path.basename(sys.executable).lower() == 'omnimon.exe':
+        if os.path.basename(sys.executable).lower() == 'omnipet.exe':
             # We're likely running from a Nuitka executable
             base_dir = os.path.dirname(sys.executable)
             print(f"[Nuitka-Alt] Detected Nuitka executable, using executable directory: {base_dir}")
@@ -403,14 +403,14 @@ if __name__ == "__main__":
     log_dir = os.path.join(base_dir, 'logs')
     if not os.path.exists(log_dir):
         os.makedirs(log_dir)
-    logging.basicConfig(filename=os.path.join(log_dir, 'omnimon.log'), level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+    logging.basicConfig(filename=os.path.join(log_dir, 'omnipet.log'), level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
     logging.info("Application starting...")
     
     # Log system information
     PYGAME_VERSION = tuple(map(int, pygame.version.ver.split('.')))
     IS_PYGAME2 = PYGAME_VERSION >= (2, 0, 0)
     
-    logging.info(f"[System] Omnimon Virtual Pet v{VERSION}")
+    logging.info(f"[System] Omnipet Virtual Pet v{VERSION}")
     logging.info(f"[System] Detected Pygame version: {pygame.version.ver}")
     logging.info(f"[System] Platform: {platform.system()} {platform.release()}")
     

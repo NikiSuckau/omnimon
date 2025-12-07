@@ -1,9 +1,9 @@
 ﻿using System;
 using System.IO;
 using System.Reflection;
-using OmnimonModuleEditor.Utils;
+using OmnipetModuleEditor.Utils;
 
-namespace OmnimonModuleEditor.docgenerators
+namespace OmnipetModuleEditor.docgenerators
 {
     internal class GeneratorUtils
     {
@@ -925,14 +925,14 @@ namespace OmnimonModuleEditor.docgenerators
             }
         }
 
-        public static string GetPetSprite(string petName, OmnimonModuleEditor.Models.Module module)
+        public static string GetPetSprite(string petName, OmnipetModuleEditor.Models.Module module)
         {
             // Use fixed name format instead of module.NameFormat
             string spriteName = GetPetFolderName(petName, null);
             return $"../monsters/{spriteName}/0.png";
         }
 
-        public static string GetPetFolderName(string petName, OmnimonModuleEditor.Models.Module module)
+        public static string GetPetFolderName(string petName, OmnipetModuleEditor.Models.Module module)
         {
             // Use fixed name format regardless of module
             return PetUtils.FixedNameFormat.Replace("$", CleanPetId(petName));

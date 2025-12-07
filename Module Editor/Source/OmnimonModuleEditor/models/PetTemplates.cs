@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace OmnimonModuleEditor.Models
+namespace OmnipetModuleEditor.Models
 {
     public static class PetTemplates
     {

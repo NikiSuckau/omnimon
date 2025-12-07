@@ -1,5 +1,5 @@
-using OmnimonModuleEditor.Models;
-using OmnimonModuleEditor.Properties;
+using OmnipetModuleEditor.Models;
+using OmnipetModuleEditor.Properties;
 using System;
 using System.Collections.Generic;
 using System.Drawing;

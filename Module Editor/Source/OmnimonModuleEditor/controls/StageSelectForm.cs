@@ -2,7 +2,7 @@ using System;
 using System.Drawing;
 using System.Windows.Forms;
 
-namespace OmnimonModuleEditor.Controls
+namespace OmnipetModuleEditor.Controls
 {
     /// <summary>
     /// Popup dialog for selecting a pet stage.

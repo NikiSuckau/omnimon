@@ -1,7 +1,7 @@
-﻿using OmnimonModuleEditor.Models;
+﻿using OmnipetModuleEditor.Models;
 using System.IO;
 
-namespace OmnimonModuleEditor.docgenerators
+namespace OmnipetModuleEditor.docgenerators
 {
     internal class IndexGenerator
     {

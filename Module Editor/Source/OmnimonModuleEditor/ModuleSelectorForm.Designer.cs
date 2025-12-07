@@ -1,4 +1,4 @@
-﻿namespace OmnimonModuleEditor
+﻿namespace OmnipetModuleEditor
 {
     partial class ModuleSelectorForm
     {
@@ -108,7 +108,7 @@
             this.Controls.Add(this.buttonRemove);
             this.Controls.Add(this.buttonEdit);
             this.Name = "ModuleSelectorForm";
-            this.Text = "Omnimon Module Manager";
+            this.Text = "Omnipet Module Manager";
             this.ResumeLayout(false);
             this.PerformLayout();
 
