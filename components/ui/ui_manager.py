@@ -13,7 +13,9 @@ DEBUG_SCALE = False  # Set to True to enable detailed scaling debug logs
 
 class UIManager:
     def __init__(self, theme="PURPLE"):
-        self.screen_size = pygame.display.get_surface().get_size()
+        # Use runtime globals for screen size so UI manager honors
+        # the configured/internal resolution (especially on Android)
+        self.screen_size = (runtime_globals.SCREEN_WIDTH, runtime_globals.SCREEN_HEIGHT)
         self.ui_scale = self.determine_scale()
         self.components = []
         self.focusable_components = []
@@ -21,6 +23,10 @@ class UIManager:
         self.theme = theme
         self.animation_components = []
         self.cached_background = None
+        
+        # Master UI cache - single surface for entire UI to reduce blits
+        self.master_ui_surface = None
+        self.master_ui_dirty = True  # Track if master surface needs rebuild
         
         # Shadow system configuration
         # Global shadow mode: None (disabled), "component", "background", "full"
@@ -40,11 +46,6 @@ class UIManager:
         self.last_mouse_pos = (0, 0)
         self.mouse_over_component = None
         self.mouse_over_sub_rect = None
-        
-        # Navigation mode tracking
-        self.keyboard_navigation_mode = False  # True when using keyboard, False when using mouse
-        self.last_keyboard_action_time = 0
-        self.keyboard_timeout = 2000  # ms - after this time, switch back to mouse mode
         
         # Tooltip system
         self.active_tooltip = None
@@ -481,10 +482,6 @@ class UIManager:
         if not self.focusable_components:
             return
             
-        # Enter keyboard navigation mode
-        self.keyboard_navigation_mode = True
-        self.last_keyboard_action_time = pygame.time.get_ticks()
-        
         # Find next visible focusable component
         current_index = self.focused_index if self.focused_index >= 0 else -1
         next_index = self.get_next_visible_focusable(current_index)
@@ -516,10 +513,6 @@ class UIManager:
         if not self.focusable_components:
             return
             
-        # Enter keyboard navigation mode
-        self.keyboard_navigation_mode = True
-        self.last_keyboard_action_time = pygame.time.get_ticks()
-        
         # Find previous visible focusable component
         current_index = self.focused_index if self.focused_index >= 0 else 0
         prev_index = self.get_prev_visible_focusable(current_index)
@@ -549,17 +542,12 @@ class UIManager:
         
     def handle_event(self, event):
         """Handle input events (keyboard, joystick, mouse)"""
-            
-        #if self.menu_blockers_input and (isinstance(event, str) or event.type in [pygame.KEYDOWN, pygame.MOUSEBUTTONDOWN, pygame.JOYBUTTONDOWN]):
-        #    self.menu_blockers_input = False
-        #    return True  # Block event this frame only
-
-        if event == "A":
-            print("DEBUG: UIManager received A action")
+        # All events are now tuples: (event_type, event_data)
+        event_type, event_data = event
 
         # Modal components have highest priority (like tooltips)
         # Stats panel blocks all events while visible
-        if self.active_stats_panel and self.active_stats_panel.visible and isinstance(event, str):
+        if self.active_stats_panel and self.active_stats_panel.visible:
             self.remove_component(self.active_stats_panel)
             self.active_stats_panel = None
             runtime_globals.game_sound.play("cancel")
@@ -571,48 +559,32 @@ class UIManager:
             self.active_menu.handle_event(event)
             return True  # Always block events when menu is visible
 
-        if self.active_tooltip and isinstance(event, str):
+        if self.active_tooltip:
             self.hide_tooltip()
             return True
         
-        # Handle mouse events with proper coordinate conversion
-        if hasattr(event, 'type') and event.type == pygame.MOUSEMOTION:
-            # Convert screen position to base UI coordinates for mouse handling
-            self.update_mouse_focus(event.pos)
+        # Handle mouse motion for focus updates
+        if event_type == "MOUSE_MOTION" and event_data and "pos" in event_data:
+            self.update_mouse_focus(event_data["pos"])
         
-        # Let components handle the event first (priority order)
-
+        # In touch mode, update focus position when receiving LCLICK (since there's no MOUSE_MOTION)
+        if event_type == "LCLICK" and runtime_globals.INPUT_MODE == runtime_globals.TOUCH_MODE:
+            if event_data and "pos" in event_data:
+                self.update_mouse_focus(event_data["pos"])
+        
+        # Let focused component handle the event first (priority order)
         if self.focused_index >= 0:
             focused_component = self.focusable_components[self.focused_index]
             if focused_component.visible and hasattr(focused_component, 'handle_event'):
                 if focused_component.handle_event(event):
                     return True
-
-        #for component in self.components:
-        #    if component.visible and hasattr(component, 'handle_event') and component.handle_event(event):
-        #        return True
         
         return self.handle_input_action(event)
     
     def update_mouse_focus(self, mouse_pos):
         """Update focus based on mouse position with sub-component support"""
-        if not runtime_globals.game_input.is_mouse_enabled():
+        if runtime_globals.INPUT_MODE not in [runtime_globals.MOUSE_MODE, runtime_globals.TOUCH_MODE]:
             return
-        
-        # Check if mouse has moved significantly (exit keyboard mode if it has)
-        if self.keyboard_navigation_mode:
-            dx = abs(mouse_pos[0] - self.last_mouse_pos[0])
-            dy = abs(mouse_pos[1] - self.last_mouse_pos[1])
-            mouse_moved = dx > 5 or dy > 5
-            if mouse_moved:
-                runtime_globals.game_console.log(f"[UIManager] Mouse moved {dx},{dy} pixels - exiting keyboard mode")
-                self.keyboard_navigation_mode = False
-                # Fall through to update focus
-            else:
-                # Update last_mouse_pos even when not processing to track cumulative movement
-                self.last_mouse_pos = mouse_pos
-                # Don't update focus while in keyboard navigation mode
-                return
         
         self.last_mouse_pos = mouse_pos
         
@@ -865,10 +837,6 @@ class UIManager:
                     current_component.on_focus_lost()
                 self.focused_index = -1
             
-        # Enter keyboard navigation mode
-        self.keyboard_navigation_mode = True
-        self.last_keyboard_action_time = pygame.time.get_ticks()
-        
         # If no component is currently focused, focus the first visible one
         if self.focused_index < 0:
             first_visible = self.get_next_visible_focusable(-1)
@@ -918,16 +886,13 @@ class UIManager:
         return (abs(rect1.x - rect2.x) < 2 and abs(rect1.y - rect2.y) < 2 and
                 abs(rect1.width - rect2.width) < 2 and abs(rect1.height - rect2.height) < 2)
     
-    def handle_input_action(self, action):
+    def handle_input_action(self, event):
         """Handle input actions and route to appropriate components"""
-
-        # Close tooltip on any other input (except mouse movement)
-        #if self.active_tooltip:
-        #    self.hide_tooltip()
-        #    return True
+        # Event is a tuple: (event_type, event_data)
+        event_type, event_data = event
 
         # Handle mouse clicks differently from keyboard actions
-        if action == "LCLICK":
+        if event_type == "LCLICK":
             # For mouse clicks, find the component under the mouse and handle it there
             if hasattr(self, '_input_manager'):
                 mouse_pos = self._input_manager.get_mouse_position()
@@ -952,7 +917,7 @@ class UIManager:
                         # First try explicit mouse click handler
                         if hasattr(component, 'handle_mouse_click'):
                             runtime_globals.game_console.log(f"[UIManager] Calling handle_mouse_click on {comp_name}")
-                            result = component.handle_mouse_click(mouse_pos, action)
+                            result = component.handle_mouse_click(mouse_pos, event_type)
                             runtime_globals.game_console.log(f"[UIManager] handle_mouse_click returned {result}")
                             if result:
                                 # Update focus to this component if it's focusable and handled the click
@@ -1015,13 +980,11 @@ class UIManager:
                 
                 # If no component handled the mouse click, let it fall through
                 return False
-            else:
-                # No input manager available, fall back to focused component behavior
-                action = "A"  # Treat as keyboard action
-        elif action == "RCLICK":
+
+        elif event_type == "RCLICK":
             # Similar handling for right clicks
-            if hasattr(self, '_input_manager'):
-                mouse_pos = self._input_manager.get_mouse_position()
+            if event_data and "pos" in event_data:
+                mouse_pos = event_data["pos"]
                 
                 # Check components in reverse order (top to bottom) for mouse clicks
                 for component in reversed(self.components):
@@ -1031,7 +994,7 @@ class UIManager:
                         
                     if hasattr(component, 'handle_mouse_click') and hasattr(component, 'rect'):
                         if component.rect.collidepoint(mouse_pos):
-                            return component.handle_mouse_click(mouse_pos, action)
+                            return component.handle_mouse_click(mouse_pos, event_type)
                     elif hasattr(component, 'rect') and component.rect.collidepoint(mouse_pos):
                         # For right click, just focus without activating
                         if hasattr(component, 'focusable') and component.focusable:
@@ -1055,12 +1018,9 @@ class UIManager:
                 
                 # If no component handled the mouse click, let it fall through
                 return False
-            else:
-                # No input manager available, treat as keyboard action
-                action = "B"
 
         # Handle tooltip activation for keyboard A button
-        if action == "A":
+        if event_type == "A":
             if self.focused_index >= 0:
                 focused_component = self.focusable_components[self.focused_index]
                 if hasattr(focused_component, 'tooltip_text') and focused_component.tooltip_text:
@@ -1071,40 +1031,40 @@ class UIManager:
                         self.show_tooltip(focused_component.tooltip_text)
                     return True
             
-        # First, let the focused component handle the action
+        # First, let the focused component handle the event
         if self.focused_index >= 0:
             focused_component = self.focusable_components[self.focused_index]
             if hasattr(focused_component, 'handle_event'):
-                if focused_component.handle_event(action):
+                if focused_component.handle_event(event):
                     return True
     
         # If focused component didn't handle it, try global UI actions
         # Scroll actions
-        if action in ["SCROLL_UP", "SCROLL_DOWN"]:
-            return self.handle_scroll(action)
+        if event_type == "SCROLL":
+            return self.handle_scroll(event)
         
         # Drag actions
-        elif action in ["DRAG_START", "DRAG_MOTION", "DRAG_END"]:
-            return self.handle_drag(action)
+        elif event_type in ["DRAG_START", "DRAG_MOTION", "DRAG_END"]:
+            return self.handle_drag(event)
         
         # Global navigation actions (only if no component handled them)
-        elif action == "LEFT":
+        elif event_type == "LEFT":
             return self.focus_direction("LEFT")
-        elif action == "RIGHT":
+        elif event_type == "RIGHT":
             return self.focus_direction("RIGHT")
-        elif action == "UP":
+        elif event_type == "UP":
             return self.focus_direction("UP")
-        elif action == "DOWN":
+        elif event_type == "DOWN":
             return self.focus_direction("DOWN")
-        elif action in ["TAB"]:  # TAB for next component
+        elif event_type in ["TAB"]:  # TAB for next component
             self.focus_next()
             return True
-        elif action in ["SHIFT_TAB"]:  # SHIFT+TAB for previous component
+        elif event_type in ["SHIFT_TAB"]:
             self.focus_prev()
             return True
         
         # These are only fallbacks if no focused component handled them
-        elif action == "A":
+        elif event_type == "A":
             return self.activate_focused_component()
             
         return False
@@ -1128,40 +1088,33 @@ class UIManager:
         
         return False
     
-    def handle_scroll(self, action):
+    def handle_scroll(self, event):
         """Handle scroll events on focused or hovered components"""
-        # Enable keyboard navigation mode for scroll events
-        self.keyboard_navigation_mode = True
-        
         # First try the focused component
         if self.focused_index >= 0:
             focused_component = self.focusable_components[self.focused_index]
             if hasattr(focused_component, 'handle_scroll'):
-                result = focused_component.handle_scroll(action)
+                result = focused_component.handle_scroll(event)
                 if result:
                     return True
         
         # If no focused component handled it, try mouse hover
-        if hasattr(self, '_input_manager'):
-            mouse_pos = self._input_manager.get_mouse_position()
-            for component in self.components:
-                if hasattr(component, 'handle_scroll') and hasattr(component, 'rect'):
-                    if component.rect.collidepoint(mouse_pos):
-                        result = component.handle_scroll(action)
-                        if result:
-                            return True
+        mouse_pos = runtime_globals.game_input.get_mouse_position()
+        for component in self.components:
+            if hasattr(component, 'handle_scroll') and hasattr(component, 'rect'):
+                if component.rect.collidepoint(mouse_pos):
+                    result = component.handle_scroll(event)
+                    if result:
+                        return True
         
         return False
     
-    def handle_drag(self, action):
+    def handle_drag(self, event):
         """Handle drag events"""
-        if not hasattr(self, '_input_manager'):
-            return False
-            
         # Route to components that support dragging
         for component in self.components:
             if component.visible and hasattr(component, 'handle_drag'):
-                result = component.handle_drag(action, self._input_manager)
+                result = component.handle_drag(event)
                 if result:
                     return True
         
@@ -1201,7 +1154,7 @@ class UIManager:
         try:
             from components.ui.simple_tooltip import Tooltip
             # Create tooltip component
-            screen_size = pygame.display.get_surface().get_size()
+            screen_size = (runtime_globals.SCREEN_WIDTH, runtime_globals.SCREEN_HEIGHT)
             self.active_tooltip = Tooltip(text, screen_size[0], screen_size[1])
             self.active_tooltip.set_manager(self)  # Use set_manager to trigger scaling
             self.menu_blockers_input = True
@@ -1246,14 +1199,50 @@ class UIManager:
         if self.active_tooltip:
             self.active_tooltip.update()
         
+        # Track if any STATIC components need redraw (dynamic components don't affect master cache)
+        static_needs_redraw = False
+        redraw_components = []
         for component in self.components:
             component.update()
+            # Only mark master surface dirty if a static component needs redraw
+            # Dynamic components render separately and don't affect the cached master surface
+            if not component.is_dynamic and (component.needs_redraw or component.cached_surface is None):
+                static_needs_redraw = True
+                # Include reason in component name
+                reason = "needs_redraw" if component.needs_redraw else "cached_surface_None"
+                redraw_components.append(f"{component.__class__.__name__}({reason})")
+        
+        # Log once per second to avoid spam
+        if static_needs_redraw and hasattr(self, '_last_redraw_log'):
+            import time
+            current_time = time.time()
+            if current_time - self._last_redraw_log >= 1.0:
+                runtime_globals.game_console.log(f"[UIManager] Static components needing redraw: {', '.join(set(redraw_components))}")
+                self._last_redraw_log = current_time
+        elif static_needs_redraw:
+            import time
+            self._last_redraw_log = time.time()
+        
+        # Only invalidate master cache if static components changed
+        if static_needs_redraw:
+            self.master_ui_dirty = True
             
     def draw(self, surface):
-        """Draw all components directly at their scaled positions"""
-        # Draw all components directly to the main surface at their scaled positions
+        """Draw all components using master UI cache for static elements and direct rendering for dynamic elements"""
+        # Rebuild master UI surface only if static components changed
+        if self.master_ui_dirty or self.master_ui_surface is None:
+            self._rebuild_master_ui_surface()
+            self.master_ui_dirty = False
+        
+        # Single blit of entire static UI from cached master surface
+        if self.master_ui_surface:
+            from core.utils.pygame_utils import blit_with_cache
+            blit_with_cache(surface, self.master_ui_surface, (self.ui_offset_x, self.ui_offset_y))
+        
+        # Draw dynamic components separately (not cached in master surface)
         for component in self.components:
-            component.draw(surface)
+            if component.visible and component.is_dynamic:
+                component.draw(surface, ui_local=False)
             
         # Draw external border if UI is smaller than screen AND there's a visible Background component
         if self.ui_offset_x > 0 or self.ui_offset_y > 0:
@@ -1275,11 +1264,52 @@ class UIManager:
         # Draw modal components on top (menu first, then tooltip on top of everything)
         if self.active_menu and self.active_menu.visible:
             menu_surface = self.active_menu.render()
-            surface.blit(menu_surface, (self.active_menu.rect.x, self.active_menu.rect.y))
+            from core.utils.pygame_utils import blit_with_cache
+            blit_with_cache(surface, menu_surface, (self.active_menu.rect.x, self.active_menu.rect.y))
         
         # Draw tooltip at scaled position (on top of everything including menu)
         if self.active_tooltip:
             self.active_tooltip.draw(surface)
+    
+    def _rebuild_master_ui_surface(self):
+        """Rebuild the master UI surface by rendering all static components to it."""
+        # Create master surface if needed
+        if self.master_ui_surface is None:
+            self.master_ui_surface = pygame.Surface((self.ui_width, self.ui_height), pygame.SRCALPHA)
+        
+        # Clear the master surface
+        self.master_ui_surface.fill((0, 0, 0, 0))
+        
+        # Draw only static (non-dynamic) visible components to the master surface
+        # Dynamic components will be drawn separately on top
+        for component in self.components:
+            if component.visible and not component.is_dynamic:
+                component.draw(self.master_ui_surface, ui_local=True)
+            elif not component.is_dynamic:
+                # For invisible static components, clear flags and ensure cached_surface exists
+                # This prevents redraw loops when components toggle visibility
+                if component.needs_redraw or component.cached_surface is None:
+                    component.cached_surface = component.render()
+                    component.needs_redraw = False
+        
+        # Draw border on master surface if theme has it
+        colors = self.get_theme_colors()
+        if self.theme != "PURPLE":
+            if "border" in colors:
+                border_color = colors["border"]
+                border_size = 2
+                border_rect = pygame.Rect(0, 0, self.ui_width, self.ui_height)
+                pygame.draw.rect(self.master_ui_surface, border_color, border_rect, width=border_size)
+        else:
+            # For PURPLE theme (default), draw purple border
+            if "fg" in colors:
+                border_color = colors["fg"]
+                border_size = 2
+                border_rect = pygame.Rect(0, 0, self.ui_width, self.ui_height)
+                pygame.draw.rect(self.master_ui_surface, border_color, border_rect, width=border_size)
+        
+        # Mark as clean
+        self.master_ui_dirty = False
     
     def set_focused_component(self, component):
         """Set focus to a specific component"""
@@ -1303,8 +1333,6 @@ class UIManager:
         component.focused = True
         component.needs_redraw = True
         component.cached_surface = None  # Force regeneration
-        # Enable keyboard navigation mode to prevent mouse from clearing focus
-        self.keyboard_navigation_mode = True
         if hasattr(component, 'on_focus_gained'):
             component.on_focus_gained()
             
@@ -1317,12 +1345,6 @@ class UIManager:
         # Individual component highlighting - no global highlight system
         component.needs_redraw = True
         return True
-    
-    def set_mouse_mode(self):
-        """Explicitly set the UI to mouse mode"""
-        self.keyboard_navigation_mode = False
-        self.last_keyboard_action_time = 0
-        self.highlight_visible = True
         
     def load_sprite_integer_scaling(self, prefix, name, suffix=None):
         """

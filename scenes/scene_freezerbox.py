@@ -16,6 +16,7 @@ from core import game_globals, runtime_globals
 import core.constants as constants
 from core.game_freezer import GameFreezer
 from core.utils.scene_utils import change_scene
+from core.utils.pygame_utils import sprite_load
 
 class SceneFreezerBox:
     def __init__(self):
@@ -151,7 +152,6 @@ class SceneFreezerBox:
         self.menu.rect = self.ui_manager.scale_rect(self.menu.base_rect)
         
         # Set mouse mode and initial focus
-        self.ui_manager.set_mouse_mode()
         self.ui_manager.set_focused_component(self.party_grid)
     
     def _on_party_mode(self):
@@ -177,7 +177,7 @@ class SceneFreezerBox:
             self.freezer_grid.visible = True
             self.freezer_grid.refresh_from_freezer_page(self.freezer_pets[self.current_freezer_page])
             # Show arrow buttons only if mouse is enabled
-            mouse_enabled = runtime_globals.game_input.mouse_enabled if runtime_globals.game_input else False
+            mouse_enabled = (runtime_globals.INPUT_MODE == runtime_globals.MOUSE_MODE or runtime_globals.INPUT_MODE == runtime_globals.TOUCH_MODE) if runtime_globals.game_input else False
             self.prev_page_button.visible = mouse_enabled
             self.next_page_button.visible = mouse_enabled
             self.box_page_label.visible = True
@@ -301,6 +301,8 @@ class SceneFreezerBox:
                         if selected_pet in self.freezer_pets[self.current_freezer_page].pets:
                             self.freezer_pets[self.current_freezer_page].pets.remove(selected_pet)
                             selected_pet.patch()
+                            # Reset position to fix Y coordinate after resolution changes
+                            selected_pet.begin_position()
                             game_globals.pet_list.append(selected_pet)
                             runtime_globals.game_console.log(f"Moved {selected_pet.name} to party.")
                             runtime_globals.game_sound.play("menu")
@@ -340,9 +342,15 @@ class SceneFreezerBox:
         self.menu.close()
     
     def clean_unused_pet_sprites(self):
+        """Clear and reload pet sprites, preserving dead pet sprites."""
         runtime_globals.pet_sprites = {}
         for pet in game_globals.pet_list:
             pet.load_sprite()
+            # Restore dead sprite if pet is dead
+            if pet.state == "dead":
+                dead_sprite = sprite_load(constants.DEAD_FRAME_PATH, size=(runtime_globals.PET_WIDTH, runtime_globals.PET_HEIGHT))
+                runtime_globals.pet_sprites[pet][0] = dead_sprite
+                runtime_globals.pet_sprites[pet][1] = dead_sprite
 
     def load_current_freezer_sprites(self):
         # Load sprites for pets on the current freezer page
@@ -354,7 +362,19 @@ class SceneFreezerBox:
 
 
     def load_freezer_data(self):
-        file_path = "save/freezer.pkl"
+        # Use Android-compatible path if running on Android
+        if runtime_globals.IS_ANDROID:
+            try:
+                from android.storage import app_storage_path # type: ignore
+                save_dir = os.path.join(app_storage_path(), "save")
+                os.makedirs(save_dir, exist_ok=True)
+                file_path = os.path.join(save_dir, "freezer.pkl")
+            except Exception as e:
+                print(f"[Freezer] Failed to get Android storage path: {e}")
+                file_path = "save/freezer.pkl"
+        else:
+            file_path = "save/freezer.pkl"
+        
         if os.path.exists(file_path):
             with open(file_path, "rb") as f:
                 pets = pickle.load(f)
@@ -368,7 +388,25 @@ class SceneFreezerBox:
 
     def save_freezer_data(self, pets=None):
         pets = pets or self.freezer_pets
-        with open("save/freezer.pkl", "wb") as f:
+        
+        # Use Android-compatible path if running on Android
+        if runtime_globals.IS_ANDROID:
+            try:
+                from android.storage import app_storage_path # type: ignore
+                save_dir = os.path.join(app_storage_path(), "save")
+                os.makedirs(save_dir, exist_ok=True)
+                file_path = os.path.join(save_dir, "freezer.pkl")
+            except Exception as e:
+                print(f"[Freezer] Failed to get Android storage path: {e}")
+                save_dir = "save"
+                file_path = "save/freezer.pkl"
+                os.makedirs(save_dir, exist_ok=True)
+        else:
+            save_dir = "save"
+            file_path = "save/freezer.pkl"
+            os.makedirs(save_dir, exist_ok=True)
+        
+        with open(file_path, "wb") as f:
             pickle.dump(pets, f)
 
     def update(self):
@@ -376,7 +414,7 @@ class SceneFreezerBox:
         
         # Update arrow button visibility based on mouse mode
         if self.mode == "freezer":
-            mouse_enabled = runtime_globals.game_input.mouse_enabled if runtime_globals.game_input else False
+            mouse_enabled = (runtime_globals.INPUT_MODE == runtime_globals.MOUSE_MODE or runtime_globals.INPUT_MODE == runtime_globals.TOUCH_MODE) if runtime_globals.game_input else False
             self.prev_page_button.visible = mouse_enabled
             self.next_page_button.visible = mouse_enabled
 
@@ -393,60 +431,49 @@ class SceneFreezerBox:
         self.ui_manager.draw(surface)
 
     def handle_event(self, event):
-        """Handle pygame events and string input actions."""
-        # Status window has priority
-        #if self.window_status:
-        #    if isinstance(event, str):
-        #        self.handle_status_input(event)
-        #    return
+        """Handle input events."""
+        event_type, event_data = event
 
+        if event_type != "MOUSE_MOTION":
+            print(f"[SceneFreezerBox] Handling event: {event_type}, data: {event_data}")
+        
         if self.ui_manager.handle_event(event):
             return
         
-        # Only process scene events if no modal component blocked the event
-        if isinstance(event, str):
-            # String input actions
-            input_action = event
-            
-            # B button exits
-            if input_action == "B":
-                self._on_exit()
-                return
-            
-            # Mode switching with SELECT - handle before grid
-            if input_action == "SELECT":
+        # B button exits
+        if event_type == "B":
+            self._on_exit()
+            return
+        
+        # Mode switching with SELECT - handle before grid
+        if event_type == "SELECT":
+            runtime_globals.game_sound.play("menu")
+            if self.mode == "party":
+                self._on_box_mode()
+            else:
+                self._on_party_mode()
+            return
+        
+        # Page navigation with L/R shoulder buttons (freezer mode only) - handle before grid
+        if self.mode == "freezer":
+            if event_type == "L":
                 runtime_globals.game_sound.play("menu")
-                if self.mode == "party":
-                    self._on_box_mode()
-                else:
-                    self._on_party_mode()
+                self._change_freezer_page(-1)
                 return
-            
-            # Page navigation with L/R shoulder buttons (freezer mode only) - handle before grid
-            if self.mode == "freezer":
-                if input_action == "L":
+            elif event_type == "R":
+                runtime_globals.game_sound.play("menu")
+                self._change_freezer_page(1)
+                return
+            # Check for LEFT/RIGHT at grid edges to change page
+            if self.freezer_grid.focused:
+                if event_type == "LEFT" and self.freezer_grid.cursor_col == 0:
                     runtime_globals.game_sound.play("menu")
                     self._change_freezer_page(-1)
                     return
-                elif input_action == "R":
+                elif event_type == "RIGHT" and self.freezer_grid.cursor_col == self.freezer_grid.columns - 1:
                     runtime_globals.game_sound.play("menu")
                     self._change_freezer_page(1)
                     return
-                # Check for LEFT/RIGHT at grid edges to change page
-                if self.freezer_grid.focused:
-                    if input_action == "LEFT" and self.freezer_grid.cursor_col == 0:
-                        runtime_globals.game_sound.play("menu")
-                        self._change_freezer_page(-1)
-                        return
-                    elif input_action == "RIGHT" and self.freezer_grid.cursor_col == self.freezer_grid.columns - 1:
-                        runtime_globals.game_sound.play("menu")
-                        self._change_freezer_page(1)
-                        return
-
-    def clean_unused_pet_sprites(self):
-        runtime_globals.pet_sprites = {}
-        for pet in game_globals.pet_list:
-            pet.load_sprite()
 
     def handle_status_input(self, input_action):
         if input_action == "LEFT":

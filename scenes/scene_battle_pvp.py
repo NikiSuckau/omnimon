@@ -355,16 +355,19 @@ class SceneBattlePvP:
         if self.battle_encounter:
             self.battle_encounter.draw(surface)
 
-    def handle_event(self, input_action) -> None:
+    def handle_event(self, event) -> None:
         """
         Handles keyboard and GPIO button inputs for the PvP battle scene.
         """
+        if not isinstance(event, tuple) or len(event) != 2:
+            return False
+        
         if self.battle_encounter:
-            self.battle_encounter.handle_event(input_action)
+            self.battle_encounter.handle_event(event)
             
             # Check for battle completion and return to game
             if self.battle_encounter.phase in ["result", "clear", "finished"]:
-                if input_action == "A" or input_action == "B" or input_action == "START":
+                if event == "A" or event == "B" or event == "START":
                     runtime_globals.game_console.log("[SceneBattlePvP] PvP battle completed, returning to game")
                     # Clear PvP data
                     if hasattr(runtime_globals, 'pvp_battle_data'):
@@ -372,7 +375,7 @@ class SceneBattlePvP:
                     change_scene("game")
         else:
             # If no battle encounter, return to game on any input
-            if input_action:
+            if event:
                 runtime_globals.game_console.log("[SceneBattlePvP] No battle encounter, returning to game")
                 if hasattr(runtime_globals, 'pvp_battle_data'):
                     delattr(runtime_globals, 'pvp_battle_data')

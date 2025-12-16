@@ -119,7 +119,6 @@ class AdventureView:
         self.ui_manager.add_component(self.exit_button)
         
         # Set initial focus
-        self.ui_manager.set_mouse_mode()
         if self.adventure_button:
             self.ui_manager.set_focused_component(self.adventure_button)
         
@@ -179,4 +178,6 @@ class AdventureView:
     
     def handle_event(self, event):
         """Handle input events."""
+        if not isinstance(event, tuple) or len(event) != 2:
+            return
         pass  # UI manager handles input

@@ -28,6 +28,12 @@ def get_battle_targets():
     """
     return [pet for pet in get_selected_pets() if pet.can_battle() and pet.dp > 0]
 
+def get_battle_pvp_targets():
+    """
+    Returns pets eligible for battle.
+    """
+    return [pet for pet in get_selected_pets() if pet.can_battle_pvp() and pet.dp > 0]
+
 def pets_need_care():
     """
     Returns True if any pet needs care (callsign is active).

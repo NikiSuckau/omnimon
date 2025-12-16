@@ -166,16 +166,20 @@ class ExciteTraining(Training):
         else:
             return 3
 
-    def handle_event(self, input_action):
-        if self.phase == "charge" and input_action in ["A", "LCLICK"]:
+    def handle_event(self, event):
+        event_type, event_data = event
+        
+        if self.phase == "charge" and event_type in ["A", "LCLICK"]:
             runtime_globals.game_sound.play("menu")
             self.xaibar.stop()
             runtime_globals.game_console.log(f"XaiBar phase ended strength {self.xaibar.selected_strength}.")
             self.phase = "wait_attack"
             self.frame_counter = 0
             self.prepare_attacks()
-        elif self.phase in ["wait_attack", "attack_move", "impact", "result"] and input_action in ["B", "START"]:
-            self.finish_training()
-        elif self.phase in ["alert", "charge"] and input_action == "B":
+        elif self.phase in ["wait_attack", "attack_move", "impact"] and event_type in ["B", "START"]:
+            runtime_globals.game_sound.play("cancel")
+            self.animated_sprite.stop()
+            self.phase = "result"
+        elif self.phase in ["alert", "charge"] and event_type == "B":
             runtime_globals.game_sound.play("cancel")
             change_scene("game")

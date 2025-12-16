@@ -192,7 +192,6 @@ class SceneTraining:
             raise
         
         # Set mouse mode and focus on the first button initially
-        self.ui_manager.set_mouse_mode()
         if self.dummy_button:
             self.ui_manager.set_focused_component(self.dummy_button)
             
@@ -309,25 +308,27 @@ class SceneTraining:
             
     def on_exit_training(self):
         """Handle EXIT button press."""
-        runtime_globals.game_sound.play("cancel")
-        change_scene("game")
+        if self.mode:
+            runtime_globals.game_sound.play("cancel")
+            self.mode.handle_event(("B", None))
+        else:
+            runtime_globals.game_sound.play("cancel")
+            change_scene("game")
 
     def on_training_exit(self):
         """Handle training exit button press - send B key to current training mode."""
         if self.mode:
-            runtime_globals.game_sound.play("cancel")
-            self.mode.handle_event("B")
+            self.mode.handle_event(("B", None))
 
     def create_training_exit_button(self):
         """Create the exit button for training phases using screen coordinates."""
         if not self.training_exit_button:
             # Calculate screen position (top right corner with margin)
-            screen_width = runtime_globals.SCREEN_WIDTH
             button_size = 30  # 30x30 at 1x scale
             margin = 10
             
             # Position at top right corner of screen
-            screen_x = screen_width - (button_size * self.ui_manager.ui_scale) - margin
+            screen_x = 10 + margin
             screen_y = margin
             
             self.training_exit_button = Button(
@@ -389,53 +390,38 @@ class SceneTraining:
             self.ui_manager.draw(surface)
             
         elif self.mode:
-            # Draw training exit button if it exists and mouse is enabled
-            # The button is managed by UI manager now, so we draw it separately
-            if (self.training_exit_button and 
-                runtime_globals.game_input.is_mouse_enabled()):
-                self.training_exit_button.draw(surface)
-
-
             # Use legacy system for training phases
-            if self.mode.phase in ["alert", "impact"]:
-                self.mode.draw(surface)
-            else:
-                self.mode.draw(surface)
+            self.mode.draw(surface)
+            
+            # Draw training exit button AFTER training mode so it appears on top
+            # Only draw it during phases where we want it visible (not alert/impact which cover full screen)
+            if (self.training_exit_button and 
+                (runtime_globals.INPUT_MODE == runtime_globals.MOUSE_MODE or runtime_globals.INPUT_MODE == runtime_globals.TOUCH_MODE) and
+                self.mode.phase not in ["alert", "impact", "result"]):
+                self.training_exit_button.draw(surface)
                 
-    def handle_event(self, input_action):
-        if input_action:
-            if self.phase == "menu":
-                self.handle_menu_input(input_action)
-            elif self.mode:
-                # Handle training exit button through UI manager for proper scaling
-                if self.training_exit_button and runtime_globals.game_input.is_mouse_enabled():
-                    # Let UI manager handle the button event
-                    if hasattr(input_action, 'type'):  # pygame event
-                        if self.ui_manager.handle_event(input_action):
-                            return  # Button was clicked
-                    elif isinstance(input_action, str) and input_action == "LCLICK":
-                        # Handle LCLICK string event for button
-                        mouse_pos = pygame.mouse.get_pos()
-                        if self.training_exit_button.rect.collidepoint(mouse_pos):
-                            self.on_training_exit()
-                            return
-                
-                # For pygame events, check if training mode has handle_pygame_event method
-                if hasattr(input_action, 'type') and hasattr(self.mode, 'handle_pygame_event'):
-                    self.mode.handle_pygame_event(input_action)
-                
-                # Pass event to training mode
-                self.mode.handle_event(input_action)
+    def handle_event(self, event):
+        if self.phase == "menu":
+            self.handle_menu_input(event)
+        elif self.mode:
+            # Handle training exit button through UI manager for proper scaling
+            if self.training_exit_button and (runtime_globals.INPUT_MODE == runtime_globals.MOUSE_MODE or runtime_globals.INPUT_MODE == runtime_globals.TOUCH_MODE):
+                # Let UI manager handle the button event
+                if self.ui_manager.handle_event(event):
+                    return  # Button was clicked
+            
+            # Pass event to training mode
+            self.mode.handle_event(event)
 
-    def handle_menu_input(self, input_action):
+    def handle_menu_input(self, event):
         # Handle pygame events through UI manager first
-        if self.ui_manager.handle_event(input_action):
+        if self.ui_manager.handle_event(event):
             return
         
         # Handle string action events (from input manager)
-        elif isinstance(input_action, str):
-            if input_action == "B":
-                runtime_globals.game_sound.play("cancel")
-                change_scene("game")
-                return
+        event_type, event_data = event
+        if event_type == "B":
+            runtime_globals.game_sound.play("cancel")
+            change_scene("game")
+            return
 

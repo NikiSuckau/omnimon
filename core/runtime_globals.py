@@ -16,12 +16,18 @@ from core.game_input.shake_detector import ShakeDetector
 APP_ROOT = ""  # Set to os.getcwd() on Android for absolute path building
 IS_ANDROID = False  # Set to True when running on Android
 
+KEYBOARD_MODE = 1
+MOUSE_MODE = 2
+TOUCH_MODE = 3
+INPUT_MODE = KEYBOARD_MODE
+INPUT_MODE_FORCED = False  # If True, INPUT_MODE won't auto-switch based on input device
+
 # --- Resolution and Scaling (Mutable) ---
 SCREEN_WIDTH = 240
 SCREEN_HEIGHT = 240
 UI_SCALE = 1.0
-PET_WIDTH = 60
-PET_HEIGHT = 60
+PET_WIDTH = 48
+PET_HEIGHT = 48
 MENU_ICON_SIZE = 24
 OPTION_ICON_SIZE = 48
 OPTION_FRAME_WIDTH = 96
@@ -139,7 +145,7 @@ def update_resolution_constants(width: int, height: int) -> None:
     # Prevent oversized sprites when MAX_PETS == 1
     try:
         from core.constants import MAX_PETS
-        PET_WIDTH = PET_HEIGHT = height // max(MAX_PETS, 2)
+        PET_WIDTH = PET_HEIGHT = height // max(MAX_PETS, 4)
     except Exception:
         PET_WIDTH = PET_HEIGHT = height // 2
 

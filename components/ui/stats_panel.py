@@ -146,18 +146,16 @@ class StatsPanel(UIComponent):
             current_y += line_height
         
     def handle_event(self, event):
-        """Block all events and close panel only on B button"""
+        """Block all events and close panel"""
         if not self.visible:
             return False
         
-        # Block all events while visible - only B button closes the panel
-        if isinstance(event, str):
+        # Block all events while visible and close panel
+        if isinstance(event, tuple) and len(event) == 2:
             self.visible = False
             return True
             
-        elif hasattr(event, 'type'):
-            # Block all pygame events (don't close on them)
-            return True
+        return True
                 
         return True  # Block everything else too
     
@@ -208,6 +206,7 @@ class StatsPanel(UIComponent):
             component_surface = component.render()
             
             # Blit to panel surface at scaled position
-            surface.blit(component_surface, (scaled_x, scaled_y))
+            from core.utils.pygame_utils import blit_with_cache
+            blit_with_cache(surface, component_surface, (scaled_x, scaled_y))
         
         return surface

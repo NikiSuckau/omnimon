@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from core.animation import PetFrame
 import core.constants as constants
 from core.utils.sprite_utils import convert_sprites_to_list, load_enemy_sprites
+from core import runtime_globals
 
 
 @dataclass

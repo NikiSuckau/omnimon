@@ -9,7 +9,7 @@ from components.ui.ui_constants import *
 from core import runtime_globals
 import core.constants as constants
 from core.game_quest import QuestStatus, RewardType
-from core.utils.pygame_utils import blit_with_shadow, get_font
+from core.utils.pygame_utils import blit_with_cache, blit_with_shadow, get_font
 from core.utils.asset_utils import image_load
 
 
@@ -72,16 +72,20 @@ class QuestPanel(UIComponent):
     
     def set_quest(self, quest):
         """Set the quest to display."""
-        self.quest = quest
-        
-        # Update focusable state - only focusable when quest is completed but not claimed
-        if quest and quest.status == QuestStatus.SUCCESS:
-            self.focusable = True
+        # Only mark for redraw if quest actually changed
+        if self.quest != quest:
+            self.quest = quest
+            
+            # Update focusable state - only focusable when quest is completed but not claimed
+            if quest and quest.status == QuestStatus.SUCCESS:
+                self.focusable = True
+            else:
+                self.focusable = False
+                self.focused = False
+            
+            self.needs_redraw = True
         else:
-            self.focusable = False
-            self.focused = False
-        
-        self.needs_redraw = True
+            self.quest = quest
     
     def get_border_color(self):
         """Get the border color based on quest status."""
@@ -103,11 +107,17 @@ class QuestPanel(UIComponent):
         if not self.focusable or not self.focused:
             return False
             
-        # Handle pygame events (mouse clicks)
-        if hasattr(event, 'type'):
-            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+        # Handle tuple-based events
+        if not isinstance(event, tuple) or len(event) != 2:
+            return False
+            
+        event_type, event_data = event
+            
+        # Handle mouse clicks
+        if event_type == "LCLICK":
+            if event_data and "pos" in event_data:
                 # Check if click is within bounds
-                if self.rect.collidepoint(event.pos):
+                if self.rect.collidepoint(event_data["pos"]):
                     if self.on_claim and self.quest:
                         self.on_claim(self.quest)
                         runtime_globals.game_sound.play("menu")
@@ -125,7 +135,9 @@ class QuestPanel(UIComponent):
     
     def render(self):
         """Render the quest panel to a surface."""
-        surface = pygame.Surface((self.rect.width, self.rect.height), pygame.SRCALPHA)
+        if getattr(self, 'cached_surface', None) is None or self.cached_surface.get_size() != (self.rect.width, self.rect.height):
+            self.cached_surface = pygame.Surface((self.rect.width, self.rect.height), pygame.SRCALPHA)
+        surface = self.cached_surface
         
         # Get scaled values
         padding = int(self.base_padding * self.manager.ui_scale) if self.manager else self.base_padding
@@ -159,7 +171,8 @@ class QuestPanel(UIComponent):
         title_font = self.get_font(custom_size=24* self.manager.ui_scale)
         title_text = self.quest.name[:20]  # Limit length
         title_surface = title_font.render(title_text, True, (255, 255, 255))
-        surface.blit(title_surface, (padding, padding))
+        from core.utils.pygame_utils import blit_with_cache
+        blit_with_cache(surface, title_surface, (padding, padding))
         
         # Module name or status (bottom left)
         module_font = self.get_font()
@@ -175,7 +188,7 @@ class QuestPanel(UIComponent):
             
         status_surface = module_font.render(status_text, True, status_color)
         status_y = self.rect.height - padding - status_surface.get_height()
-        surface.blit(status_surface, (padding, status_y))
+        blit_with_cache(surface, status_surface, (padding, status_y))
         
         # Quest progress (top right)
         progress_font = self.get_font(custom_size=24* self.manager.ui_scale)
@@ -188,7 +201,7 @@ class QuestPanel(UIComponent):
             
         progress_surface = progress_font.render(progress_text, True, progress_color)
         progress_x = self.rect.width - padding - progress_surface.get_width()
-        surface.blit(progress_surface, (progress_x, padding))
+        blit_with_cache(surface, progress_surface, (progress_x, padding))
         
         # Quest reward (bottom right)
         self._render_reward(surface, padding)
@@ -212,7 +225,7 @@ class QuestPanel(UIComponent):
                 reward_surface = reward_font.render(reward_text, True, (255, 255, 255))
                 reward_x = self.rect.width - padding - reward_surface.get_width()
                 reward_y = self.rect.height - padding - reward_surface.get_height()
-                surface.blit(reward_surface, (reward_x, reward_y))
+                blit_with_cache(surface, reward_surface, (reward_x, reward_y))
             
         elif self.quest.reward_type == RewardType.EXPERIENCE:
             # Show EXP value
@@ -220,7 +233,7 @@ class QuestPanel(UIComponent):
             reward_surface = reward_font.render(reward_text, True, (255, 255, 255))
             reward_x = self.rect.width - padding - reward_surface.get_width()
             reward_y = self.rect.height - padding - reward_surface.get_height()
-            surface.blit(reward_surface, (reward_x, reward_y))
+            blit_with_cache(surface, reward_surface, (reward_x, reward_y))
             
         elif self.quest.reward_type == RewardType.TROPHY:
             # Show trophy icon + value
@@ -231,7 +244,7 @@ class QuestPanel(UIComponent):
                 reward_surface = reward_font.render(reward_text, True, (255, 255, 255))
                 reward_x = self.rect.width - padding - reward_surface.get_width()
                 reward_y = self.rect.height - padding - reward_surface.get_height()
-                surface.blit(reward_surface, (reward_x, reward_y))
+                blit_with_cache(surface, reward_surface, (reward_x, reward_y))
                 
         elif self.quest.reward_type == RewardType.VITAL_VALUES:
             # Show heart icon + value
@@ -242,7 +255,7 @@ class QuestPanel(UIComponent):
                 reward_surface = reward_font.render(reward_text, True, (255, 255, 255))
                 reward_x = self.rect.width - padding - reward_surface.get_width()
                 reward_y = self.rect.height - padding - reward_surface.get_height()
-                surface.blit(reward_surface, (reward_x, reward_y))
+                blit_with_cache(surface, reward_surface, (reward_x, reward_y))
     
     def _render_icon_reward(self, surface, icon, text, padding):
         """Render reward with icon and text."""
@@ -263,8 +276,8 @@ class QuestPanel(UIComponent):
         text_y = self.rect.height - padding - text_surface.get_height()
         
         # Draw
-        surface.blit(scaled_icon, (icon_x, icon_y))
-        surface.blit(text_surface, (text_x, text_y))
+        blit_with_cache(surface, scaled_icon, (icon_x, icon_y))
+        blit_with_cache(surface, text_surface, (text_x, text_y))
     
     def _render_empty_content(self, surface):
         """Render empty quest slot message."""
@@ -276,7 +289,7 @@ class QuestPanel(UIComponent):
         text_x = self.rect.width // 2 - empty_surface.get_width() // 2
         text_y = self.rect.height // 2 - empty_surface.get_height() // 2
         
-        surface.blit(empty_surface, (text_x, text_y))
+        blit_with_cache(surface, empty_surface, (text_x, text_y))
     
     def draw_scaled(self, surface):
         """Draw the quest panel."""

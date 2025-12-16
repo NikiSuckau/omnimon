@@ -3,6 +3,7 @@ Label Component - Text display with optional color override
 """
 import pygame
 from components.ui.component import UIComponent
+from core import runtime_globals
 from core.utils.pygame_utils import blit_with_cache, blit_with_shadow
 
 class Label(UIComponent):
@@ -89,6 +90,7 @@ class Label(UIComponent):
                         self.scroll_pause_timer -= 1
                     else:
                         # Update scroll position
+                        old_offset = self.scroll_offset
                         self.scroll_offset += self.scroll_direction * self.scroll_speed
                         
                         # Check boundaries and reverse direction
@@ -102,10 +104,14 @@ class Label(UIComponent):
                             self.scroll_direction = 1
                             self.scroll_pause_timer = self.scroll_pause_duration
                         
-                        self.needs_redraw = True
+                        # Only mark for redraw if scroll position actually changed
+                        if old_offset != self.scroll_offset:
+                            self.needs_redraw = True
                 else:
                     # Reset scrolling if text fits
-                    self.scroll_offset = 0
+                    if self.scroll_offset != 0:
+                        self.scroll_offset = 0
+                        self.needs_redraw = True
         
     def render(self):
         # Choose font based on type using centralized font method
@@ -162,7 +168,8 @@ class Label(UIComponent):
                         blit_with_cache(scroll_surface, text_surface, (0, 0))
             
             # Draw highlight if focused and has tooltip
-            if self.focused and self.tooltip_text:
+            # Skip in touch mode - focus highlights are for keyboard/mouse navigation only
+            if self.focused and self.tooltip_text and runtime_globals.INPUT_MODE != runtime_globals.TOUCH_MODE:
                 colors = self.get_colors()
                 highlight_color = colors.get("highlight", colors["fg"])  # Safe fallback
                 pygame.draw.rect(scroll_surface, highlight_color, scroll_surface.get_rect(), 2)
@@ -197,7 +204,8 @@ class Label(UIComponent):
                 blit_with_cache(aligned_surface, text_surface, text_rect)
             
             # Draw highlight if focused and has tooltip
-            if self.focused and self.tooltip_text:
+            # Skip in touch mode - focus highlights are for keyboard/mouse navigation only
+            if self.focused and self.tooltip_text and runtime_globals.INPUT_MODE != runtime_globals.TOUCH_MODE:
                 colors = self.get_colors()
                 highlight_color = colors.get("highlight", colors["fg"])  # Safe fallback
                 pygame.draw.rect(aligned_surface, highlight_color, aligned_surface.get_rect(), 2)
@@ -240,7 +248,8 @@ class Label(UIComponent):
                 self.rect.height = text_surface.get_height()
             
             # Draw highlight if focused and has tooltip
-            if self.focused and self.tooltip_text:
+            # Skip in touch mode - focus highlights are for keyboard/mouse navigation only
+            if self.focused and self.tooltip_text and runtime_globals.INPUT_MODE != runtime_globals.TOUCH_MODE:
                 # Create a new surface to include the highlight border
                 highlight_surface = pygame.Surface((text_surface.get_width() + 4, text_surface.get_height() + 4), pygame.SRCALPHA)
                 colors = self.get_colors()
@@ -249,8 +258,8 @@ class Label(UIComponent):
                 # Draw highlight border
                 pygame.draw.rect(highlight_surface, highlight_color, highlight_surface.get_rect(), 2)
                 
-                # Blit text centered in the highlight surface
-                highlight_surface.blit(text_surface, (2, 2))
+                # Blit text centered in the highlight surface with tracked blit
+                blit_with_cache(highlight_surface, text_surface, (2, 2))
                 
                 # Update component screen size
                 self.rect.width = highlight_surface.get_width()

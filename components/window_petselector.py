@@ -43,35 +43,39 @@ class WindowPetSelector:
     def ITEM_HEIGHT(self):
         return int(60 * runtime_globals.UI_SCALE)
 
-    def handle_event(self, input_action) -> None:
-        if input_action:
-            if input_action == "DOWN":
-                runtime_globals.game_sound.play("menu")
-                self.selected_index = (self.selected_index + 1) % len(self.pets)
-                self.adjust_scroll()
-            elif input_action == "LEFT":
-                runtime_globals.game_sound.play("menu")
-                self.selected_index = (self.selected_index - 4) % len(self.pets)
-                self.adjust_scroll()
-            elif input_action == "RIGHT":
-                runtime_globals.game_sound.play("menu")
-                self.selected_index = (self.selected_index + 4) % len(self.pets)
-                self.adjust_scroll()
-            elif input_action == "UP":
-                runtime_globals.game_sound.play("menu")
-                self.selected_index = (self.selected_index - 1) % len(self.pets)
-                self.adjust_scroll()
-            elif input_action == "A":
-                runtime_globals.game_sound.play("menu")
-                return True
-            elif input_action == "B":
-                runtime_globals.game_sound.play("cancel")
-                change_scene("game")
+    def handle_event(self, event) -> None:
+        if not isinstance(event, tuple) or len(event) != 2:
+            return False
+        
+        event_type, event_data = event
+        
+        if event_type == "DOWN":
+            runtime_globals.game_sound.play("menu")
+            self.selected_index = (self.selected_index + 1) % len(self.pets)
+            self.adjust_scroll()
+        elif event_type == "LEFT":
+            runtime_globals.game_sound.play("menu")
+            self.selected_index = (self.selected_index - 4) % len(self.pets)
+            self.adjust_scroll()
+        elif event_type == "RIGHT":
+            runtime_globals.game_sound.play("menu")
+            self.selected_index = (self.selected_index + 4) % len(self.pets)
+            self.adjust_scroll()
+        elif event_type == "UP":
+            runtime_globals.game_sound.play("menu")
+            self.selected_index = (self.selected_index - 1) % len(self.pets)
+            self.adjust_scroll()
+        elif event_type == "A":
+            runtime_globals.game_sound.play("menu")
+            return True
+        elif event_type == "B":
+            runtime_globals.game_sound.play("cancel")
+            change_scene("game")
         return False
 
     def update(self):
         """Update method called every frame to handle mouse hover."""
-        if runtime_globals.game_input.mouse_enabled:
+        if (runtime_globals.INPUT_MODE == runtime_globals.MOUSE_MODE):
             mouse_pos = runtime_globals.game_input.get_mouse_position()
             self.check_mouse_hover(mouse_pos)
 

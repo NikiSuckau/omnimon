@@ -9,6 +9,7 @@ import datetime
 import os
 import time
 
+from components.ui.ui_constants import TEXT_FONT
 from components.window_background import WindowBackground
 from components.window_clock import WindowClock
 from components.window_mainmenu import WindowMenu
@@ -23,8 +24,6 @@ from core.utils.module_utils import get_module
 from core.utils.quest_event_utils import generate_daily_quests, get_hourly_random_event
 from core.utils.inventory_utils import add_to_inventory
 from core.utils.asset_utils import image_load
-
-HEARTS_SIZE = int(8 * runtime_globals.UI_SCALE)
 
 #=====================================================================
 # SceneMainGame
@@ -47,7 +46,7 @@ class SceneMainGame:
         self.fade_alpha = 0
         self.lock_inputs = False
         self.lock_updates = False
-
+        HEARTS_SIZE = int(8 * runtime_globals.UI_SCALE)
         self.sprites = {
             "heart_empty": pygame.transform.scale(image_load(constants.HEART_EMPTY_ICON_PATH).convert_alpha(), (HEARTS_SIZE, HEARTS_SIZE)),
             "heart_half": pygame.transform.scale(image_load(constants.HEART_HALF_ICON_PATH).convert_alpha(), (HEARTS_SIZE, HEARTS_SIZE)),
@@ -82,16 +81,16 @@ class SceneMainGame:
         # Screensaver rendering caches (create fonts/sprites once)
         from core.utils.asset_utils import font_load
         try:
-            self._ss_time_font = font_load(None, int(72 * runtime_globals.UI_SCALE))
+            self._ss_time_font = font_load(TEXT_FONT, int(72 * runtime_globals.UI_SCALE))
         except Exception:
-            self._ss_time_font = font_load(None, int(72 * runtime_globals.UI_SCALE))
+            self._ss_time_font = font_load(TEXT_FONT, int(72 * runtime_globals.UI_SCALE))
         # Use module font for smaller text where available
         try:
             self._ss_call_font = get_font(runtime_globals.FONT_SIZE_MEDIUM)
             self._ss_poop_font = get_font(runtime_globals.FONT_SIZE_SMALL)
         except Exception:
-            self._ss_call_font = font_load(None, int(28 * runtime_globals.UI_SCALE))
-            self._ss_poop_font = font_load(None, int(24 * runtime_globals.UI_SCALE))
+            self._ss_call_font = font_load(TEXT_FONT, int(28 * runtime_globals.UI_SCALE))
+            self._ss_poop_font = font_load(TEXT_FONT, int(24 * runtime_globals.UI_SCALE))
 
         # Cached sprites (pulled lazily from main menu / runtime globals)
         self._ss_call_sprite = None
@@ -444,45 +443,16 @@ class SceneMainGame:
 
     def update_mouse_hover(self):
         """Update menu selection based on mouse hover and handle pet area clicks."""
-        if not runtime_globals.game_input.mouse_enabled or self.lock_inputs:
+        if not (runtime_globals.INPUT_MODE == runtime_globals.MOUSE_MODE) or self.lock_inputs:
             return
         
         mouse_pos = runtime_globals.game_input.get_mouse_position()
-        mouse_x, mouse_y = mouse_pos
-        
-        # Check if mouse is hovering over any menu icon
-        hovered_index = self.get_hovered_menu_index(mouse_x, mouse_y)
+        # Ask WindowMenu for the hovered index using its authoritative hitboxes
+        hovered_index = self.menu.get_menu_index_at(mouse_pos)
         
         # Update menu index based on hover (-1 if not hovering any)
         if hovered_index != runtime_globals.main_menu_index:
             runtime_globals.main_menu_index = hovered_index
-
-    def get_hovered_menu_index(self, mouse_x, mouse_y):
-        """Get the menu index that the mouse is hovering over, or the last index if none."""
-        icon_size = runtime_globals.MENU_ICON_SIZE * 2
-        
-        # Calculate menu positions (same logic as WindowMenu.calculate_spacing)
-        spacing_x = (runtime_globals.SCREEN_WIDTH - (5 * icon_size)) // 5
-        top_y = 20 * runtime_globals.UI_SCALE if game_globals.showClock else 5 * runtime_globals.UI_SCALE
-        bottom_y = runtime_globals.SCREEN_HEIGHT - icon_size - 10
-        
-        # Check top row (icons 0-4)
-        for i in range(5):
-            icon_x = spacing_x + i * (icon_size + spacing_x)
-            icon_rect = pygame.Rect(icon_x, top_y, icon_size, icon_size)
-            if icon_rect.collidepoint(mouse_x, mouse_y):
-                return i
-        
-        # Check bottom row (icons 5-8), not selecting Call icon
-        for i in range(4):
-            icon_x = spacing_x + i * (icon_size + spacing_x)
-            icon_rect = pygame.Rect(icon_x, bottom_y, icon_size, icon_size)
-            if icon_rect.collidepoint(mouse_x, mouse_y):
-                return i + 5
-        
-        # Return the previous menu index instead of -1 to allow keyboard inputs to change the index
-        # when the mouse is not hovering over the menu.
-        return runtime_globals.main_menu_index
 
     def is_mouse_in_pet_area(self, mouse_pos):
         """Check if mouse is in the pet area (from pet Y to pet Y + height across full screen width)."""
@@ -504,8 +474,10 @@ class SceneMainGame:
         """
         Draws the cached static surface and dynamic elements like pets, poops, and animations.
         """
-        # Update mouse hover for menu items if mouse is enabled
-        if runtime_globals.game_input.mouse_enabled:
+        # Update menu selection based on mouse hover (desktop only).
+        # Touch should be click-driven, so we intentionally do NOT update
+        # hover state when in TOUCH_MODE.
+        if runtime_globals.INPUT_MODE == runtime_globals.MOUSE_MODE:
             self.update_mouse_hover()
         
         # Screensaver: check timeout (seconds) using frame-based timing to avoid frequent time.time() calls
@@ -552,14 +524,16 @@ class SceneMainGame:
                     self._screensaver_cache = s
                 self._screensaver_cache_last_frame = self.frame_counter
 
-            surface.blit(self._screensaver_cache, (0, 0))
+            from core.utils.pygame_utils import blit_with_cache
+            blit_with_cache(surface, self._screensaver_cache, (0, 0))
             return
 
         # Update the cached static surface if needed
         self.update_static_surface()
 
         # Blit the cached static surface
-        surface.blit(self.cached_static_surface, (0, 0))
+        from core.utils.pygame_utils import blit_with_cache
+        blit_with_cache(surface, self.cached_static_surface, (0, 0))
 
         # Draw pets and their overlays
         pets = game_globals.pet_list
@@ -632,7 +606,8 @@ class SceneMainGame:
             fade_overlay.fill((0, 0, 0))
             fade_overlay.set_alpha(self.fade_alpha)
             self._fade_overlay_cache = fade_overlay
-        surface.blit(self._fade_overlay_cache, (0, 0))
+        from core.utils.pygame_utils import blit_with_cache
+        blit_with_cache(surface, self._fade_overlay_cache, (0, 0))
 
     def draw_food_anims(self, surface: pygame.Surface) -> None:
         """
@@ -740,7 +715,7 @@ class SceneMainGame:
                         
                         # Show quantity text below item
                         from core.utils.asset_utils import font_load
-                        font = font_load(None, int(20 * runtime_globals.UI_SCALE))
+                        font = font_load(TEXT_FONT, int(20 * runtime_globals.UI_SCALE))
                         quantity_text = font.render(f"+{game_globals.event.item_quantity}", True, constants.FONT_COLOR_DEFAULT)
                         text_x = center_x - quantity_text.get_width() // 2
                         text_y = item_y + item_sprite.get_height() + 5
@@ -748,7 +723,7 @@ class SceneMainGame:
                     else:
                         # Fallback: show item name and quantity as text
                         from core.utils.asset_utils import font_load
-                        font = font_load(None, int(24 * runtime_globals.UI_SCALE))
+                        font = font_load(TEXT_FONT, int(24 * runtime_globals.UI_SCALE))
                         text_surface = font.render(f"+{game_globals.event.item_quantity} {item_name}", 
                                                  True, constants.FONT_COLOR_DEFAULT)
                         text_x = center_x - text_surface.get_width() // 2
@@ -767,9 +742,10 @@ class SceneMainGame:
         # Refresh cache if older than 1 second or not present
         if not cache_entry or now - cache_entry[1] > 1:
             total_hearts = 4
-            heart_surface = pygame.Surface((total_hearts * HEARTS_SIZE, HEARTS_SIZE), pygame.SRCALPHA)
+            heart_size = int(8 * runtime_globals.UI_SCALE)
+            heart_surface = pygame.Surface((total_hearts * heart_size, heart_size), pygame.SRCALPHA)
             for i in range(total_hearts):
-                heart_x = i * HEARTS_SIZE
+                heart_x = i * heart_size
                 if value >= (i + 1) * factor:
                     heart_sprite = self.sprites["heart_full"]
                 elif value >= i * factor + (factor / 2):
@@ -783,30 +759,41 @@ class SceneMainGame:
 
         blit_with_cache(surface, heart_surface, (x, y))
 
-    def handle_event(self, input_action) -> None:
+    def handle_event(self, event) -> None:
         """
         Handles keyboard and GPIO button inputs in the main game scene.
         """
-        if input_action:
-            self.fade_out_timer = 60 * constants.FRAME_RATE  # Reset on any input
-            # Update last input frame so screensaver does not trigger erroneously
-            runtime_globals.last_input_frame = getattr(self, 'frame_counter', 0)
-
-        # Handle mouse clicks in pet area to toggle hearts view
-        if input_action == "LCLICK" and runtime_globals.game_input.mouse_enabled:
-            mouse_pos = runtime_globals.game_input.get_mouse_position()
-            if self.is_mouse_in_pet_area(mouse_pos):
-                runtime_globals.show_hearts = not runtime_globals.show_hearts
-                runtime_globals.game_sound.play("menu")
-                runtime_globals.game_console.log(f"[SceneMainGame] Hearts view toggled: {runtime_globals.show_hearts}")
-                return
+        event_type, event_data = event
+        
+        # Reset timers on any input
+        self.fade_out_timer = 60 * constants.FRAME_RATE
+        runtime_globals.last_input_frame = getattr(self, 'frame_counter', 0)
 
         if self.lock_inputs:
             return
 
+        # Handle mouse/touch clicks in pet area to toggle hearts view and menu clicks
+        if event_type == "LCLICK":
+            if event_data and "pos" in event_data:
+                mouse_pos = event_data["pos"]
+                
+                # Check if clicking on a menu item using WindowMenu hitboxes
+                clicked_index = self.menu.get_menu_index_at(mouse_pos)
+                if clicked_index >= 0:
+                    # Update menu index to the clicked item and log
+                    runtime_globals.main_menu_index = clicked_index
+                    runtime_globals.game_console.log(f"[SceneMainGame] Menu item {clicked_index} clicked")
+                    # Don't return here - let handle_action_keys process the click action
+                elif self.is_mouse_in_pet_area(mouse_pos):
+                    # Only toggle hearts if not clicking on menu
+                    runtime_globals.show_hearts = not runtime_globals.show_hearts
+                    runtime_globals.game_sound.play("menu")
+                    runtime_globals.game_console.log(f"[SceneMainGame] Hearts view toggled: {runtime_globals.show_hearts}")
+                    return
+                
         # Handle event system inputs
         if self.event_stage > 0 and game_globals.event:
-            if self.event_stage == 1 and input_action in ["A", "B"]:
+            if self.event_stage == 1 and event_type in ["A", "B", "LCLICK"]:
                 # Alert stage - any button to proceed to animation
                 self.event_stage = 2
                 self.event_gift_timer = 0
@@ -818,10 +805,10 @@ class SceneMainGame:
                 from core.game_event import EventType
                 if game_globals.event.type == EventType.ITEM_PACKAGE:
                     gift_move_duration = 4 * constants.FRAME_RATE  # 4 seconds
-                    if input_action == "A" and self.event_gift_timer > gift_move_duration:  # Accept item after gift opens
+                    if event_type in ["A", "LCLICK"] and self.event_gift_timer > gift_move_duration:  # Accept item after gift opens
                         # Complete event (cleanup handled in update_gift_animation)
                         pass  # Let the animation finish naturally
-                    elif input_action == "B":
+                    elif event_type in ["B", "RCLICK"]:
                         # Decline item - immediate cleanup
                         game_globals.event = None
                         game_globals.event_time = None
@@ -832,7 +819,7 @@ class SceneMainGame:
                         return
                 else:
                     # Other event types - A to complete after 0.5 seconds
-                    if input_action == "A" and self.event_gift_timer > constants.FRAME_RATE // 2:
+                    if event_type in ["A", "LCLICK"] and self.event_gift_timer > constants.FRAME_RATE // 2:
                         game_globals.event = None
                         game_globals.event_time = None
                         self.event_stage = 0
@@ -844,73 +831,82 @@ class SceneMainGame:
             if self.event_stage > 0:
                 return
 
-        if not all_pets_hatched():
-            if input_action == "Y" or input_action == "SHAKE":
-                for pet in game_globals.pet_list:
-                    pet.shake_counter += 1
-            
-        if input_action == "B":
+        if event_type == "Y" or event_type == "SHAKE":
             for pet in game_globals.pet_list:
-                pet.death_save_counter += 1
+                if pet.stage == 0:
+                    pet.shake_counter += 1
+                # Handle death save shake counter
+                if pet.death_save_shake_counter > 0:
+                    pet.death_save_shake_counter -= 1
+                    if pet.death_save_shake_counter == 0:
+                        runtime_globals.game_console.log(f"[Death Save] {pet.name} shake requirement met!")
+            
+        if event_type in ["B", "RCLICK"]:
+            for pet in game_globals.pet_list:
+                # Handle death save B-press counter
+                if pet.death_save_b_counter > 0:
+                    pet.death_save_b_counter -= 1
+                    if pet.death_save_b_counter == 0:
+                        runtime_globals.game_console.log(f"[Death Save] {pet.name} B-press requirement met!")
 
-        if input_action == "SELECT":
+        if event_type == "SELECT":
             self.selection_mode = "pet" if self.selection_mode == "menu" else "menu"
             runtime_globals.game_sound.play("menu")
             runtime_globals.game_console.log(f"[SceneMainGame] Switched selection mode to {self.selection_mode}")
             return
 
-        self.handle_debug_keys(input_action)
+        self.handle_debug_keys(event_type)
 
         if self.selection_mode == "menu":
-            self.handle_navigation_keys(input_action)
-            self.handle_action_keys(input_action)
+            self.handle_navigation_keys(event_type)
+            self.handle_action_keys(event_type)
         elif self.selection_mode == "pet":
-            self.handle_pet_selection_keys(input_action)
+            self.handle_pet_selection_keys(event_type)
 
-    def handle_debug_keys(self, input_action) -> None:
+    def handle_debug_keys(self, event_type) -> None:
         """
         Debugging shortcuts (F11, F12).
         """
-        if input_action == "F11":
+        if event_type == "F11":
             # Open test scene
             runtime_globals.game_sound.play("menu")
             change_scene("test")
             runtime_globals.game_console.log("[DEBUG] Opening test scene")
-        elif input_action == "F12" and constants.DEBUG_MODE:
+        elif event_type == "F12" and constants.DEBUG_MODE:
             # Open debug scene
             runtime_globals.game_sound.play("menu")
             change_scene("debug")
             runtime_globals.game_console.log("[DEBUG] Opening debug scene")
 
-    def handle_navigation_keys(self, input_action) -> None:
+    def handle_navigation_keys(self, event_type) -> None:
         """Handles cyclic LEFT, RIGHT, UP, DOWN for menu navigation."""
         rows, cols = 2, 5  # 🔹 Menu layout (2 rows × 5 columns)
         max_index = rows * cols - 1  # 🔹 Maximum valid index (8)
-        if runtime_globals.main_menu_index < 0 and input_action in ["LEFT","RIGHT","UP","DOWN"]:
+        if runtime_globals.main_menu_index < 0 and event_type in ["LEFT","RIGHT","UP","DOWN"]:
             runtime_globals.game_sound.play("menu")
             runtime_globals.main_menu_index = 0
-        elif input_action == "LEFT":
+        elif event_type == "LEFT":
             runtime_globals.game_sound.play("menu")
             if runtime_globals.main_menu_index in [0, 5, -1]:  
                 runtime_globals.main_menu_index = runtime_globals.main_menu_index + 4
             else:
                 runtime_globals.main_menu_index -= 1
 
-        elif input_action == "RIGHT":
+        elif event_type == "RIGHT":
             runtime_globals.game_sound.play("menu")
             if runtime_globals.main_menu_index in [4, 8, -1]:  
                 runtime_globals.main_menu_index = runtime_globals.main_menu_index - 4
             else:
                 runtime_globals.main_menu_index += 1
 
-        elif input_action == "UP":
+        elif event_type == "UP":
             runtime_globals.game_sound.play("menu")
             if runtime_globals.main_menu_index in range(0, cols) or runtime_globals.main_menu_index == -1:
                 runtime_globals.main_menu_index += 5  # 🔹 Wrap from top to bottom
             else:
                 runtime_globals.main_menu_index -= 5
 
-        elif input_action == "DOWN":
+        elif event_type == "DOWN":
             runtime_globals.game_sound.play("menu")
             if runtime_globals.main_menu_index in range(5, max_index + 1) or runtime_globals.main_menu_index == -1:
                 runtime_globals.main_menu_index -= 5  # 🔹 Wrap from bottom to top
@@ -924,18 +920,16 @@ class SceneMainGame:
         if runtime_globals.main_menu_index != -1:
             runtime_globals.main_menu_index %= (max_index + 1)  # 🔥 Ensure cyclic behavior
 
-    def handle_action_keys(self, input_action) -> None:
+    def handle_action_keys(self, event_type) -> None:
         """
         Handles Enter, Escape, and equivalent GPIO button actions for menu selection.
         """
         index = runtime_globals.main_menu_index
 
-        if input_action in ["A", "LCLICK"]:
+        if event_type in ["A", "LCLICK"]:
             if index == 0:
-                runtime_globals.game_sound.play("menu")
                 self.start_scene("status")
             elif index == 1:
-                runtime_globals.game_sound.play("menu")
                 self.start_scene("feeding")
             elif index == 2:
                 self.start_training()
@@ -948,24 +942,23 @@ class SceneMainGame:
             elif index == 6:
                 self.heal_sick_pets()
             elif index == 7:
-                runtime_globals.game_sound.play("menu")
                 self.start_scene("library")
             elif index == 8:
-                self.start_scene("connect")
+                self.start_connect()
 
-        elif input_action == "START" or (platform.system() == "Windows" and input_action == "B"):  # Maps to ESC (PC) & "START" button (Pi)
+        elif event_type in ["START", "RCLICK"] or (platform.system() == "Windows" and event_type == "B"):  # Maps to ESC (PC) & "START" button (Pi)
             runtime_globals.game_sound.play("cancel")
             self.start_scene("settings")
 
-        elif input_action == "L":  # Rotate screen upside-down
+        elif event_type == "L":  # Rotate screen upside-down
             runtime_globals.game_sound.play("menu")
             game_globals.rotated = True
 
-        elif input_action == "R":
+        elif event_type == "R":
             runtime_globals.game_sound.play("menu")
             distribute_pets_evenly()
 
-        elif input_action == "X":
+        elif event_type == "X":
             runtime_globals.game_sound.play("menu")
             runtime_globals.show_hearts = not runtime_globals.show_hearts
 
@@ -974,22 +967,23 @@ class SceneMainGame:
         """
         Helper to start a new scene.
         """
+        runtime_globals.game_sound.play("menu")
         runtime_globals.game_state = scene_name
         runtime_globals.game_state_update = True
         runtime_globals.game_console.log(f"[SceneMainGame] Switched to {scene_name}")
 
-    def handle_pet_selection_keys(self, input_action) -> None:
+    def handle_pet_selection_keys(self, event_type) -> None:
         total_pets = len(game_globals.pet_list)
 
-        if input_action == "LEFT":
+        if event_type == "LEFT":
             self.pet_selection_index = (self.pet_selection_index - 1) % total_pets
             runtime_globals.game_sound.play("menu")
 
-        elif input_action == "RIGHT":
+        elif event_type == "RIGHT":
             self.pet_selection_index = (self.pet_selection_index + 1) % total_pets
             runtime_globals.game_sound.play("menu")
 
-        elif input_action == "A":
+        elif event_type == "A":
             self.toggle_pet_selection(self.pet_selection_index)
             runtime_globals.game_sound.play("menu")
 
@@ -1012,7 +1006,6 @@ class SceneMainGame:
         """
         can_train = any(pet.can_train() for pet in get_selected_pets())
         if can_train:
-            runtime_globals.game_sound.play("menu")
             self.start_scene("training")
         else:
             runtime_globals.game_sound.play("cancel")
@@ -1024,8 +1017,18 @@ class SceneMainGame:
         """
         can_train = any(pet.can_battle() for pet in get_selected_pets())
         if can_train:
-            runtime_globals.game_sound.play("menu")
             self.start_scene("battle")
+        else:
+            runtime_globals.game_sound.play("cancel")
+            runtime_globals.game_console.log("[SceneMainGame] Cannot start battle: no eligible pets.")
+
+    def start_connect(self) -> None:
+        """
+        Checks if battle is possible and starts it.
+        """
+        can_train = any(pet.can_battle_pvp() for pet in get_selected_pets())
+        if can_train:
+            self.start_scene("connect")
         else:
             runtime_globals.game_sound.play("cancel")
             runtime_globals.game_console.log("[SceneMainGame] Cannot start battle: no eligible pets.")

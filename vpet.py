@@ -53,7 +53,8 @@ class VirtualPetGame:
         print("[Init] Omnibot initialized with SceneBoot")
         self.rotated = False
         from core.utils.asset_utils import font_load
-        self.stat_font = font_load(None, 16)
+        from components.ui.ui_constants import TEXT_FONT
+        self.stat_font = font_load(TEXT_FONT, 16)
         
         # Load mouse pointer sprite (only on desktop)
         self.mouse_pointer = None
@@ -96,8 +97,18 @@ class VirtualPetGame:
             game_globals.rotated = False
             self.rotated = not self.rotated
 
-        if runtime_globals.shake_detector.check_for_shake():
-            self.scene.handle_event("SHAKE")
+        # Handle shake detection
+        # On Raspberry Pi: check I2C accelerometer via shake_detector
+        # On Android: poll plyer accelerometer via input_manager
+        if runtime_globals.IS_ANDROID:
+            shake_action = runtime_globals.game_input.poll_accelerometer()
+            if shake_action:
+                from core.game_input.input_event import create_simple_event
+                self.scene.handle_event(create_simple_event(shake_action))
+        else:
+            if runtime_globals.shake_detector.check_for_shake():
+                from core.game_input.input_event import create_simple_event
+                self.scene.handle_event(create_simple_event("SHAKE"))
             
         # Handle autosave
         game_globals.autosave()
@@ -118,8 +129,8 @@ class VirtualPetGame:
                 last_stats_update = now
             draw_system_stats(clock, surface, cached_stats, self.stat_font)
 
-        # Draw mouse pointer if enabled and sprite is loaded
-        if (runtime_globals.game_input.mouse_enabled and 
+        # Draw mouse pointer only when in mouse mode
+        if (runtime_globals.INPUT_MODE == runtime_globals.MOUSE_MODE and 
             self.mouse_pointer is not None):
             mouse_pos = runtime_globals.game_input.get_mouse_position()
             if mouse_pos != (0, 0):  # Only draw if mouse position is valid
@@ -139,19 +150,25 @@ class VirtualPetGame:
         """
         Delegates event handling to the current scene.
         """
-        input_action = runtime_globals.game_input.process_event(event)
+        input_event = runtime_globals.game_input.process_event(event)
 
-        # First, let the scene handle the raw pygame event (for mouse motion, etc.)
-        if self.scene.handle_event(input_action if input_action else event):
-            return
-        else: #Analog inputs only
-            for action in runtime_globals.game_input.get_just_pressed_joystick():
-                if action in ("ANALOG_UP", "ANALOG_DOWN", "ANALOG_LEFT", "ANALOG_RIGHT"):
-                    self.scene.handle_event(action.replace("ANALOG_", ""))
+        # Pass the input event tuple to the scene if we got one
+        if input_event:
+            if self.scene.handle_event(input_event):
+                return
+        
+        # Handle analog joystick inputs (they come through get_just_pressed_joystick)
+        for action in runtime_globals.game_input.get_just_pressed_joystick():
+            # Convert analog actions to directional events
+            if action in ("ANALOG_UP", "ANALOG_DOWN", "ANALOG_LEFT", "ANALOG_RIGHT"):
+                from core.game_input.input_event import create_simple_event
+                directional = action.replace("ANALOG_", "")
+                self.scene.handle_event(create_simple_event(directional))
 
     def poll_gpio_inputs(self):
+        from core.game_input.input_event import create_simple_event
         for action in runtime_globals.game_input.get_gpio_just_pressed():
-            self.scene.handle_event(action)
+            self.scene.handle_event(create_simple_event(action))
 
     def change_scene(self) -> None:
         """

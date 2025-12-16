@@ -8,22 +8,53 @@ from core.utils.asset_utils import image_load
 from core.utils.module_utils import get_module
 
 shadow_cache = {}
+composite_shadow_cache = {}  # Cache for pre-rendered sprite+shadow composites
 
 def get_surface_hash(surface):
-    """Generate a hash of the surface’s pixel data to uniquely identify it."""
-    return hashlib.md5(pygame.image.tostring(surface, "RGBA")).hexdigest()
+    """Generate a hash using the surface's memory address (instant, unique per object).
+    
+    Note: This uses object identity rather than content comparison. Since game sprites
+    are loaded once and reused, this is much faster than MD5 hashing pixel data.
+    """
+    return id(surface)
 
 def get_shadow(sprite, shadow_color=(0, 0, 0, 100)):
-    key = get_surface_hash(sprite)
+    key = id(sprite)  # Use object identity directly for instant lookup
     if key not in shadow_cache:
         shadow = sprite.copy()
         shadow.fill(shadow_color, special_flags=pygame.BLEND_RGBA_MULT)
         shadow_cache[key] = shadow
     return shadow_cache[key]
 
+def get_composite_shadow(sprite, offset=(2, 2), shadow_color=(0, 0, 0, 100)):
+    """Get or create a pre-rendered composite surface with shadow + sprite.
+    
+    This reduces 2 blits (shadow + sprite) to 1 blit (composite).
+    """
+    # Cache key includes sprite ID and offset
+    key = (id(sprite), offset[0], offset[1])
+    
+    if key not in composite_shadow_cache:
+        # Create composite surface large enough for sprite + shadow offset
+        width = sprite.get_width() + abs(offset[0])
+        height = sprite.get_height() + abs(offset[1])
+        composite = pygame.Surface((width, height), pygame.SRCALPHA)
+        composite.fill((0, 0, 0, 0))  # Transparent background
+        
+        # Get or create shadow
+        shadow = get_shadow(sprite, shadow_color)
+        
+        # Blit shadow and sprite onto composite
+        composite.blit(shadow, (offset[0], offset[1]))
+        composite.blit(sprite, (0, 0))
+        
+        composite_shadow_cache[key] = composite
+    
+    return composite_shadow_cache[key]
+
 def blit_with_shadow(surface, sprite, pos, offset=(2, 2)):
     """
-    Blits a sprite with a shadow effect and logs the number of calls per second.
+    Blits a sprite with a shadow effect using a pre-rendered composite (1 blit instead of 2).
     """
     if constants.DEBUG_MODE and constants.DEBUG_BLIT_LOGGING:
         global _blit_shadow_calls, _last_log_time
@@ -38,13 +69,9 @@ def blit_with_shadow(surface, sprite, pos, offset=(2, 2)):
             _blit_shadow_calls = 0
             _last_log_time = current_time
 
-    # Perform the blit with shadow
-    shadow = get_shadow(sprite)
-    surface.blit(shadow, (pos[0] + offset[0], pos[1] + offset[1]))
-    surface.blit(sprite, pos)
-    shadow = get_shadow(sprite)
-    surface.blit(shadow, (pos[0] + offset[0], pos[1] + offset[1]))
-    surface.blit(sprite, pos)
+    # Use pre-rendered composite (reduces 2 blits to 1)
+    composite = get_composite_shadow(sprite, offset)
+    surface.blit(composite, pos)
 
 def get_font(size=24):
     from core.utils.asset_utils import font_load
@@ -103,7 +130,7 @@ def sprite_load_percent_wh(path, percent_w=100, percent_h=100, keep_proportion=T
 def load_attack_sprites():
     attack_sprites = {}
     # Scale to half pet height, maintaining aspect ratio
-    target_height = runtime_globals.PET_HEIGHT // 2
+    target_height = 24 * runtime_globals.UI_SCALE
     for filename in os.listdir(constants.ATK_FOLDER):
         if filename.endswith(".png"):
             path = os.path.join(constants.ATK_FOLDER, filename)
@@ -190,17 +217,14 @@ blit_cache = {}
 
 def blit_with_cache(surface, sprite, pos):
     """
-    Blits a sprite using caching and logs the number of calls per second.
+    Blits a sprite and logs the number of calls per second.
+    
+    Note: The "cache" in the name is legacy - we now just blit directly since
+    Pygame's internal blit is already highly optimized. Caching sprites by copying
+    them doesn't provide any benefit and just wastes memory.
     """
     if constants.DEBUG_MODE and constants.DEBUG_BLIT_LOGGING:
         global _blit_cache_calls, _last_cache_log_time
-
-        # Generate a hash for the sprite
-        key = get_surface_hash(sprite)
-
-        # Use cached sprite if available
-        if key not in blit_cache:
-            blit_cache[key] = sprite.copy()
 
         # Increment the counter
         _blit_cache_calls += 1
@@ -212,5 +236,5 @@ def blit_with_cache(surface, sprite, pos):
             _blit_cache_calls = 0
             _last_cache_log_time = current_time
 
-    # Perform the blit
+    # Perform the blit - Pygame's internal blit is already optimized
     surface.blit(sprite, pos)

@@ -6,6 +6,7 @@ import math
 from components.ui.grid import Grid, GridItem
 from core import game_globals, runtime_globals
 import core.constants as constants
+from core.utils.pygame_utils import blit_with_cache
 
 
 def get_grid_dimensions(max_pets):
@@ -206,7 +207,7 @@ class PartyGrid(Grid):
             text_rect.center = (cell_width // 2, cell_height // 2)
             
             layer = pygame.Surface((cell_width, cell_height), pygame.SRCALPHA)
-            layer.blit(text_surface, text_rect)
+            blit_with_cache(layer, text_surface, text_rect.topleft)
             return layer
         
         # Pet name at bottom with scrolling
@@ -230,25 +231,30 @@ class PartyGrid(Grid):
             scroll_offset = self.text_scroll_offsets.get(item_index, 0)
             
             # Blit with offset
-            scroll_container.blit(text_surface, (-scroll_offset, 0))
+            blit_with_cache(scroll_container, text_surface, (-int(scroll_offset), 0))
             
             # Position at bottom center of cell
             text_rect = scroll_container.get_rect()
             text_rect.centerx = cell_width // 2
             text_rect.bottom = cell_height - int(4 * self.manager.ui_scale)
-            layer.blit(scroll_container, text_rect)
+            blit_with_cache(layer, scroll_container, text_rect.topleft)
         else:
             # Text fits - render normally without scrolling
             text_rect = text_surface.get_rect()
             text_rect.centerx = cell_width // 2
             text_rect.bottom = cell_height - int(4 * self.manager.ui_scale)
-            layer.blit(text_surface, text_rect)
+            blit_with_cache(layer, text_surface, text_rect.topleft)
         
         return layer
     
     def render(self):
         """Render the party grid with attribute-colored backgrounds"""
-        surface = pygame.Surface((self.rect.width, self.rect.height), pygame.SRCALPHA)
+        # Reuse a cached render surface to avoid per-frame allocations
+        target_size = (self.rect.width, self.rect.height)
+        if not hasattr(self, "_render_surface") or self._render_surface is None or self._render_surface.get_size() != target_size:
+            self._render_surface = pygame.Surface(target_size, pygame.SRCALPHA)
+        surface = self._render_surface
+        surface.fill((0, 0, 0, 0))
         
         current_items = self.get_current_page_items()
         colors = self.manager.get_theme_colors() if self.manager else {}
@@ -316,7 +322,7 @@ class PartyGrid(Grid):
                         # Center sprite in cell horizontally, position with padding from top
                         sprite_x = cell_rect.centerx - new_width // 2
                         sprite_y = cell_rect.y + int(4 * self.manager.ui_scale)
-                        surface.blit(scaled_sprite, (sprite_x, sprite_y))
+                        blit_with_cache(surface, scaled_sprite, (sprite_x, sprite_y))
                     
                     # Draw text layer (with scrolling support)
                     if item.text and self.manager:
@@ -325,10 +331,11 @@ class PartyGrid(Grid):
                             self.text_layer_cache[item_index] = self._render_text_layer(item_index, item, cell_rect)
                         
                         if self.text_layer_cache[item_index]:
-                            surface.blit(self.text_layer_cache[item_index], (cell_rect.x, cell_rect.y))
+                            blit_with_cache(surface, self.text_layer_cache[item_index], (cell_rect.x, cell_rect.y))
                 
                 # Draw focus border
-                if is_focused:
+                # Skip in touch mode - focus highlights are for keyboard/mouse navigation only
+                if is_focused and runtime_globals.INPUT_MODE != runtime_globals.TOUCH_MODE:
                     # Get theme color for border
                     if self.manager:
                         colors = self.manager.get_theme_colors()

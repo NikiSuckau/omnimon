@@ -68,5 +68,7 @@ class AdventureBattleView:
     
     def handle_event(self, event):
         """Handle input events."""
+        if not isinstance(event, tuple) or len(event) != 2:
+            return
         if self.battle_encounter:
             self.battle_encounter.handle_event(event)

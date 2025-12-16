@@ -117,11 +117,46 @@ def setup_pygame():
         pygame.mixer.pre_init(frequency=44100, size=-16, channels=2, buffer=128)
 
 
+def apply_config_to_constants(config):
+    """Apply configuration values to constants module"""
+    # Import after pygame init to avoid circular dependencies
+    from game.core import constants
+    
+    # Apply frame rate
+    frame_rate = config.get("FRAME_RATE", 30)
+    if frame_rate < 3:
+        frame_rate = 3
+    constants.FRAME_RATE = frame_rate
+    
+    # Apply max pets
+    max_pets = config.get("MAX_PETS", 4)
+    if max_pets < 1:
+        max_pets = 1
+    constants.MAX_PETS = max_pets
+    
+    # Apply debug settings
+    constants.DEBUG_MODE = config.get("DEBUG_MODE", config.get("DEBUG", False))
+    constants.DEBUG_FILE_LOGGING = config.get("DEBUG_FILE_LOGGING", config.get("LOGGING", False))
+    constants.SHOW_FPS = config.get("SHOW_FPS", False)
+    constants.DEBUG_BLIT_LOGGING = config.get("DEBUG_BLIT_LOGGING", config.get("LOG_BLITS", False))
+    constants.DEBUG_BATTLE_INFO = config.get("DEBUG_BATTLE_INFO", False)
+    
+    # Update legacy aliases
+    constants.DEBUG = constants.DEBUG_MODE
+    constants.LOGGING = constants.DEBUG_FILE_LOGGING
+    constants.LOG_BLITS = constants.DEBUG_BLIT_LOGGING
+    
+    logging.info(f"[Config] Applied: FRAME_RATE={constants.FRAME_RATE}, MAX_PETS={constants.MAX_PETS}, DEBUG_MODE={constants.DEBUG_MODE}")
+
+
 def setup_display():
     """Setup the display window with proper resolution and fullscreen detection"""
     global render_surface, final_screen, scale_to_screen, native_width, native_height
 
     config = load_display_config()
+    
+    # Apply configuration to constants module
+    apply_config_to_constants(config)
     
     # Determine if we should run in fullscreen
     fullscreen_requested = (

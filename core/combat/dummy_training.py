@@ -115,17 +115,18 @@ class DummyTraining(Training):
 
     def handle_event(self, event):
         """Forward input events to the bar component."""
+        event_type, event_data = event
+        
         if self.phase == "charge" and self.minigame.handle_event(event):
             return
         
-        if isinstance(event, str):
-            if event in ("START", "B") and self.phase in ("charge", "alert"):
-                runtime_globals.game_sound.play("cancel")
-                change_scene("game")
-            elif event in ("A", "B") and self.phase != "result":
-                runtime_globals.game_sound.play("cancel")
-                self.animated_sprite.stop()
-                self.phase = "result"
+        if event_type in ("START", "B") and self.phase in ("charge", "alert"):
+            runtime_globals.game_sound.play("cancel")
+            change_scene("game")
+        elif event_type in ("B") and self.phase != "result":
+            runtime_globals.game_sound.play("cancel")
+            self.animated_sprite.stop()
+            self.phase = "result"
 
     def draw_attack_move(self, surface):
         if self.attack_phase == 1:

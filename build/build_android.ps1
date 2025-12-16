@@ -34,7 +34,7 @@ wsl bash -c "cd $WSLBuildDir && find . -type f -name '*.pyc' -delete && find . -
 if ($Clean) { wsl bash -c "cd $WSLBuildDir && rm -rf .buildozer bin" }
 
 Write-Host "[4/4] Building APK ($BuildType)..." -ForegroundColor Yellow
-$buildCommand = if ($Release) { "cd $WSLBuildDir && buildozer android release" } else { "cd $WSLBuildDir && buildozer android debug" }
+$buildCommand = if ($Release) { "cd $WSLBuildDir && buildozer android clean && buildozer android release" } else { "cd $WSLBuildDir && buildozer android clean && buildozer android debug" }
 wsl bash -c $buildCommand
 
 if ($LASTEXITCODE -eq 0) {

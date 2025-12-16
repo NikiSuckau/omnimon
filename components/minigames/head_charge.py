@@ -31,6 +31,8 @@ class HeadCharge:
         self.left_attack_sprite = left_attack_sprite
         self.right_attack_sprite = right_attack_sprite
 
+        self.pet_size = 36 * runtime_globals.UI_SCALE
+
         self.pattern = ""
         self.current_index = 0
         self.victories = 0
@@ -48,22 +50,21 @@ class HeadCharge:
         self._sprite_cache['vs_img'] = self.ui_manager.load_sprite_non_integer_scaling(constants.VS_PATH, runtime_globals.UI_SCALE * 1.5)
         self._sprite_cache['strikes'] = self.ui_manager.load_sprite_non_integer_scaling(constants.HEADTRAINING_STRIKE_PATH, sprite_scale_factor)
         self._sprite_cache['strikes_back'] = self.ui_manager.load_sprite_non_integer_scaling(constants.HEADTRAINING_BACK_PATH, sprite_scale_factor)
+
+        self.left_attack_sprite = pygame.transform.scale(self.left_attack_sprite, (self.pet_size//2, self.pet_size//2))
+        self.right_attack_sprite = pygame.transform.scale(self.right_attack_sprite, (self.pet_size//2, self.pet_size//2))
         
         # Cache pet sprites scaled at +50%
         if self.left_pet and self.right_pet:
-            pet_scale_factor = 1.50  # Direct scaling factor, not based on sprite_scale_factor
             left_atk1 = runtime_globals.pet_sprites[self.left_pet][PetFrame.ATK1.value]
             left_atk2 = runtime_globals.pet_sprites[self.left_pet][PetFrame.ATK2.value]
             right_atk1 = runtime_globals.pet_sprites[self.right_pet][PetFrame.ATK1.value]
             right_atk2 = runtime_globals.pet_sprites[self.right_pet][PetFrame.ATK2.value]
             
-            scaled_width = int(left_atk1.get_width() * pet_scale_factor)
-            scaled_height = int(left_atk1.get_height() * pet_scale_factor)
-            
-            self._sprite_cache['left_pet_atk1'] = pygame.transform.scale(left_atk1, (scaled_width, scaled_height))
-            self._sprite_cache['left_pet_atk2'] = pygame.transform.scale(left_atk2, (scaled_width, scaled_height))
-            self._sprite_cache['right_pet_atk1'] = pygame.transform.scale(right_atk1, (scaled_width, scaled_height))
-            self._sprite_cache['right_pet_atk2'] = pygame.transform.scale(right_atk2, (scaled_width, scaled_height))
+            self._sprite_cache['left_pet_atk1'] = pygame.transform.scale(left_atk1, (self.pet_size, self.pet_size))
+            self._sprite_cache['left_pet_atk2'] = pygame.transform.scale(left_atk2, (self.pet_size, self.pet_size))
+            self._sprite_cache['right_pet_atk1'] = pygame.transform.scale(right_atk1, (self.pet_size, self.pet_size))
+            self._sprite_cache['right_pet_atk2'] = pygame.transform.scale(right_atk2, (self.pet_size, self.pet_size))
         
         # Create UP/DOWN UI buttons using UI manager's base coordinate system (240x240)
         ui_base = 240  # UI manager's base resolution
@@ -113,7 +114,7 @@ class HeadCharge:
                 self.phase = "charge"
                 self.frame_counter = 0
 
-        mouse_enabled = runtime_globals.game_input.is_mouse_enabled()
+        mouse_enabled = (runtime_globals.INPUT_MODE == runtime_globals.MOUSE_MODE or runtime_globals.INPUT_MODE == runtime_globals.TOUCH_MODE)
         if self.phase != "result" and mouse_enabled:
             self.up_button.update()
             self.down_button.update()
@@ -128,28 +129,16 @@ class HeadCharge:
                 self.player_input = "A"
                 self.start_attack()
 
-    def handle_event(self, input_action):
+    def handle_event(self, event):
         """Handle input events for the head charge minigame"""
-        # Handle pygame events (like mouse clicks) for buttons
-        if hasattr(input_action, 'type'):
-            if input_action.type == pygame.MOUSEBUTTONDOWN and input_action.button == 1:
-                mouse_pos = input_action.pos
-                # Check if click is on UP button using rect
-                if (mouse_pos[0] >= self.up_button.rect.x and mouse_pos[0] <= self.up_button.rect.x + self.up_button.rect.width and
-                    mouse_pos[1] >= self.up_button.rect.y and mouse_pos[1] <= self.up_button.rect.y + self.up_button.rect.height):
-                    self.handle_button_press("UP")
-                    return True
-                # Check if click is on DOWN button using rect
-                elif (mouse_pos[0] >= self.down_button.rect.x and mouse_pos[0] <= self.down_button.rect.x + self.down_button.rect.width and
-                      mouse_pos[1] >= self.down_button.rect.y and mouse_pos[1] <= self.down_button.rect.y + self.down_button.rect.height):
-                    self.handle_button_press("DOWN")
-                    return True
+        if not isinstance(event, tuple) or len(event) != 2:
             return False
         
-        # Handle string action events (keyboard/controller/mouse abstractions)
-        if isinstance(input_action, str):
-            if input_action == "LCLICK" and runtime_globals.game_input.is_mouse_enabled():
-                mouse_pos = pygame.mouse.get_pos()
+        event_type, event_data = event
+        
+        if event_type == "LCLICK" and (runtime_globals.INPUT_MODE == runtime_globals.MOUSE_MODE or runtime_globals.INPUT_MODE == runtime_globals.TOUCH_MODE):
+            if event_data and "pos" in event_data:
+                mouse_pos = event_data["pos"]
                 if self.up_button.rect.collidepoint(mouse_pos):
                     self.handle_button_press("UP")
                     return True
@@ -157,15 +146,15 @@ class HeadCharge:
                     self.handle_button_press("DOWN")
                     return True
 
-            if self.phase == "charge":
-                if input_action == "UP":
-                    self.player_input = "B"
-                    self.start_attack()
-                    return True
-                elif input_action == "DOWN":
-                    self.player_input = "A"
-                    self.start_attack()
-                    return True
+        if self.phase == "charge":
+            if event_type == "UP":
+                self.player_input = "B"
+                self.start_attack()
+                return True
+            elif event_type == "DOWN":
+                self.player_input = "A"
+                self.start_attack()
+                return True
         return False
 
     def start_attack(self):
@@ -180,8 +169,8 @@ class HeadCharge:
         y_up = self.left_y
         y_down = y_up + int(32 * runtime_globals.UI_SCALE)
 
-        left_x = runtime_globals.PET_WIDTH + (5 * runtime_globals.UI_SCALE)
-        right_x = runtime_globals.SCREEN_WIDTH - runtime_globals.PET_WIDTH - (5 * runtime_globals.UI_SCALE)
+        left_x = self.pet_size + (5 * runtime_globals.UI_SCALE)
+        right_x = runtime_globals.SCREEN_WIDTH - self.pet_size - (5 * runtime_globals.UI_SCALE)
 
         left_sprite = self.left_attack_sprite
         right_sprite = self.right_attack_sprite
@@ -263,7 +252,7 @@ class HeadCharge:
                 self.draw_attacks(surface)
 
             # Draw UI buttons only if mouse is available (and not on result screen)
-            mouse_enabled = runtime_globals.game_input.is_mouse_enabled()
+            mouse_enabled = (runtime_globals.INPUT_MODE == runtime_globals.MOUSE_MODE or runtime_globals.INPUT_MODE == runtime_globals.TOUCH_MODE)
             if self.phase != "result" and mouse_enabled:
                 self.up_button.draw(surface)
                 self.down_button.draw(surface)
@@ -314,9 +303,9 @@ class HeadCharge:
 
         # Calculate positions to center the scaled sprites
         left_x = 0 + (5 * runtime_globals.UI_SCALE)
-        self.left_y = runtime_globals.SCREEN_HEIGHT // 2 - left_sprite.get_height() // 2
-        right_x = runtime_globals.SCREEN_WIDTH - right_sprite.get_width() - (5 * runtime_globals.UI_SCALE)
-        self.right_y = runtime_globals.SCREEN_HEIGHT // 2 - right_sprite.get_height() // 2
+        self.left_y = runtime_globals.SCREEN_HEIGHT // 2 - self.pet_size // 2
+        right_x = runtime_globals.SCREEN_WIDTH - self.pet_size - (5 * runtime_globals.UI_SCALE)
+        self.right_y = runtime_globals.SCREEN_HEIGHT // 2 - self.pet_size // 2
 
         blit_with_shadow(surface, left_sprite, (left_x, self.left_y))
         blit_with_shadow(surface, right_sprite, (right_x, self.right_y))

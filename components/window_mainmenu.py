@@ -26,6 +26,10 @@ class WindowMenu:
         self.top_positions = []
         self.bottom_positions = []
 
+        # Absolute on-screen rectangles for all 10 icons (top 0-4, bottom 5-9)
+        # This is the single source of truth for hit-testing (mouse/touch).
+        self.icon_rects = []
+
         self.prev_menu_index = -2
         self.prev_alert_state = None
 
@@ -64,12 +68,22 @@ class WindowMenu:
         self.spacing_x = (runtime_globals.SCREEN_WIDTH - (5 * runtime_globals.MENU_ICON_SIZE * 2)) // 6
         self.top_y = 20 * runtime_globals.UI_SCALE if game_globals.showClock else 5 * runtime_globals.UI_SCALE
 
+        icon_w = runtime_globals.MENU_ICON_SIZE * 2
+        icon_h = runtime_globals.MENU_ICON_SIZE * 2
+
         self.top_positions = [
-            (self.spacing_x + i * (runtime_globals.MENU_ICON_SIZE * 2 + self.spacing_x), 0) for i in range(5)
+            (self.spacing_x + i * (icon_w + self.spacing_x), 0) for i in range(5)
         ]
         self.bottom_positions = [
-            (self.spacing_x + (i - 5) * (runtime_globals.MENU_ICON_SIZE * 2 + self.spacing_x), 0) for i in range(5, 10)
+            (self.spacing_x + (i - 5) * (icon_w + self.spacing_x), 0) for i in range(5, 10)
         ]
+
+        # Build absolute on-screen rects for hit-testing
+        self.icon_rects = []
+        for i, (x, y) in enumerate(self.top_positions):
+            self.icon_rects.append(pygame.Rect(x, self.top_y + y, icon_w, icon_h))
+        for i, (x, y) in enumerate(self.bottom_positions, start=5):
+            self.icon_rects.append(pygame.Rect(x, self.bottom_y + y, icon_w, icon_h))
 
 
     def update_cache(self, force=False):
@@ -83,7 +97,7 @@ class WindowMenu:
         if self.prev_menu_index != menu_index or force:
             self.top_cache = pygame.Surface((runtime_globals.SCREEN_WIDTH, runtime_globals.MENU_ICON_SIZE * 2), pygame.SRCALPHA)
             for i, (x, y) in enumerate(self.top_positions):
-                selected = (i == menu_index)
+                selected = (i == menu_index) and runtime_globals.INPUT_MODE != runtime_globals.TOUCH_MODE
                 icon = self.icons[i][1] if selected else self.icons[i][0]
                 self.top_cache.blit(icon, (x, y))
         
@@ -91,7 +105,7 @@ class WindowMenu:
         if self.prev_menu_index != menu_index or self.prev_alert_state != alert or force:
             self.bottom_cache = pygame.Surface((runtime_globals.SCREEN_WIDTH, runtime_globals.MENU_ICON_SIZE * 2), pygame.SRCALPHA)
             for i, (x, y) in enumerate(self.bottom_positions, start=5):
-                selected = (i == menu_index)
+                selected = (i == menu_index) and runtime_globals.INPUT_MODE != runtime_globals.TOUCH_MODE
                 if i == 9 and alert:
                     icon = self.icons[i][1]
                 else:
@@ -116,6 +130,19 @@ class WindowMenu:
         if self.bottom_cache:
             #surface.blit(self.bottom_cache, (0, self.bottom_y))
             blit_with_cache(surface, self.bottom_cache, (0, self.bottom_y))
+
+
+    def get_menu_index_at(self, pos):
+        """Return the menu index at the given screen position, or -1 if none.
+
+        This uses precomputed icon_rects so input code does not need to
+        duplicate spacing math. Works for both mouse and touch coordinates.
+        """
+        x, y = pos
+        for i, rect in enumerate(self.icon_rects):
+            if rect.collidepoint(x, y):
+                return i
+        return -1
 
 
     def move_selection(self, direction):

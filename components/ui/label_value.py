@@ -4,6 +4,7 @@ Label Value Component - A combined component that shows a label and value togeth
 import pygame
 from components.ui.component import UIComponent
 from components.ui.ui_constants import PURPLE, BLACK, GREY, YELLOW
+from core import runtime_globals
 from core.utils.pygame_utils import blit_with_cache, blit_with_shadow
 
 
@@ -77,7 +78,8 @@ class LabelValue(UIComponent):
             blit_with_cache(surface, value_surface, (value_x, value_y))
         
         # Draw highlight if focused and has tooltip
-        if self.focused and self.tooltip_text:
+        # Skip in touch mode - focus highlights are for keyboard/mouse navigation only
+        if self.focused and self.tooltip_text and runtime_globals.INPUT_MODE != runtime_globals.TOUCH_MODE:
             colors = self.get_colors()
             highlight_color = colors.get("highlight", colors["fg"])  # Safe fallback
             pygame.draw.rect(surface, highlight_color, surface.get_rect(), 2)

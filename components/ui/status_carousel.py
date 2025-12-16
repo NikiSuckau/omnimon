@@ -23,6 +23,9 @@ class StatusCarousel(UIComponent):
         self.auto_scroll_speed = 20  # pixels per second
         self.last_scroll_time = 0
         
+        # Mark as dynamic since carousel auto-scrolls and animates
+        self.is_dynamic = True
+        
         # Box dimensions and spacing - these will be scaled in setup_scaling()
         self.base_box_width = 60
         self.base_box_spacing = 8
@@ -356,7 +359,9 @@ class StatusCarousel(UIComponent):
             surface_height = self.box_height
             
             # Create the content surface
-            self.content_surface = pygame.Surface((surface_width, surface_height), pygame.SRCALPHA)
+            # Reuse content_surface if size matches; else recreate
+            if getattr(self, 'content_surface', None) is None or self.content_surface.get_size() != (surface_width, surface_height):
+                self.content_surface = pygame.Surface((surface_width, surface_height), pygame.SRCALPHA)
             
             # Calculate spacing for even distribution
             if len(self.boxes) == 1:
@@ -384,7 +389,7 @@ class StatusCarousel(UIComponent):
                 # Create box surface
                 box_surface = self.create_box_surface(box, i, font)
                 
-                # Blit box to content surface
+                # Blit box to content surface (internal rendering, no tracking needed)
                 self.content_surface.blit(box_surface, (box_x, box_y))
         else:
             # When boxes don't fit, use scrolling mode with duplication
@@ -396,7 +401,8 @@ class StatusCarousel(UIComponent):
             surface_height = self.box_height
             
             # Create the content surface
-            self.content_surface = pygame.Surface((surface_width, surface_height), pygame.SRCALPHA)
+            if getattr(self, 'content_surface', None) is None or self.content_surface.get_size() != (surface_width, surface_height):
+                self.content_surface = pygame.Surface((surface_width, surface_height), pygame.SRCALPHA)
             
             # Render all boxes twice (original + wrapped) for seamless scrolling
             for cycle in range(2):
@@ -414,7 +420,7 @@ class StatusCarousel(UIComponent):
                     # The box_index remains the same for both cycles as it's the logical box position
                     box_surface = self.create_box_surface(box, i, font)
                     
-                    # Blit box to content surface
+                    # Blit box to content surface (internal rendering, no tracking needed)
                     self.content_surface.blit(box_surface, (box_x, box_y))
         
         self.surface_needs_rebuild = False
@@ -544,7 +550,7 @@ class StatusCarousel(UIComponent):
                 
     def handle_mouse_hover(self):
         """Handle mouse hover for individual box selection"""
-        if not runtime_globals.game_input.is_mouse_enabled():
+        if not (runtime_globals.INPUT_MODE in [runtime_globals.MOUSE_MODE, runtime_globals.TOUCH_MODE]):
             return
         
         # Disable mouse hover during drag to prevent focus changes
@@ -670,58 +676,53 @@ class StatusCarousel(UIComponent):
                 
     def handle_event(self, event):
         """Handle input events"""
-        if isinstance(event, str):
-            return self.handle_input_action(event)
-        elif hasattr(event, 'type'):
-            return self.handle_pygame_event(event)
-        return False
+        if not isinstance(event, tuple) or len(event) != 2:
+            return False
+            
+        event_type, event_data = event
         
-    def handle_input_action(self, action):
-        """Handle string-based input actions"""
         if not self.focused or not self.boxes:
             return False
             
-        if action == "LEFT":
+        if event_type == "LEFT":
             self.move_focus(-1)
             return True
-        elif action == "RIGHT":
+        elif event_type == "RIGHT":
             self.move_focus(1)
             return True
-        elif action in ["A"]:
+        elif event_type == "A":
             # Show tooltip for focused box
             if 0 <= self.focused_box_index < len(self.boxes):
                 box = self.boxes[self.focused_box_index]
                 if self.manager and hasattr(self.manager, 'show_tooltip'):
                     self.manager.show_tooltip(f"{box['name']}: {box['value']}")
             return True
-            
-        return False
-        
-    def handle_pygame_event(self, event):
-        """Handle pygame events for dragging"""
-        # Disable dragging when mouse is hovering over component
-        # Only allow mouse wheel scrolling in this mode
-        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-            if self.rect.collidepoint(event.pos):
-                # Check if mouse is over the component bounds
-                relative_x = event.pos[0] - self.rect.x
-                relative_y = event.pos[1] - self.rect.y
-                
-                # If mouse is over component, disable drag and only allow wheel scroll
-                if (0 <= relative_x < self.rect.width and 0 <= relative_y < self.rect.height):
-                    # Mouse is over component - do not start drag, let mouse wheel handle scrolling
-                    return False
-                else:
-                    # Mouse is outside component - allow drag
-                    self.start_drag(event.pos[0])
+        elif event_type == "LCLICK":
+            # Handle left clicks for box interaction
+            if event_data and "pos" in event_data:
+                return self.handle_mouse_click(event_data["pos"], "LCLICK")
+        elif event_type == "DRAG_START":
+            # Start drag interaction
+            if event_data and "pos" in event_data:
+                mouse_x = event_data["pos"][0]
+                # Only start drag if outside component bounds (for scrolling)
+                if not self.rect.collidepoint(event_data["pos"]):
+                    self.start_drag(mouse_x)
                     return True
-        elif event.type == pygame.MOUSEBUTTONUP and event.button == 1:
+        elif event_type == "DRAG_MOTION":
+            # Continue drag
+            if self.dragging and event_data and "pos" in event_data:
+                self.update_drag(event_data["pos"][0])
+                return True
+        elif event_type == "DRAG_END":
+            # End drag
             if self.dragging:
                 self.end_drag()
                 return True
-        elif event.type == pygame.MOUSEMOTION and self.dragging:
-            self.update_drag(event.pos[0])
-            return True
+        elif event_type == "SCROLL":
+            # Handle scroll wheel
+            if event_data and "amount" in event_data:
+                return self.handle_scroll(event_data["amount"])
             
         return False
     
@@ -855,12 +856,22 @@ class StatusCarousel(UIComponent):
         
         return True
     
-    def handle_drag(self, action, input_manager):
+    def handle_drag(self, event):
         """Handle drag for UI manager compatibility"""
-        if not self.boxes:
+        if not isinstance(event, tuple) or len(event) != 2:
+            return False
+        
+        event_type, event_data = event
+        
+        if not (runtime_globals.INPUT_MODE in [runtime_globals.MOUSE_MODE, runtime_globals.TOUCH_MODE]):
             return False
             
-        mouse_pos = input_manager.get_mouse_position()
+        if not self.boxes:
+            return False
+        
+        mouse_pos = event_data.get("pos")
+        if not mouse_pos:
+            return False
         
         # Check if mouse is over the component - if so, disable dragging
         if self.rect.collidepoint(mouse_pos):
@@ -868,17 +879,17 @@ class StatusCarousel(UIComponent):
             return False
         
         # Handle drag start (only when mouse is outside component)
-        if action == "DRAG_START":
+        if event_type == "DRAG_START":
             self.start_drag(mouse_pos[0])
             return True
         
         # Handle drag continue
-        elif action == "DRAG_CONTINUE" and self.dragging:
+        elif event_type == "DRAG_MOTION" and self.dragging:
             self.update_drag(mouse_pos[0])
             return True
         
         # Handle drag end
-        elif action == "DRAG_END" and self.dragging:
+        elif event_type == "DRAG_END" and self.dragging:
             self.end_drag()
             return True
             

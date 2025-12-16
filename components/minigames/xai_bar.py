@@ -9,12 +9,22 @@ XAIARROW_ICON_PATH = "assets/XaiArrow.png"  # Update this path as needed
 
 class XaiBar:
     """XAI bar minigame for DMX ruleset"""
-    SCALE_WIDTH = runtime_globals.SCREEN_WIDTH / 240
-    SCALE_HEIGHT = runtime_globals.SCREEN_HEIGHT / 240
-    WIDTH = int(152 * SCALE_WIDTH)
-    HEIGHT = int(72 * SCALE_HEIGHT)
-    INNER_WIDTH = int(148 * SCALE_WIDTH)
-    INNER_HEIGHT = int(68 * SCALE_HEIGHT)
+    
+    @property
+    def WIDTH(self):
+        return int(152 * runtime_globals.UI_SCALE)
+    
+    @property
+    def HEIGHT(self):
+        return int(72 * runtime_globals.UI_SCALE)
+    
+    @property
+    def INNER_WIDTH(self):
+        return int(148 * runtime_globals.UI_SCALE)
+    
+    @property
+    def INNER_HEIGHT(self):
+        return int(68 * runtime_globals.UI_SCALE)
 
     def __init__(self, x, y, xai_number, pet):
         self.x = x
@@ -42,6 +52,7 @@ class XaiBar:
         self._bar_structures_cache = None
         self._bar_surfaces_cache = None
         self._cache_key = None
+        self._static_surfaces = None  # (border_surf, inner_surf, ext_surf)
 
         self._update_cache()
 
@@ -51,6 +62,7 @@ class XaiBar:
         if key != self._cache_key:
             self._bar_structures_cache = self._compute_bar_structures()
             self._bar_surfaces_cache = self._compute_bar_surfaces()
+            self._static_surfaces = self._compute_static_surfaces()
             self._cache_key = key
 
     def start(self):
@@ -77,9 +89,9 @@ class XaiBar:
     def _compute_bar_structures(self):
         yellow_width, orange_width, orange_height, red_width, red_height = self.getBars()
         name_seed = sum(ord(c) for c in self.pet.name)
-        base_y = self.y + 2
-        bar_left = self.x + 2
-        bar_right = self.x + 2 + self.INNER_WIDTH
+        base_y = self.y + int(2 * runtime_globals.UI_SCALE)
+        bar_left = self.x + int(2 * runtime_globals.UI_SCALE)
+        bar_right = self.x + int(2 * runtime_globals.UI_SCALE) + self.INNER_WIDTH
 
         rects = []
 
@@ -128,7 +140,7 @@ class XaiBar:
             if order == "big_first":
                 struct1, struct2 = struct2, struct1
 
-            gap = 8
+            gap = int(8 * runtime_globals.UI_SCALE)
             total_width = (
                 struct1["yellow"] + struct1["orange"] + struct1["red"] +
                 struct2["yellow"] + struct2["orange"] + struct2["red"] +
@@ -211,35 +223,23 @@ class XaiBar:
 
     def handle_event(self, event):
         """Handle input events for the XAI bar minigame"""
-        if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_a or event.key == pygame.K_SPACE:
-                if self.arrow_animating:
-                    self.stop()
-                    return True
-        elif event.type == pygame.MOUSEBUTTONDOWN:
-            if event.button == 1:  # Left click
-                if self.arrow_animating:
-                    self.stop()
-                    return True
+        if not isinstance(event, tuple) or len(event) != 2:
+            return False
+        
+        event_type, event_data = event
+        
+        if event_type in ("A", "LCLICK"):
+            if self.arrow_animating:
+                self.stop()
+                return True
         return False
 
     def draw(self, surface):
-        # Draw outer border with shadow
-        border_surf = pygame.Surface((self.WIDTH, self.HEIGHT), pygame.SRCALPHA)
-        pygame.draw.rect(border_surf, (0, 0, 0), (0, 0, self.WIDTH, self.HEIGHT), 0)
-        blit_with_shadow(surface, border_surf, (self.x, self.y))
-
-        # Draw inner background with shadow
-        inner_surf = pygame.Surface((self.INNER_WIDTH, self.INNER_HEIGHT), pygame.SRCALPHA)
-        pygame.draw.rect(inner_surf, (255, 255, 255, 200), (0, 0, self.INNER_WIDTH, self.INNER_HEIGHT), 0)
-        blit_with_shadow(surface, inner_surf, (self.x + 2, self.y + 2))
-
-        # Draw top extension rectangle (white with black border) with shadow
-        ext_height = 30
+        # Use cached static surfaces to avoid per-frame allocations
+        border_surf, inner_surf, ext_surf, ext_height = self._static_surfaces
         ext_y = self.y - ext_height
-        ext_surf = pygame.Surface((self.WIDTH, ext_height), pygame.SRCALPHA)
-        pygame.draw.rect(ext_surf, (0, 0, 0), (0, 0, self.WIDTH, ext_height), 0)
-        pygame.draw.rect(ext_surf, (255, 255, 255, 200), (2, 2, self.INNER_WIDTH, ext_height - 4), 0)
+        blit_with_shadow(surface, border_surf, (self.x, self.y))
+        blit_with_shadow(surface, inner_surf, (self.x + int(2 * runtime_globals.UI_SCALE), self.y + int(2 * runtime_globals.UI_SCALE)))
         blit_with_shadow(surface, ext_surf, (self.x, ext_y))
 
         # Draw arrow sprite at the top, centered or animating, with shadow
@@ -255,9 +255,24 @@ class XaiBar:
             blit_with_shadow(surface, surf, (x, y))
 
     def getBars(self):
-        yellow_width = int((7 + (self.pet.level / 4)) * self.SCALE_WIDTH)
-        orange_width = int((20 + (self.pet.level / 3)) * self.SCALE_WIDTH)
+        yellow_width = int((7 + (self.pet.level / 4)) * runtime_globals.UI_SCALE)
+        orange_width = int((20 + (self.pet.level / 3)) * runtime_globals.UI_SCALE)
         orange_height = int((self.INNER_HEIGHT * 2 / 3))
-        red_width = int((26 + (self.pet.level / 4)) * self.SCALE_WIDTH)
+        red_width = int((26 + (self.pet.level / 4)) * runtime_globals.UI_SCALE)
         red_height = int((self.INNER_HEIGHT / 3))
         return yellow_width, orange_width, orange_height, red_width, red_height
+
+    def _compute_static_surfaces(self):
+        # Pre-render static surfaces used every frame
+        border_surf = pygame.Surface((self.WIDTH, self.HEIGHT), pygame.SRCALPHA)
+        pygame.draw.rect(border_surf, (0, 0, 0), (0, 0, self.WIDTH, self.HEIGHT), 0)
+
+        inner_surf = pygame.Surface((self.INNER_WIDTH, self.INNER_HEIGHT), pygame.SRCALPHA)
+        pygame.draw.rect(inner_surf, (255, 255, 255, 200), (0, 0, self.INNER_WIDTH, self.INNER_HEIGHT), 0)
+
+        ext_height = int(30 * runtime_globals.UI_SCALE)
+        ext_surf = pygame.Surface((self.WIDTH, ext_height), pygame.SRCALPHA)
+        pygame.draw.rect(ext_surf, (0, 0, 0), (0, 0, self.WIDTH, ext_height), 0)
+        pygame.draw.rect(ext_surf, (255, 255, 255, 200), (int(2 * runtime_globals.UI_SCALE), int(2 * runtime_globals.UI_SCALE), self.INNER_WIDTH, ext_height - int(4 * runtime_globals.UI_SCALE)), 0)
+
+        return border_surf, inner_surf, ext_surf, ext_height

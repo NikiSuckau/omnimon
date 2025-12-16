@@ -39,6 +39,9 @@ class XaiRoll:
             icon = pygame.transform.scale(icon, (self.width, self.height))
             self.scaled_sprites.append(icon)
 
+        # Cache for rectangle effect surfaces by height
+        self._rect_cache = {}
+
     def roll(self):
         self.rolling = True
         self.stopping = False
@@ -57,10 +60,14 @@ class XaiRoll:
 
     def update(self):
         if self.rolling:
+            # Use integer tick progression to avoid per-frame modulo cost
             self.roll_timer += 1
             if self.roll_timer >= self.roll_speed:
                 self.roll_timer = 0
-                self.current_frame = (self.current_frame + 1) % self.FRAME_COUNT
+                nxt = self.current_frame + 1
+                if nxt >= self.FRAME_COUNT:
+                    nxt = 0
+                self.current_frame = nxt
 
         if self.stopping:
             if self.rect_anim_phase == 0:
@@ -99,11 +106,16 @@ class XaiRoll:
         if self.stopping and self.rect_anim_progress > 0:
             # Draw expanding/shrinking rectangles from top and bottom
             rect_height = self.rect_anim_progress
-            top_rect = pygame.Rect(self.x, self.y, self.width, rect_height)
-            bottom_rect = pygame.Rect(self.x, self.y + self.height - rect_height, self.width, rect_height)
-            color = (0, 0, 0)  # Black, or choose another color for the effect
-            pygame.draw.rect(surface, color, top_rect)
-            pygame.draw.rect(surface, color, bottom_rect)
+            # Build or reuse cached solid surfaces of requested height
+            surf = self._rect_cache.get(int(rect_height))
+            if surf is None or surf.get_height() != int(rect_height):
+                surf = pygame.Surface((self.width, int(rect_height)))
+                surf.fill((0, 0, 0))
+                self._rect_cache[int(rect_height)] = surf
+            # Top band
+            blit_with_cache(surface, surf, (self.x, self.y))
+            # Bottom band
+            blit_with_cache(surface, surf, (self.x, self.y + self.height - int(rect_height)))
 
     def get_result(self):
         """Get the current XAI number result (1-7)"""
@@ -111,18 +123,15 @@ class XaiRoll:
 
     def handle_event(self, event):
         """Handle input events for the XAI roll minigame"""
-        if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_a or event.key == pygame.K_SPACE:
-                if not self.rolling:
-                    self.roll()
-                elif not self.stopping:
-                    self.stop()
-                return True
-        elif event.type == pygame.MOUSEBUTTONDOWN:
-            if event.button == 1:  # Left click
-                if not self.rolling:
-                    self.roll()
-                elif not self.stopping:
-                    self.stop()
-                return True
+        if not isinstance(event, tuple) or len(event) != 2:
+            return False
+        
+        event_type, event_data = event
+        
+        if event_type in ("A", "LCLICK"):
+            if not self.rolling:
+                self.roll()
+            elif not self.stopping:
+                self.stop()
+            return True
         return False

@@ -1,10 +1,10 @@
 """
 Omnipet Virtual Pet - Android Entry Point
 """
-import pygame
 import sys
 import os
-
+os.environ["SDL_RENDER_SCALE_QUALITY"] = "0"
+import pygame
 
 def main():
     # Initialize pygame
@@ -23,10 +23,23 @@ def main():
         from core import runtime_globals
         runtime_globals.APP_ROOT = os.getcwd()
         runtime_globals.IS_ANDROID = True
+        runtime_globals.INPUT_MODE = runtime_globals.TOUCH_MODE
+        #runtime_globals.INPUT_MODE_FORCED = True
         
         # Update runtime resolution based on actual device screen size
         width, height = screen.get_size()
-        runtime_globals.update_resolution_constants(width, height)
+
+        # Run the game at half the native resolution for performance, then upscale
+        game_width  = (width  // 2) & ~1
+        game_height = (height // 2) & ~1
+        #game_width  = width
+        #game_height = height
+
+        # Update runtime globals to use the game's internal resolution (half)
+        runtime_globals.update_resolution_constants(game_width, game_height)
+
+        # Create an offscreen surface at game resolution to render into
+        offscreen = pygame.Surface((game_width, game_height))
         
         # Now import game after environment is configured
         from vpet import VirtualPetGame
@@ -45,7 +58,20 @@ def main():
                     game.handle_event(event)
             
             game.update()
-            game.draw(screen, clock)
+
+            # Render the game into the offscreen (half-res) surface
+            game.draw(offscreen, clock)
+
+            # Upscale 2x using pixel-perfect integer scaling (no interpolation/blur)
+            
+            scaled = pygame.transform.scale(
+                offscreen,
+                (game_width * 2, game_height * 2)
+            )
+            scaled_rect = scaled.get_rect(center=screen.get_rect().center)
+            screen.blit(scaled, scaled_rect)
+            #screen.blit(offscreen, (0, 0))
+
             pygame.display.flip()
             clock.tick(30)
         

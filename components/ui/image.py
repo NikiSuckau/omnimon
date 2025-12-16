@@ -4,6 +4,7 @@ Image Component - Displays an image with optional scaling
 import pygame
 from components.ui.component import UIComponent
 from core.utils.asset_utils import image_load
+from core.utils.pygame_utils import blit_with_cache
 
 
 class Image(UIComponent):
@@ -68,7 +69,12 @@ class Image(UIComponent):
     
     def render(self):
         """Render the image component"""
-        surface = pygame.Surface((self.rect.width, self.rect.height), pygame.SRCALPHA)
+        # Reuse a cached render surface to avoid per-frame allocations
+        target_size = (self.rect.width, self.rect.height)
+        if not hasattr(self, "_render_surface") or self._render_surface is None or self._render_surface.get_size() != target_size:
+            self._render_surface = pygame.Surface(target_size, pygame.SRCALPHA)
+        surface = self._render_surface
+        surface.fill((0, 0, 0, 0))
         
         if not self.original_surface:
             # No image to display, fill with transparent
@@ -87,7 +93,7 @@ class Image(UIComponent):
         x = (self.rect.width - image_width) // 2
         y = (self.rect.height - image_height) // 2
         
-        surface.blit(self.scaled_surface, (x, y))
+        blit_with_cache(surface, self.scaled_surface, (x, y))
         
         # Draw highlight if focused and focusable
         if self.focused and self.focusable:

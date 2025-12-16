@@ -1,6 +1,8 @@
 import pygame
+from components.ui.ui_constants import TEXT_FONT
 import core.constants as constants
 import core.runtime_globals as runtime_globals
+from core.utils.asset_utils import font_load
 from core.utils.pygame_utils import blit_with_shadow, get_font
 
 
@@ -14,8 +16,7 @@ class GameMessage:
         self.slide_speed = 6 * (30 / constants.FRAME_RATE)  # Pixels per frame
 
     def add(self, text: str, pos: tuple[int, int], color: tuple[int, int, int], font_size=None):
-        from core.utils.asset_utils import font_load
-        font = font_load(None, font_size)
+        font = font_load(TEXT_FONT, font_size)
         surface = font.render(text, True, color).convert_alpha()
         self.messages.append([surface, list(pos), 255, 0])
 

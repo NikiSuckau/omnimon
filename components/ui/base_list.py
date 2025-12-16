@@ -12,6 +12,7 @@ import pygame
 import math
 from components.ui.component import UIComponent
 from core import runtime_globals
+from core.utils.pygame_utils import blit_with_cache
 
 
 class BaseList(UIComponent):
@@ -99,6 +100,38 @@ class BaseList(UIComponent):
         self.cached_surface = None
         self.needs_redraw = True
         
+    def set_selected_index(self, index, instant_scroll=False):
+        """Set the selected index and optionally scroll to it instantly
+        
+        Args:
+            index: The index to select
+            instant_scroll: If True, scroll immediately without animation
+        """
+        if not self.items or index < 0 or index >= len(self.items):
+            return
+        
+        self.selected_index = index
+        self.active_index = index
+        
+        if instant_scroll:
+            # Calculate scroll position to center the item
+            visible_count = self.get_visible_item_count()
+            item_total_size = self.item_size + self.item_spacing
+            
+            # Try to center the item, but clamp to valid scroll range
+            center_scroll = (index - visible_count // 2) * item_total_size
+            max_scroll = max(0, (len(self.items) - visible_count) * item_total_size)
+            center_scroll = max(0, min(center_scroll, max_scroll))
+            
+            # Set both current and target to same value for instant scroll
+            self.scroll_offset = center_scroll
+            self.target_scroll_offset = center_scroll
+        else:
+            # Animate to visible
+            self.ensure_visible(index)
+        
+        self.needs_redraw = True
+    
     def set_background_visible(self, visible):
         """Set whether the list background should be visible"""
         self.show_background = visible
@@ -193,6 +226,10 @@ class BaseList(UIComponent):
     def ensure_visible(self, index):
         """Ensure the given item index is visible by scrolling if necessary"""
         if not self.items or index < 0 or index >= len(self.items):
+            return
+        
+        # Don't auto-scroll during drag - let user control scroll
+        if self.dragging:
             return
             
         visible_count = self.get_visible_item_count()
@@ -320,13 +357,13 @@ class BaseList(UIComponent):
                 self.scroll_offset += scroll_step if scroll_diff > 0 else -scroll_step
             self.needs_redraw = True
             
-        # Handle mouse hover if mouse is enabled
-        if runtime_globals.game_input.is_mouse_enabled() and self.focused:
+        # Handle mouse hover if mouse or touch is enabled
+        if (runtime_globals.INPUT_MODE in [runtime_globals.MOUSE_MODE, runtime_globals.TOUCH_MODE]) and self.focused:
             self._handle_mouse_hover()
             
     def _handle_mouse_hover(self):
         """Handle mouse hover for selection changes"""
-        if not self.rect or not runtime_globals.game_input.is_mouse_enabled():
+        if not self.rect or not (runtime_globals.INPUT_MODE in [runtime_globals.MOUSE_MODE, runtime_globals.TOUCH_MODE]):
             return
             
         # Don't change focus during drag
@@ -367,38 +404,34 @@ class BaseList(UIComponent):
                 self.needs_redraw = True
                 
     def handle_event(self, event):
-        """Handle input events"""
-        if isinstance(event, str):
-            return self.handle_input_action(event)
-        elif hasattr(event, 'type'):
-            return self.handle_pygame_event(event)
-        return False
+        """Handle input events - now expects tuple-based events"""
+        event_type, event_data = event
         
-    def handle_input_action(self, action):
-        """Handle string-based input actions"""
         if not self.focused or not self.items:
             return False
             
+        # Handle directional inputs
         if self.orientation == "horizontal":
-            if action == "LEFT":
+            if event_type == "LEFT":
                 self.select_previous()
                 runtime_globals.game_sound.play("menu")
                 return True
-            elif action == "RIGHT":
+            elif event_type == "RIGHT":
                 self.select_next()
                 runtime_globals.game_sound.play("menu")
                 return True
         else:  # vertical
-            if action == "UP":
+            if event_type == "UP":
                 self.select_previous()
                 runtime_globals.game_sound.play("menu")
                 return True
-            elif action == "DOWN":
+            elif event_type == "DOWN":
                 self.select_next()
                 runtime_globals.game_sound.play("menu")
                 return True
                 
-        if action in ["A", "ENTER"]:
+        # Handle action buttons
+        if event_type in ["A", "ENTER"]:
             # For keyboard, just activate the already-selected item
             current_time = pygame.time.get_ticks()
             
@@ -412,68 +445,93 @@ class BaseList(UIComponent):
                 runtime_globals.game_sound.play("menu")
                 return True
                 
-        elif action == "LCLICK":
-            # Handle mouse click on list items
-            # Check if mouse is over an item (mouse_over_index is set by _handle_mouse_hover)
-            if self.mouse_over_index >= 0 and self.mouse_over_index < len(self.items):
-                # Check if clicking on already selected item
-                was_already_selected = (self.selected_index == self.mouse_over_index)
-                
-                # Update selection indices
-                old_active = self.active_index
-                self.active_index = self.mouse_over_index
-                self.selected_index = self.mouse_over_index
-                self.last_mouse_click_time = pygame.time.get_ticks()
-                
-                # Notify subclasses of selection change
-                if old_active != self.active_index:
-                    self._on_selection_changed(old_active, self.active_index)
-                
-                # Notify subclasses of click
-                self._on_item_clicked(self.mouse_over_index, was_already_selected)
-                runtime_globals.game_sound.play("menu")
-                self.needs_redraw = True
-                return True
-            # Click not over an item - do nothing
-            return False
-                
-        return False
-        
-    def handle_pygame_event(self, event):
-        """Handle pygame events for mouse/touch interaction"""
-        if self.needs_layout_recalc:
-            self._calculate_layout()
-            
-        if event.type == pygame.MOUSEBUTTONDOWN:
-            if event.button == 1:  # Left click
-                if self.rect.collidepoint(event.pos):
-                    return self._handle_mouse_click(event.pos)
-            elif event.button == 4:  # Mouse wheel up
-                if self.rect.collidepoint(event.pos):
-                    if self.orientation == "horizontal":
-                        self.select_previous()
-                    else:
-                        self.scroll_by_items(-1)
-                    runtime_globals.game_sound.play("menu")
-                    return True
-            elif event.button == 5:  # Mouse wheel down
-                if self.rect.collidepoint(event.pos):
-                    if self.orientation == "horizontal":
-                        self.select_next()
-                    else:
-                        self.scroll_by_items(1)
+        # Handle mouse click
+        elif event_type == "LCLICK":
+            if event_data and "pos" in event_data:
+                mouse_pos = event_data["pos"]
+                if self.rect.collidepoint(mouse_pos):
+                    # Check if mouse is over an item (mouse_over_index is set by _handle_mouse_hover)
+                    if self.mouse_over_index >= 0 and self.mouse_over_index < len(self.items):
+                        # Check if clicking on already selected item
+                        was_already_selected = (self.selected_index == self.mouse_over_index)
+                        
+                        # Update selection indices
+                        old_active = self.active_index
+                        self.active_index = self.mouse_over_index
+                        self.selected_index = self.mouse_over_index
+                        self.last_mouse_click_time = pygame.time.get_ticks()
+                        
+                        # Notify subclasses of selection change
+                        if old_active != self.active_index:
+                            self._on_selection_changed(old_active, self.active_index)
+                        
+                        # Notify subclasses of click
+                        self._on_item_clicked(self.mouse_over_index, was_already_selected)
+                        runtime_globals.game_sound.play("menu")
+                        self.needs_redraw = True
+                        return True
+                        
+        # Handle scroll events
+        elif event_type == "SCROLL":
+            if event_data:
+                direction = event_data.get("direction")
+                # Check if mouse is over this list (using last known mouse position)
+                mouse_pos = runtime_globals.game_input.get_mouse_position()
+                if self.rect.collidepoint(mouse_pos):
+                    if direction == "UP":
+                        if self.orientation == "horizontal":
+                            self.select_previous()
+                        else:
+                            self.scroll_by_items(-1)
+                    elif direction == "DOWN":
+                        if self.orientation == "horizontal":
+                            self.select_next()
+                        else:
+                            self.scroll_by_items(1)
                     runtime_globals.game_sound.play("menu")
                     return True
                     
-        elif event.type == pygame.MOUSEBUTTONUP:
-            if event.button == 1 and self.dragging:
+        # Drag events are handled by handle_drag() method, not here
+        # This prevents double-handling when both handle_event and handle_drag are called
+                
+        # Handle mouse motion for hover
+        if event_type == "MOUSE_MOTION":
+            if event_data and "pos" in event_data:
+                # _handle_mouse_hover is called from update(), not from events
+                pass
+                
+        return False
+    
+    def handle_drag(self, event):
+        """Handle drag events from ui_manager"""
+        if not isinstance(event, tuple) or len(event) != 2:
+            return False
+        
+        event_type, event_data = event
+        
+        if not (runtime_globals.INPUT_MODE in [runtime_globals.MOUSE_MODE, runtime_globals.TOUCH_MODE]):
+            return False
+        
+        if event_type == "DRAG_START":
+            if event_data and "pos" in event_data:
+                mouse_pos = event_data["pos"]
+                if self.rect.collidepoint(mouse_pos):
+                    self.dragging = True
+                    self.drag_start_pos = mouse_pos
+                    self.drag_start_scroll = self.scroll_offset
+                    self.drag_accumulated = 0
+                    self._last_drag_distance = 0
+                    return True
+                    
+        elif event_type == "DRAG_MOTION":
+            if self.dragging and event_data and "pos" in event_data:
+                return self._handle_drag_motion(event_data["pos"])
+                
+        elif event_type == "DRAG_END":
+            if self.dragging:
                 self.dragging = False
                 return True
-                
-        elif event.type == pygame.MOUSEMOTION:
-            if self.dragging:
-                return self._handle_drag_motion(event.pos)
-                
+        
         return False
         
     def _handle_mouse_click(self, mouse_pos):
@@ -537,23 +595,21 @@ class BaseList(UIComponent):
         if not self.dragging:
             return False
             
-        # Calculate drag distance
+        # Calculate drag distance from current scroll position
         if self.orientation == "horizontal":
-            drag_distance = mouse_pos[0] - self.drag_start_pos[0]
+            drag_delta = self.drag_start_pos[0] - mouse_pos[0]
         else:
-            drag_distance = mouse_pos[1] - self.drag_start_pos[1]
-            
-        self.drag_accumulated += abs(drag_distance - (self.drag_accumulated if hasattr(self, '_last_drag_distance') else 0))
-        self._last_drag_distance = drag_distance
+            drag_delta = self.drag_start_pos[1] - mouse_pos[1]
         
-        # Apply scroll with drag
-        new_scroll = self.drag_start_scroll - drag_distance
+        # Apply scroll directly based on drag delta
+        new_scroll = self.drag_start_scroll + drag_delta
         
-        # Clamp scroll
+        # Clamp scroll to valid range
         visible_count = self.get_visible_item_count()
         max_scroll = max(0, (len(self.items) - visible_count) * (self.item_size + self.item_spacing))
         new_scroll = max(0, min(new_scroll, max_scroll))
         
+        # Apply scroll immediately for responsive dragging
         self.scroll_offset = new_scroll
         self.target_scroll_offset = new_scroll
         self.needs_redraw = True
@@ -728,13 +784,13 @@ class BaseList(UIComponent):
                 if font:
                     text_surface = font.render(str(item.name), True, text_color)
                     text_rect = text_surface.get_rect(center=item_rect.center)
-                    surface.blit(text_surface, text_rect)
+                    blit_with_cache(surface, text_surface, text_rect.topleft)
             elif isinstance(item, (str, int, float)):
                 font = self.get_font("text")
                 if font:
                     text_surface = font.render(str(item), True, text_color)
                     text_rect = text_surface.get_rect(center=item_rect.center)
-                    surface.blit(text_surface, text_rect)
+                    blit_with_cache(surface, text_surface, text_rect.topleft)
                     
     def get_item_rect(self, index):
         """Get the rect for a specific item (relative to component)"""

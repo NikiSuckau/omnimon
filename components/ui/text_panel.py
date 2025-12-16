@@ -3,6 +3,7 @@ Text Panel Component - Displays text with cut corners and theme styling
 """
 import pygame
 from components.ui.component import UIComponent
+from core.utils.pygame_utils import blit_with_cache
 
 
 class TextPanel(UIComponent):
@@ -83,17 +84,33 @@ class TextPanel(UIComponent):
             
         return lines
         
-    def draw(self, surface):
-        """Draw the text panel component"""
+    def draw(self, surface, ui_local=False):
+        """Draw the text panel component
+        
+        Args:
+            surface: Target surface to draw on
+            ui_local: If True, use UI-local coordinates (for master surface rendering)
+                     If False, use screen coordinates (for direct screen rendering)
+        """
         if self.needs_redraw or not self.cached_surface or self.text != self.last_text:
             self._render_to_cache()
             
         if self.cached_surface:
-            surface.blit(self.cached_surface, self.rect.topleft)
+            # Calculate position based on rendering context
+            if ui_local and self.manager:
+                # When drawing to master UI surface, use UI-relative position (subtract offset)
+                pos = (self.rect.x - self.manager.ui_offset_x, self.rect.y - self.manager.ui_offset_y)
+            else:
+                # When drawing directly to screen, use screen position
+                pos = self.rect.topleft
+            
+            blit_with_cache(surface, self.cached_surface, pos)
             
     def _render_to_cache(self):
         """Render the component to cached surface"""
-        self.cached_surface = pygame.Surface((self.rect.width, self.rect.height), pygame.SRCALPHA)
+        # Allocate once and reuse; only recreate when size changes
+        if not hasattr(self, 'cached_surface') or self.cached_surface is None or self.cached_surface.get_size() != (self.rect.width, self.rect.height):
+            self.cached_surface = pygame.Surface((self.rect.width, self.rect.height), pygame.SRCALPHA)
         
         # Get colors using the centralized color system
         colors = self.get_colors()
@@ -148,7 +165,7 @@ class TextPanel(UIComponent):
                         
                         # Make sure we don't draw outside the text area
                         if line_rect.bottom <= text_y + text_height:
-                            self.cached_surface.blit(line_surface, line_rect)
+                            blit_with_cache(self.cached_surface, line_surface, line_rect.topleft)
                         
         self.needs_redraw = False
         self.last_text = self.text

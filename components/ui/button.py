@@ -4,7 +4,7 @@ Button Component - Clickable button with text and optional icon
 import pygame
 from components.ui.component import UIComponent
 from core import runtime_globals
-from core.utils.pygame_utils import blit_with_shadow
+from core.utils.pygame_utils import blit_with_shadow, blit_with_cache
 from core.utils.asset_utils import image_load
 
 
@@ -222,7 +222,12 @@ class Button(UIComponent):
                 self.needs_redraw = True
         
     def render(self):
-        surface = pygame.Surface((self.rect.width, self.rect.height), pygame.SRCALPHA)
+        # Reuse a cached render surface to avoid per-frame allocations
+        target_size = (self.rect.width, self.rect.height)
+        if not hasattr(self, "_render_surface") or self._render_surface is None or self._render_surface.get_size() != target_size:
+            self._render_surface = pygame.Surface(target_size, pygame.SRCALPHA)
+        surface = self._render_surface
+        surface.fill((0, 0, 0, 0))
         
         # Get colors using the centralized color system
         colors = self.get_colors()
@@ -399,14 +404,14 @@ class Button(UIComponent):
                 if icon_use_shadow:
                     blit_with_shadow(surface, self.icon_sprite, (icon_x, start_y))
                 else:
-                    surface.blit(self.icon_sprite, (icon_x, start_y))
+                    blit_with_cache(surface, self.icon_sprite, (icon_x, start_y))
             text_y = start_y + icon_h + padding
             for s in line_surfaces:
                 text_x = (self.rect.width - s.get_width()) // 2
                 if use_shadow:
                     blit_with_shadow(surface, s, (text_x, text_y))
                 else:
-                    surface.blit(s, (text_x, text_y))
+                    blit_with_cache(surface, s, (text_x, text_y))
                 text_y += s.get_height() + line_spacing
 
         elif layout == 'left':
@@ -417,7 +422,7 @@ class Button(UIComponent):
                 if icon_use_shadow:
                     blit_with_shadow(surface, self.icon_sprite, (icon_x, icon_y))
                 else:
-                    surface.blit(self.icon_sprite, (icon_x, icon_y))
+                    blit_with_cache(surface, self.icon_sprite, (icon_x, icon_y))
 
             text_area_x = icon_x + icon_w + padding
             text_area_width = self.rect.width - text_area_x - border_size
@@ -427,7 +432,7 @@ class Button(UIComponent):
                 if use_shadow:
                     blit_with_shadow(surface, s, (text_x, text_y))
                 else:
-                    surface.blit(s, (text_x, text_y))
+                    blit_with_cache(surface, s, (text_x, text_y))
                 text_y += s.get_height() + line_spacing
 
         elif layout == 'center':
@@ -437,7 +442,7 @@ class Button(UIComponent):
             if icon_use_shadow:
                 blit_with_shadow(surface, self.icon_sprite, (icon_x, icon_y))
             else:
-                surface.blit(self.icon_sprite, (icon_x, icon_y))
+                blit_with_cache(surface, self.icon_sprite, (icon_x, icon_y))
 
         elif layout == 'text_only':
             # Only text, center vertically and horizontally
@@ -447,7 +452,7 @@ class Button(UIComponent):
                 if use_shadow:
                     blit_with_shadow(surface, s, (text_x, y))
                 else:
-                    surface.blit(s, (text_x, y))
+                    blit_with_cache(surface, s, (text_x, y))
                 y += s.get_height() + line_spacing
         
         # Draw decorators on top of everything
@@ -478,7 +483,7 @@ class Button(UIComponent):
                 if decorator_use_shadow:
                     blit_with_shadow(surface, scaled_sprite, (offset_x, offset_y))
                 else:
-                    surface.blit(scaled_sprite, (offset_x, offset_y))
+                    blit_with_cache(surface, scaled_sprite, (offset_x, offset_y))
         
         # Apply transparency for disabled buttons
         if not self.enabled:
@@ -487,17 +492,15 @@ class Button(UIComponent):
         
         return surface
     
-    def handle_event(self, action):
+    def handle_event(self, event):
         """Handle input events for the button"""
         if not self.enabled:
             return False
             
-        # Handle string action (keyboard/controller/mouse)
-        # NOTE: Only handle string actions, not raw pygame events
-        # Raw events are converted to strings by input manager to prevent double-processing
-        if isinstance(action, str):
-            if action == "A":
-                return self.activate()
+        event_type, event_data = event
+            
+        if event_type in ["A", "LCLICK"]:
+            return self.activate()
                     
         return False
     
@@ -510,6 +513,7 @@ class Button(UIComponent):
         self.clicked = True
         self.was_activated = True
         self.click_frame_counter = self.click_hold_frames
+        self.click_time = pygame.time.get_ticks()  # Set click time to prevent premature reset
         self.needs_redraw = True
         
         if self.on_click_callback:

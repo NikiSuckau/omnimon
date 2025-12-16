@@ -103,7 +103,8 @@ class ItemList(BaseList):
             is_selected = (i == self.active_index)  # persistent selection
             is_hovered = (i == self.mouse_over_index)
             is_keyboard_focused = (self.focused and i == self.selected_index)
-            is_focus_highlighted = is_hovered or is_keyboard_focused
+            # Skip focus highlighting in touch mode - it's for keyboard/mouse navigation only
+            is_focus_highlighted = (is_hovered or is_keyboard_focused) and runtime_globals.INPUT_MODE != runtime_globals.TOUCH_MODE
 
             if is_selected:
                 # Selected state: swap bg and fg colors
@@ -219,12 +220,14 @@ class ItemList(BaseList):
                     # Draw first line (left-aligned)
                     line1_rect = line1_surface.get_rect()
                     line1_rect.midleft = (x, y - line_spacing // 2)
-                    surface.blit(line1_surface, line1_rect)
+                    from core.utils.pygame_utils import blit_with_cache
+                    blit_with_cache(surface, line1_surface, line1_rect.topleft)
                     
                     # Draw second line (left-aligned)
                     line2_rect = line2_surface.get_rect()
                     line2_rect.midleft = (x, y + line_spacing // 2)
-                    surface.blit(line2_surface, line2_rect)
+                    from core.utils.pygame_utils import blit_with_cache
+                    blit_with_cache(surface, line2_surface, line2_rect.topleft)
                     
                     # Reset scroll state for this item since we're using 2-line layout
                     if item_index in self.text_scroll_offset:
@@ -246,7 +249,8 @@ class ItemList(BaseList):
             # Text fits, no scrolling needed
             text_rect = text_surface.get_rect()
             text_rect.midleft = (x, y)  # Left-align the text
-            surface.blit(text_surface, text_rect)
+            from core.utils.pygame_utils import blit_with_cache
+            blit_with_cache(surface, text_surface, text_rect.topleft)
             # Reset scroll state for this item
             if item_index in self.text_scroll_offset:
                 del self.text_scroll_offset[item_index]
@@ -282,7 +286,8 @@ class ItemList(BaseList):
                 # Draw text at scrolled position
                 text_rect = text_surface.get_rect()
                 text_rect.midleft = (x - scroll_offset, y)
-                surface.blit(text_surface, text_rect)
+                from core.utils.pygame_utils import blit_with_cache
+                blit_with_cache(surface, text_surface, text_rect.topleft)
                 
                 # Clear clipping
                 surface.set_clip(None)
@@ -293,7 +298,8 @@ class ItemList(BaseList):
                 
                 text_rect = text_surface.get_rect()
                 text_rect.midleft = (x, y)
-                surface.blit(text_surface, text_rect)
+                from core.utils.pygame_utils import blit_with_cache
+                blit_with_cache(surface, text_surface, text_rect.topleft)
                 
                 surface.set_clip(None)
                 
@@ -422,10 +428,16 @@ class ItemList(BaseList):
 
         return self.rect
     
-    def set_selected_index(self, index):
-        """Set the selected index with bounds checking"""
+    def set_selected_index(self, index, instant_scroll=False):
+        """Set the selected index with bounds checking
+        
+        Args:
+            index: The index to select
+            instant_scroll: If True, scroll immediately without animation
+        """
         if not self.items:
             self.selected_index = -1
+            self.active_index = -1
             return
             
         # Clamp index to valid range
@@ -435,9 +447,12 @@ class ItemList(BaseList):
             self.selected_index = len(self.items) - 1
         else:
             self.selected_index = index
-            
-        # Ensure selected item is visible by scrolling if needed
-        self._ensure_item_visible(self.selected_index)
+        
+        # Call parent class method to handle scroll behavior
+        super().set_selected_index(self.selected_index, instant_scroll=instant_scroll)
+        
+        # Set active_index to make the item visually selected (same as keyboard navigation)
+        self.active_index = self.selected_index
         
         # Trigger redraw
         self.needs_redraw = True

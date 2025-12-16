@@ -8,8 +8,24 @@ import time
 # Game Global State
 #=====================================================================
 
-SAVE_FILE = "save/save_data.dat"
-SAVE_DIR = "save"
+def get_save_dir():
+    """Get the appropriate save directory based on platform"""
+    from core import runtime_globals
+    if runtime_globals.IS_ANDROID:
+        try:
+            from android.storage import app_storage_path
+            save_dir = os.path.join(app_storage_path(), "save")
+            # Ensure directory exists
+            os.makedirs(save_dir, exist_ok=True)
+            return save_dir
+        except Exception as e:
+            print(f"[Save] Failed to get Android storage path: {e}")
+            # Fallback to relative path
+            return "save"
+    return "save"
+
+SAVE_FILE = "save/save_data.dat"  # Legacy reference, use get_save_dir() instead
+SAVE_DIR = "save"  # Legacy reference, use get_save_dir() instead
 MAX_BACKUPS = 10  # Keep 10 backup files
 
 # Persistent variables
@@ -39,6 +55,7 @@ quests = []
 event = None
 event_time = None
 sprite_resolution_preference = 0
+total_victories = {}  # Track total battle victories per module: {module_name: count}
 
 # Internal timer for autosave
 _last_save_time = time.time()
@@ -46,7 +63,8 @@ AUTOSAVE_INTERVAL_SECONDS = 60  # 5 minutes
 
 def get_next_save_number():
     """Get the next save file number for backup rotation (1 to MAX_BACKUPS)."""
-    if not os.path.exists(SAVE_DIR):
+    save_dir = get_save_dir()
+    if not os.path.exists(save_dir):
         return 1
 
     # Get the highest number and increment by 1
@@ -65,13 +83,14 @@ def get_next_save_number():
 
 def get_latest_save_file():
     """Get the path to the most recent save file."""
-    if not os.path.exists(SAVE_DIR):
+    save_dir = get_save_dir()
+    if not os.path.exists(save_dir):
         return None
     
     # Check if old save_data.dat exists and migrate it first
-    old_save_path = os.path.join(SAVE_DIR, "save_data.dat")
+    old_save_path = os.path.join(save_dir, "save_data.dat")
     if os.path.exists(old_save_path):
-        new_save_path = os.path.join(SAVE_DIR, "save_data_1.dat")
+        new_save_path = os.path.join(save_dir, "save_data_1.dat")
         try:
             os.rename(old_save_path, new_save_path)
             print(f"[Save] Migrated save_data.dat to save_data_1.dat")
@@ -80,11 +99,11 @@ def get_latest_save_file():
     
     # Find existing numbered save files
     save_files = []
-    for filename in os.listdir(SAVE_DIR):
+    for filename in os.listdir(save_dir):
         if filename.startswith("save_data_") and filename.endswith(".dat"):
             try:
                 number_part = filename.replace("save_data_", "").replace(".dat", "")
-                full_path = os.path.join(SAVE_DIR, filename)
+                full_path = os.path.join(save_dir, filename)
                 save_files.append((int(number_part), full_path))
             except ValueError:
                 continue
@@ -98,16 +117,17 @@ def get_latest_save_file():
 
 def cleanup_old_saves():
     """Remove old backup saves beyond MAX_BACKUPS."""
-    if not os.path.exists(SAVE_DIR):
+    save_dir = get_save_dir()
+    if not os.path.exists(save_dir):
         return
     
     # Find all numbered save files
     save_files = []
-    for filename in os.listdir(SAVE_DIR):
+    for filename in os.listdir(save_dir):
         if filename.startswith("save_data_") and filename.endswith(".dat"):
             try:
                 number_part = filename.replace("save_data_", "").replace(".dat", "")
-                full_path = os.path.join(SAVE_DIR, filename)
+                full_path = os.path.join(save_dir, filename)
                 save_files.append((int(number_part), full_path))
             except ValueError:
                 continue
@@ -129,10 +149,11 @@ def save() -> None:
     Saves the current global game state to a file with backup rotation.
     """
     # Ensure save directory exists
-    if not os.path.exists(SAVE_DIR):
+    save_dir = get_save_dir()
+    if not os.path.exists(save_dir):
         try:
-            os.makedirs(SAVE_DIR)
-            print(f"[Save] Created save directory: {SAVE_DIR}")
+            os.makedirs(save_dir)
+            print(f"[Save] Created save directory: {save_dir}")
         except Exception as e:
             print(f"[Save] Failed to create save directory: {e}")
             return
@@ -162,11 +183,12 @@ def save() -> None:
         "event": event,
         "event_time": event_time,
         "sprite_resolution_preference": sprite_resolution_preference,
+        "total_victories": total_victories,
     }
 
     # Get the next save number and create the filename
     save_number = get_next_save_number()
-    save_path = os.path.join(SAVE_DIR, f"save_data_{save_number}.dat")
+    save_path = os.path.join(save_dir, f"save_data_{save_number}.dat")
 
     try:
         with open(save_path, "wb") as f:
@@ -189,23 +211,24 @@ def load() -> None:
     global pet_list, poop_list, traited, gcell_fragments, unlocks, battle_area, battle_round, last_adventure_module, xai, xai_date, background_high_res
     global game_background, background_module_name, showClock, sound, inventory, battle_effects
     global wake_time, sleep_time, screen_timeout, sprite_resolution_preference
-    global quests, event, event_time
+    global quests, event, event_time, total_victories
 
     # Get all available save files in order (newest first)
     save_files_to_try = []
     
-    if not os.path.exists(SAVE_DIR):
+    save_dir = get_save_dir()
+    if not os.path.exists(save_dir):
         try:
-            os.makedirs(SAVE_DIR)
-            print(f"[Save] Created save directory: {SAVE_DIR}")
+            os.makedirs(save_dir)
+            print(f"[Save] Created save directory: {save_dir}")
         except Exception as e:
             print(f"[Save] Failed to create save directory: {e}")
             return
 
     # Check if old save_data.dat exists and migrate it first
-    old_save_path = os.path.join(SAVE_DIR, "save_data.dat")
+    old_save_path = os.path.join(save_dir, "save_data.dat")
     if os.path.exists(old_save_path):
-        new_save_path = os.path.join(SAVE_DIR, "save_data_1.dat")
+        new_save_path = os.path.join(save_dir, "save_data_1.dat")
         try:
             os.rename(old_save_path, new_save_path)
             print(f"[Save] Migrated save_data.dat to save_data_1.dat")
@@ -214,11 +237,11 @@ def load() -> None:
 
     # Find all numbered save files
     all_saves = []
-    for filename in os.listdir(SAVE_DIR):
+    for filename in os.listdir(save_dir):
         if filename.startswith("save_data_") and filename.endswith(".dat"):
             try:
                 number_part = filename.replace("save_data_", "").replace(".dat", "")
-                full_path = os.path.join(SAVE_DIR, filename)
+                full_path = os.path.join(save_dir, filename)
                 all_saves.append((int(number_part), full_path))
             except ValueError:
                 continue
@@ -298,6 +321,7 @@ def load() -> None:
                 event = data.get("event", None)
                 event_time = data.get("event_time", None)
                 sprite_resolution_preference = data.get("sprite_resolution_preference", 0)
+                total_victories = data.get("total_victories", {})
 
                 print(f"[Game] Successfully loaded save file: {os.path.basename(save_path)} with {len(pet_list)} valid pets")
                 return  # Successfully loaded, exit the function
@@ -329,6 +353,7 @@ def load() -> None:
     wake_time = None
     sleep_time = None
     screen_timeout = 60
+    total_victories = {}
 
 def autosave() -> None:
     """

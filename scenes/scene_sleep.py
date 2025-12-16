@@ -62,9 +62,6 @@ class SceneSleep:
         
         self.setup_ui()
         
-        # Set mouse mode and focus on opposite function button
-        self.ui_manager.set_mouse_mode()
-        
         # Focus on the opposite function button based on current scene state
         if self.scene_state == "sleep":
             # If we start in sleep mode, focus on wake button
@@ -320,21 +317,23 @@ class SceneSleep:
         
     def handle_event(self, event) -> None:
         """Handle events in the sleep menu scene."""
+        if not isinstance(event, tuple) or len(event) != 2:
+            return
         
-        # Handle pygame events through UI manager first
+        event_type, event_data = event
+        
+        # Handle events through UI manager first
         if self.ui_manager.handle_event(event):
-                return
+            return
         
-        # Handle string action events (from input manager)
-        elif isinstance(event, str):
-            # Block input during animations and pause
-            if self.is_animating or self.is_pausing_after_animation:
-                return
-                
-            if event == "B":
-                runtime_globals.game_sound.play("cancel")
-                change_scene("game")
-                return
+        # Block input during animations and pause
+        if self.is_animating or self.is_pausing_after_animation:
+            return
+            
+        if event_type == "B":
+            runtime_globals.game_sound.play("cancel")
+            change_scene("game")
+            return
             
     # Button callback methods
     def on_sleep_button(self):

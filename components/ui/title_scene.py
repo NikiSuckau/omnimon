@@ -51,6 +51,7 @@ class TitleScene(UIComponent):
         self.cyan_background_sprite = self.manager.load_sprite_integer_scaling("Sleep", "Title", "Cyan")
         self.yellow_bright_background_sprite = self.manager.load_sprite_integer_scaling("Sleep", "Title", "Yellow_Bright")
         self.lime_background_sprite = self.manager.load_sprite_integer_scaling("Sleep", "Title", "Lime")
+        self.dark_red_background_sprite = self.manager.load_sprite_integer_scaling("Sleep", "Title", "Dark_Red")
 
         # Get title font using centralized method with proper scaling
         # Manager already handles scaling through get_title_font_size()
@@ -74,7 +75,9 @@ class TitleScene(UIComponent):
         
     def render(self):
         """Render the title scene component"""
-        surface = pygame.Surface((self.rect.width, self.rect.height), pygame.SRCALPHA)
+        if getattr(self, 'cached_surface', None) is None or self.cached_surface.get_size() != (self.rect.width, self.rect.height):
+            self.cached_surface = pygame.Surface((self.rect.width, self.rect.height), pygame.SRCALPHA)
+        surface = self.cached_surface
         
         # Choose background sprite based on current mode (for sleep scene animation) or theme
         background_sprite = None
@@ -105,13 +108,16 @@ class TitleScene(UIComponent):
                     background_sprite = self.cyan_background_sprite
                 elif theme == "LIME":
                     background_sprite = self.lime_background_sprite
+                elif theme == "RED_DARK_VARIANT":
+                    background_sprite = self.dark_red_background_sprite
                 else:
                     # Fallback to blue if unknown theme
                     background_sprite = self.blue_background_sprite
         
         # Draw the selected background sprite
         if background_sprite:
-            surface.blit(background_sprite, (0, 0))
+            from core.utils.pygame_utils import blit_with_cache
+            blit_with_cache(surface, background_sprite, (0, 0))
         
         # Draw title text with left margin and proper theme color
         if self.font and self.title_text:
@@ -124,6 +130,6 @@ class TitleScene(UIComponent):
             text_x = self.text_margin  # Base margin value
             text_y = 2  # Base y position
             
-            surface.blit(text_surface, (text_x, text_y))
+            blit_with_cache(surface, text_surface, (text_x, text_y))
             
         return surface

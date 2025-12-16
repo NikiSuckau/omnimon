@@ -4,6 +4,7 @@ Horizontal Pet List Component - Scrollable horizontal list for pet selection
 import pygame
 import os
 from components.ui.component import UIComponent
+from components.ui.ui_constants import TEXT_FONT
 from core import runtime_globals
 from core.animation import PetFrame
 from core.utils.pygame_utils import blit_with_cache
@@ -34,11 +35,11 @@ def safe_font_load(font_path, size):
         
         # Fallback to default font
         runtime_globals.game_console.log(f"[PetList] Font not found: {font_path}, using default")
-        return font_load(None, size)
+        return font_load(TEXT_FONT, size)
         
     except Exception as e:
         runtime_globals.game_console.log(f"[PetList] Error loading font {font_path}: {e}")
-        return font_load(None, size)
+        return font_load(TEXT_FONT, size)
 import core.constants as constants
 
 
@@ -49,6 +50,7 @@ class PetList(UIComponent):
         self.selected_index = 0  # Currently focused item (for navigation)
         self.active_index = 0    # Currently selected item (for showing stats)
         self.focusable = True
+        self.is_dynamic = True  # Pet list animates sprites, so it's dynamic
         self.scroll_anim_start = 0
         self.scroll_anim_duration = 300  # ms
         self.scrolling = False
@@ -178,22 +180,7 @@ class PetList(UIComponent):
             ui_scale = self.manager.ui_scale
             
             # Get actual screen dimensions from multiple sources
-            screen_width = self.actual_screen_width  # Current fallback
-            
-            try:
-                # Try to get from pygame display first
-                surface = pygame.display.get_surface()
-                if surface:
-                    screen_width = surface.get_width()
-                # Try manager's screen reference
-                elif hasattr(self.manager, 'screen') and self.manager.screen:
-                    screen_width = self.manager.screen.get_width()
-                # Try runtime globals
-                elif hasattr(runtime_globals, 'screen') and runtime_globals.screen:
-                    screen_width = runtime_globals.screen.get_width()
-            except Exception as e:
-                runtime_globals.game_console.log(f"[PetList] Error getting screen width: {e}")
-            
+            screen_width = runtime_globals.SCREEN_WIDTH
             # Recalculate if we have better screen information now or UI scale changed
             if screen_width != self.actual_screen_width and screen_width > 240:
                 old_width = self.actual_screen_width
@@ -456,7 +443,7 @@ class PetList(UIComponent):
     
     def handle_mouse_hover(self):
         """Handle mouse hover for highlighting (separate from selection)"""
-        if not runtime_globals.game_input.is_mouse_enabled():
+        if not (runtime_globals.INPUT_MODE in [runtime_globals.MOUSE_MODE, runtime_globals.TOUCH_MODE]):
             old_hover_index = getattr(self, 'hover_index', -1)
             old_hover_left = getattr(self, 'hover_left_arrow', False)
             old_hover_right = getattr(self, 'hover_right_arrow', False)
@@ -619,7 +606,8 @@ class PetList(UIComponent):
         line_color = colors.get("black", colors["fg"])  # Use black for borders, fallback to fg
         
         # Focus state: highlight border when hovered
-        if is_hovered:
+        # Skip in touch mode - focus highlights are for keyboard/mouse navigation only
+        if is_hovered and runtime_globals.INPUT_MODE != runtime_globals.TOUCH_MODE:
             line_color = colors["highlight"]
             fg_color = colors["highlight"]
         
@@ -672,7 +660,8 @@ class PetList(UIComponent):
         line_color = colors["fg"]
         
         # Focus state: highlight border and text when hovered or keyboard focused
-        if is_hovered or (is_selected and self.focused):
+        # Skip in touch mode - focus highlights are for keyboard/mouse navigation only
+        if (is_hovered or (is_selected and self.focused)) and runtime_globals.INPUT_MODE != runtime_globals.TOUCH_MODE:
             line_color = colors["highlight"]
             fg_color = colors["highlight"]
         
@@ -702,7 +691,8 @@ class PetList(UIComponent):
         is_selected = (pet_index == self.active_index)  # Currently selected for stats (persistent selection)
         is_hovered = (pet_index == self.hover_index)  # Mouse hover state
         # Focus: keyboard focus OR mouse hover
-        is_focus_highlighted = is_focused or is_hovered
+        # Skip in touch mode - focus highlights are for keyboard/mouse navigation only
+        is_focus_highlighted = (is_focused or is_hovered) and runtime_globals.INPUT_MODE != runtime_globals.TOUCH_MODE
         
         # Color logic according to specifications:
         # Selection: swap bg/fg colors (persistent state)
@@ -848,11 +838,16 @@ class PetList(UIComponent):
 
     def handle_event(self, event):
         """Handle input events"""
-        # Only handle string events from the input manager
         if not self.focused:
             return False
+        
+        # Handle tuple-based events
+        if not isinstance(event, tuple) or len(event) != 2:
+            return False
             
-        if event == "LEFT":
+        event_type, event_data = event
+            
+        if event_type == "LEFT":
             self.select_previous()
             # Play sound only once for navigation
             runtime_globals.game_sound.play("menu")
@@ -863,7 +858,7 @@ class PetList(UIComponent):
                     self.on_item_click(self.pets[self.selected_index])
             self.needs_redraw = True
             return True
-        elif event == "RIGHT":
+        elif event_type == "RIGHT":
             self.select_next()
             runtime_globals.game_sound.play("menu")
             # For keyboard navigation, immediately activate the newly selected pet (original behavior)
@@ -873,13 +868,13 @@ class PetList(UIComponent):
                     self.on_item_click(self.pets[self.selected_index])
             self.needs_redraw = True
             return True
-        elif event == "DOWN":
+        elif event_type == "DOWN":
             # Allow DOWN to move focus to next component (don't handle it here)
             return False
-        elif event == "UP":
+        elif event_type == "UP":
             # Allow UP to move focus to previous component (don't handle it here)
             return False
-        elif event == "A":
+        elif event_type == "A":
             # Keyboard activation: set both active_index and selected_index (like LEFT/RIGHT do)
             self.clicked = True
             self.click_time = pygame.time.get_ticks()
@@ -909,7 +904,7 @@ class PetList(UIComponent):
     
     def handle_mouse_click(self, mouse_pos, action):
         """Handle direct mouse clicks on specific positions"""
-        if not runtime_globals.game_input.is_mouse_enabled():
+        if not (runtime_globals.INPUT_MODE in [runtime_globals.MOUSE_MODE, runtime_globals.TOUCH_MODE]):
             return False
         
         # Don't handle clicks during drag or if InputManager is dragging
@@ -999,7 +994,7 @@ class PetList(UIComponent):
     
     def handle_scroll(self, action):
         """Handle scroll wheel events - behave like LEFT/RIGHT keys"""
-        if not runtime_globals.game_input.is_mouse_enabled():
+        if not (runtime_globals.INPUT_MODE == runtime_globals.MOUSE_MODE):
             return False
         
         if action == "SCROLL_UP":
@@ -1015,25 +1010,35 @@ class PetList(UIComponent):
         
         return False
     
-    def handle_drag(self, action, input_manager):
+    def handle_drag(self, event):
         """Handle drag events for touch scrolling"""
-        if not runtime_globals.game_input.is_mouse_enabled():
+        if not isinstance(event, tuple) or len(event) != 2:
             return False
         
-        if action == "DRAG_START":
+        event_type, event_data = event
+        
+        if not (runtime_globals.INPUT_MODE in [runtime_globals.MOUSE_MODE, runtime_globals.TOUCH_MODE]):
+            return False
+        
+        if event_type == "DRAG_START":
             # Store initial position for drag scrolling
             self._drag_start_scroll = self.first_visible_pet
             self._drag_start_selected = self.selected_index
             self._is_dragging = True
             # Store the initial drag position for threshold calculation
-            self._drag_start_pos = input_manager.get_mouse_position()
+            mouse_pos = event_data.get("pos")
+            if not mouse_pos:
+                return False
+            self._drag_start_pos = mouse_pos
             self._drag_accumulated = 0  # Track accumulated drag distance
             return True
             
-        elif action == "DRAG_MOTION":
+        elif event_type == "DRAG_MOTION":
             # Calculate drag distance for scrolling only (no selection changes)
             if hasattr(self, '_drag_start_pos') and hasattr(self, '_is_dragging'):
-                current_pos = input_manager.get_mouse_position()
+                current_pos = event_data.get("pos")
+                if not current_pos:
+                    return False
                 
                 # Horizontal drag for scrolling
                 dx = current_pos[0] - self._drag_start_pos[0]
@@ -1079,7 +1084,7 @@ class PetList(UIComponent):
                 self._drag_start_pos = current_pos
                 return True
                         
-        elif action == "DRAG_END":
+        elif event_type == "DRAG_END":
             # Clean up drag state
             if hasattr(self, '_drag_start_scroll'):
                 delattr(self, '_drag_start_scroll')
@@ -1097,8 +1102,8 @@ class PetList(UIComponent):
     
     def handle_action_button(self):
         """Handle A button press - could be selection or arrow click based on mouse position"""
-        if not runtime_globals.game_input.is_mouse_enabled():
-            # No mouse - just select current item
+        if not (runtime_globals.INPUT_MODE in [runtime_globals.MOUSE_MODE, runtime_globals.TOUCH_MODE]):
+            # No mouse/touch - just select current item
             self.select_item()
             return
             

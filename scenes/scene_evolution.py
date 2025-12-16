@@ -103,7 +103,11 @@ class SceneEvolution:
 
         phase_methods.get(self.phase, lambda: None)()
 
-    def handle_event(self, action_button):
+    def handle_event(self, event):
+        if not isinstance(event, tuple) or len(event) != 2:
+            return
+        event_type, event_data = event
+        # Evolution scene is non-interactive during animation
         pass
 
     def switch_phase(self, new_phase, reset_particles = True):

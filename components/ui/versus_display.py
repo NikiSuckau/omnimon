@@ -113,9 +113,14 @@ class VersusDisplay(UIComponent):
         """Update colors based on current UI theme"""
         if self.manager:
             theme_colors = self.manager.get_theme_colors()
-            self.default_fill = theme_colors.get("bg", (40, 40, 80))
-            self.default_border = theme_colors.get("fg", (255, 255, 255))
-            self.needs_redraw = True
+            new_fill = theme_colors.get("bg", (40, 40, 80))
+            new_border = theme_colors.get("fg", (255, 255, 255))
+            
+            # Only mark redraw if colors actually changed
+            if self.default_fill != new_fill or self.default_border != new_border:
+                self.default_fill = new_fill
+                self.default_border = new_border
+                self.needs_redraw = True
             
     def on_manager_set(self):
         """Called when component is added to UI manager"""
@@ -187,7 +192,12 @@ class VersusDisplay(UIComponent):
     def render(self):
         """Render the versus display"""
         # Create surface for the component
-        surface = pygame.Surface((self.rect.width, self.rect.height), pygame.SRCALPHA)
+        # Reuse cached surface if available
+        if hasattr(self, 'cached_surface') and self.cached_surface and self.cached_surface.get_size() == (self.rect.width, self.rect.height):
+            surface = self.cached_surface
+        else:
+            surface = pygame.Surface((self.rect.width, self.rect.height), pygame.SRCALPHA)
+            self.cached_surface = surface
         
         if not self.left_hexagon_center or not self.right_hexagon_center:
             return surface
@@ -275,7 +285,8 @@ class VersusDisplay(UIComponent):
                         
                     # Center sprite in hexagon
                     sprite_rect.center = scaled_center
-                    surface.blit(sprite, sprite_rect)
+                    from core.utils.pygame_utils import blit_with_cache
+                    blit_with_cache(surface, sprite, sprite_rect.topleft)
             except Exception as e:
                 # Fallback if sprite loading fails
                 runtime_globals.game_console.log(f"[VersusDisplay] Failed to load sprite for pet in slot {slot_index}: {e}")
@@ -295,4 +306,5 @@ class VersusDisplay(UIComponent):
         # Center the sprite
         sprite_rect = self.versus_small_sprite.get_rect()
         sprite_rect.center = scaled_center
-        surface.blit(self.versus_small_sprite, sprite_rect)
+        from core.utils.pygame_utils import blit_with_cache
+        blit_with_cache(surface, self.versus_small_sprite, sprite_rect.topleft)

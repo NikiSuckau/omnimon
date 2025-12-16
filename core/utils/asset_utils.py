@@ -69,8 +69,8 @@ def font_load(rel_path: str, size: int):
     Returns:
         pygame.font.Font: Loaded font
     """
-    if rel_path is None:
-        return pygame.font.Font(None, size)
+    if size == None or size <= 0:
+        size = int(16 * runtime_globals.UI_SCALE)  # Default size if zero provided
     
     if runtime_globals.IS_ANDROID and runtime_globals.APP_ROOT:
         full_path = os.path.join(runtime_globals.APP_ROOT, rel_path)

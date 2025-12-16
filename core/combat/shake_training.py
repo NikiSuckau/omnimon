@@ -119,9 +119,7 @@ class ShakeTraining(Training):
             runtime_globals.game_console.log(f"[TROPHY] Shake training great score achieved! Trophy awarded.")
 
     def draw_charge(self, surface):
-        # Fill the screen with black background
-        surface.fill(self.background_color)
-
+        # Don't fill the screen - let the background show through so EXIT button is visible
         # Use the shake punch minigame to handle punch interface drawing
         if self.shake_punch:
             self.shake_punch.draw(surface)
@@ -204,20 +202,20 @@ class ShakeTraining(Training):
         else:
             return 3
         
-    def handle_event(self, input_action):
-        if self.phase == "charge" and input_action in ("Y", "SHAKE"):
+    def handle_event(self, event):
+        if not isinstance(event, tuple) or len(event) != 2:
+            return
+        
+        event_type, event_data = event
+        
+        if self.phase == "charge" and event_type in ("Y", "SHAKE"):
             # Let the minigame handle the input
-            if self.shake_punch and self.shake_punch.handle_event(input_action):
+            if self.shake_punch and self.shake_punch.handle_event(event):
                 pass  # Minigame handled the input
-        elif self.phase in ["wait_attack", "attack_move", "impact", "result"] and input_action in ["B", "START"]:
-            self.finish_training()
-        elif self.phase in ["alert", "charge"] and input_action == "B":
+        elif self.phase in ["wait_attack", "attack_move", "impact"] and event_type in ["B", "START"]:
+            runtime_globals.game_sound.play("cancel")
+            self.animated_sprite.stop()
+            self.phase = "result"
+        elif self.phase in ["alert", "charge"] and event_type == "B":
             runtime_globals.game_sound.play("cancel")
             change_scene("game")
-            
-    def handle_pygame_event(self, event):
-        """Handle pygame events for shake detection during punch phase."""
-        if self.shake_punch:
-            # The minigame now handles shake detection and directly calls handle_event
-            return self.shake_punch.handle_pygame_event(event)
-        return False

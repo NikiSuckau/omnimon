@@ -57,28 +57,20 @@ class CountMatchTraining(Training):
         # Set minigame to count phase
         self.count_match.set_phase("count")
 
-    def handle_event(self, input_action):
-        if self.phase in "charge" and input_action in ("Y", "SHAKE"):
+    def handle_event(self, event):
+        event_type, event_data = event
+        
+        if self.phase in "charge" and event_type in ("Y", "SHAKE"):
             # Let the minigame handle the input
-            if self.count_match and self.count_match.handle_event(input_action):
+            if self.count_match and self.count_match.handle_event(event):
                 self.press_counter = self.count_match.get_press_counter()
                 self.rotation_index = self.count_match.get_rotation_index()
                 
-        elif self.phase in ["wait_attack", "attack_move", "impact", "result"] and input_action in ["B", "START"]:
+        elif self.phase in ["wait_attack", "attack_move", "impact", "result"] and event_type in ["B", "START"]:
             self.finish_training()
-        elif self.phase in ("alert", "charge") and input_action == "B":
+        elif self.phase in ("alert", "charge") and event_type == "B":
             runtime_globals.game_sound.play("cancel")
             change_scene("game")
-            
-    def handle_pygame_event(self, event):
-        """Handle pygame events for shake detection during count phase."""
-        if self.count_match:
-            shake_event = self.count_match.handle_pygame_event(event)
-            if shake_event:
-                self.press_counter = self.count_match.get_press_counter()
-                self.rotation_index = self.count_match.get_rotation_index()
-                
-        return False
 
     def get_first_pet_attribute(self):
         pet = self.pets[0]

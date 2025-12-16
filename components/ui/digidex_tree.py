@@ -145,30 +145,32 @@ class DigidexTree(UIComponent):
         # Debug logging
         #runtime_globals.game_console.log(f"[DigidexTree] handle_event: {event}, visible={self.visible}")
         
-        # Accept both pygame events and string actions
-        if not isinstance(event, str):
+        # Handle tuple-based events
+        if not isinstance(event, tuple) or len(event) != 2:
             return False
             
+        event_type, event_data = event
+            
         # navigation and back handling
-        if event == 'B' or event == 'BACK':
+        if event_type == 'B' or event_type == 'BACK':
             runtime_globals.game_console.log("[DigidexTree] B/BACK pressed")
             if self.on_back:
                 self.on_back()
             return True
 
         dx, dy = 0, 0
-        if event == "LEFT":
+        if event_type == "LEFT":
             dx = -1
-            #runtime_globals.game_console.log("[DigidexTree] LEFT pressed")
-        elif event == "RIGHT":
+            #runtime_globals.game_console.log(\"[DigidexTree] LEFT pressed\")
+        elif event_type == "RIGHT":
             dx = 1
-            #runtime_globals.game_console.log("[DigidexTree] RIGHT pressed")
-        elif event == "UP":
+            #runtime_globals.game_console.log(\"[DigidexTree] RIGHT pressed\")
+        elif event_type == "UP":
             dy = -1
-            #runtime_globals.game_console.log("[DigidexTree] UP pressed")
-        elif event == "DOWN":
+            #runtime_globals.game_console.log(\"[DigidexTree] UP pressed\")
+        elif event_type == "DOWN":
             dy = 1
-            #runtime_globals.game_console.log("[DigidexTree] DOWN pressed")
+            #runtime_globals.game_console.log(\"[DigidexTree] DOWN pressed\")
 
         if dx != 0 or dy != 0:
             old_cursor = self.tree_cursor
@@ -179,23 +181,26 @@ class DigidexTree(UIComponent):
 
         return False
     
-    def handle_drag(self, action, input_manager):
+    def handle_drag(self, event):
         """Handle drag events for panning the tree view"""
-        #runtime_globals.game_console.log(f"[DigidexTree] handle_drag: {action}, visible={self.visible}")
-        
-        if not runtime_globals.game_input.is_mouse_enabled():
+        if not isinstance(event, tuple) or len(event) != 2:
             return False
         
-        if action == "DRAG_START":
-            mouse_pos = input_manager.get_mouse_position()
+        event_type, event_data = event
+        
+        if not (runtime_globals.INPUT_MODE in [runtime_globals.MOUSE_MODE, runtime_globals.TOUCH_MODE]):
+            return False
+        
+        if event_type == "DRAG_START":
+            mouse_pos = event_data.get("pos")
+            if not mouse_pos:
+                return False
+                
             relative_x = mouse_pos[0] - self.rect.x
             relative_y = mouse_pos[1] - self.rect.y
             
-            #runtime_globals.game_console.log(f"[DigidexTree] DRAG_START at ({relative_x}, {relative_y}), rect={self.rect}")
-            
             # Check if mouse is within component bounds
             if not (0 <= relative_x < self.rect.width and 0 <= relative_y < self.rect.height):
-                #runtime_globals.game_console.log("[DigidexTree] Drag start outside bounds")
                 return False
             
             # Start drag - store last position for incremental updates
@@ -204,8 +209,10 @@ class DigidexTree(UIComponent):
             runtime_globals.game_console.log("[DigidexTree] Drag started")
             return True
         
-        elif action == "DRAG_MOTION" and hasattr(self, '_is_dragging') and self._is_dragging:
-            current_pos = input_manager.get_mouse_position()
+        elif event_type == "DRAG_MOTION" and hasattr(self, '_is_dragging') and self._is_dragging:
+            current_pos = event_data.get("pos")
+            if not current_pos:
+                return False
             
             # Calculate incremental movement from last position
             dx = current_pos[0] - self._drag_last_pos[0]
@@ -226,13 +233,12 @@ class DigidexTree(UIComponent):
                 self.tree_cursor[1] + cursor_dy
             )
             self.needs_redraw = True
-            #runtime_globals.game_console.log(f"[DigidexTree] Cursor at {self.tree_cursor}, delta=({cursor_dx:.2f}, {cursor_dy:.2f})")
             
             # Update last position for next motion event
             self._drag_last_pos = current_pos
             return True
         
-        elif action == "DRAG_END":
+        elif event_type == "DRAG_END":
             if hasattr(self, '_is_dragging') and self._is_dragging:
                 self._is_dragging = False
                 runtime_globals.game_console.log("[DigidexTree] Drag ended")

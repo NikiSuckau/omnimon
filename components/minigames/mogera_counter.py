@@ -35,8 +35,8 @@ class MogeraCounter:
         self.counter_attack_speed = 4 * runtime_globals.UI_SCALE * (30.0 / constants.FRAME_RATE)
         
         # Attack delay system - wait between attacks
-        self.attack_delay_timer = 0
         self.attack_delay_duration = int(1.0 * constants.FRAME_RATE)  # 1 second delay between attacks at any frame rate
+        self.attack_delay_timer = self.attack_delay_duration  # Start with delay so first attack shows after delay
         
         # Pet state - stays in TRAIN1 until input, then TRAIN2 while counter attack moves
         self.pet_frame = PetFrame.TRAIN1
@@ -67,6 +67,10 @@ class MogeraCounter:
         # Get pet's attack sprite
         self.attack_sprites = load_attack_sprites()
         self.module_attack_sprites = module_attack_sprites(pet.module)
+
+        # Cache for scaled pet frames per UI scale
+        self._pet_frame_cache = {}
+        self._cached_pet_size = int(48 * runtime_globals.UI_SCALE)
         
         # Create arrow buttons for mouse mode using UI manager's base coordinate system (240x240)
         ui_base = 240  # UI manager's base resolution
@@ -78,7 +82,7 @@ class MogeraCounter:
         self.arrow_up_button = Button(
             center_x, up_y, 
             button_size, button_size, "",
-            callback=lambda: self.handle_button_press("UP"),
+            callback=lambda: self.handle_button_press(("UP", None)),
             decorators=["ArrowUp"], shadow_mode="full"
         )
         ui_manager.add_component(self.arrow_up_button)
@@ -88,7 +92,7 @@ class MogeraCounter:
         self.arrow_down_button = Button(
             center_x, down_y,
             button_size, button_size, "",
-            callback=lambda: self.handle_button_press("DOWN"),
+            callback=lambda: self.handle_button_press(("DOWN", None)),
             decorators=["ArrowDown"], shadow_mode="full"
         )
         ui_manager.add_component(self.arrow_down_button)
@@ -232,7 +236,7 @@ class MogeraCounter:
                 self.last_attack_result = None
         
         # Update buttons for mouse support
-        mouse_enabled = runtime_globals.game_input.is_mouse_enabled()
+        mouse_enabled = (runtime_globals.INPUT_MODE ==  runtime_globals.MOUSE_MODE or runtime_globals.INPUT_MODE == runtime_globals.TOUCH_MODE)
         if mouse_enabled:
             self.arrow_up_button.update()
             self.arrow_down_button.update()
@@ -266,46 +270,27 @@ class MogeraCounter:
         """Handle button press from UI buttons"""
         return self.handle_event(direction)
 
-    def handle_event(self, input_action):
+    def handle_event(self, event):
         """Handle player input for countering attacks"""
         if self.phase != "active" or self.current_attack_index >= self.total_attacks:
             return False
         
-        # Handle pygame mouse events for button clicks
-        if hasattr(input_action, 'type'):
-            if input_action.type == pygame.MOUSEBUTTONDOWN and input_action.button == 1:
-                mouse_pos = input_action.pos
-                # Check if click is on UP button
-                if (mouse_pos[0] >= self.arrow_up_button.rect.x and 
-                    mouse_pos[0] <= self.arrow_up_button.rect.x + self.arrow_up_button.rect.width and
-                    mouse_pos[1] >= self.arrow_up_button.rect.y and 
-                    mouse_pos[1] <= self.arrow_up_button.rect.y + self.arrow_up_button.rect.height):
-                    return self._process_counter_input("UP")
-                # Check if click is on DOWN button
-                elif (mouse_pos[0] >= self.arrow_down_button.rect.x and 
-                      mouse_pos[0] <= self.arrow_down_button.rect.x + self.arrow_down_button.rect.width and
-                      mouse_pos[1] >= self.arrow_down_button.rect.y and 
-                      mouse_pos[1] <= self.arrow_down_button.rect.y + self.arrow_down_button.rect.height):
-                    return self._process_counter_input("DOWN")
-            return False
+        event_type, event_data = event
         
-        # Handle string input events (keyboard/controller/mouse clicks)
-        if isinstance(input_action, str):
-            # Handle LCLICK by checking button positions
-            if input_action == "LCLICK":
-                mouse_pos = pygame.mouse.get_pos()
-                
+        # Handle LCLICK by checking button positions
+        if event_type == "LCLICK":
+            if event_data and "pos" in event_data:
+                mouse_pos = event_data["pos"]
                 # Check if mouse is over UP button
                 if self.arrow_up_button.rect.collidepoint(mouse_pos):
                     return self._process_counter_input("UP")
                 # Check if mouse is over DOWN button
                 elif self.arrow_down_button.rect.collidepoint(mouse_pos):
                     return self._process_counter_input("DOWN")
-                else:
-                    return False
-            elif input_action == "RCLICK":
-                return False
-            return self._process_counter_input(input_action)
+            return False
+        elif event_type in ("UP", "DOWN"):
+            # Only process keyboard UP/DOWN inputs
+            return self._process_counter_input(event_type)
         
         return False
     
@@ -338,7 +323,7 @@ class MogeraCounter:
                     runtime_globals.game_console.log(f"[DEBUG] COUNTER LAUNCHED - Attack #{self.current_attack_index + 1}, type={current_attack}, counter_start_x={int(self.counter_attack_x)}, attack_x={int(self.attack_x)}")
                 
                 # Play sound
-                runtime_globals.game_sound.play("attack_aus")  # Pet attack sound
+                runtime_globals.game_sound.play("attack")  # Pet attack sound
                 return True
             else:
                 # Wrong input - DO NOT mark as countered, let incoming attack continue
@@ -352,6 +337,7 @@ class MogeraCounter:
                     runtime_globals.game_console.log(
                         f"[DEBUG] WRONG INPUT (NO SPRITE) - Attack #{self.current_attack_index + 1}, expected={current_attack}, got={direction}"
                     )
+                runtime_globals.game_sound.play("attack")
                 return False
         
         return False
@@ -393,21 +379,30 @@ class MogeraCounter:
         """Draw during active counter phase"""
         # Draw pet on the right side - positioned to align with attacks
         pet_size = int(48 * runtime_globals.UI_SCALE)
+        if pet_size != self._cached_pet_size:
+            self._pet_frame_cache.clear()
+            self._cached_pet_size = pet_size
         pet_x = runtime_globals.SCREEN_WIDTH - pet_size - int(20 * runtime_globals.UI_SCALE)
         pet_y = runtime_globals.SCREEN_HEIGHT // 2 - pet_size // 2
-        
-        # Get pet sprite using the current frame (TRAIN1 or TRAIN2)
+
+        # Get pet sprite using the current frame (TRAIN1 or TRAIN2), cached scaling
         try:
             pet_sprite = runtime_globals.pet_sprites[self.pet][self.pet_frame.value]
-            scaled_pet = pygame.transform.scale(pet_sprite, (pet_size, pet_size))
-            blit_with_shadow(surface, scaled_pet, (pet_x, pet_y))
+            cached = self._pet_frame_cache.get(self.pet_frame.value)
+            if cached is None or cached.get_size() != (pet_size, pet_size):
+                cached = pygame.transform.scale(pet_sprite, (pet_size, pet_size))
+                self._pet_frame_cache[self.pet_frame.value] = cached
+            blit_with_shadow(surface, cached, (pet_x, pet_y))
         except (KeyError, IndexError) as e:
             runtime_globals.game_console.log(f"[MogeraCounter] Error loading pet sprite frame {self.pet_frame.value}: {e}")
             # Fallback to IDLE1 if frame not available
             try:
                 pet_sprite = runtime_globals.pet_sprites[self.pet][PetFrame.IDLE1.value]
-                scaled_pet = pygame.transform.scale(pet_sprite, (pet_size, pet_size))
-                blit_with_shadow(surface, scaled_pet, (pet_x, pet_y))
+                cached = self._pet_frame_cache.get(PetFrame.IDLE1.value)
+                if cached is None or cached.get_size() != (pet_size, pet_size):
+                    cached = pygame.transform.scale(pet_sprite, (pet_size, pet_size))
+                    self._pet_frame_cache[PetFrame.IDLE1.value] = cached
+                blit_with_shadow(surface, cached, (pet_x, pet_y))
             except:
                 pass  # Give up if even IDLE1 doesn't work
         
@@ -444,7 +439,7 @@ class MogeraCounter:
             blit_with_shadow(surface, hit_sprite, (int(hit_x), int(hit_y)))
         
         # Draw arrow buttons if mouse is enabled
-        mouse_enabled = runtime_globals.game_input.is_mouse_enabled()
+        mouse_enabled = (runtime_globals.INPUT_MODE == runtime_globals.MOUSE_MODE or runtime_globals.INPUT_MODE == runtime_globals.TOUCH_MODE)
         if mouse_enabled:
             self.arrow_up_button.draw(surface)
             self.arrow_down_button.draw(surface)

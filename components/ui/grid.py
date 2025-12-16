@@ -5,6 +5,7 @@ import pygame
 import math
 from components.ui.component import UIComponent
 from core import runtime_globals
+from core.utils.pygame_utils import blit_with_cache
 
 
 class GridItem:
@@ -49,6 +50,9 @@ class Grid(UIComponent):
         
     def set_items(self, items):
         """Set the items to display in the grid"""
+        # Only mark redraw if items actually changed
+        items_changed = (self.items != items)
+        
         self.items = items
         self.current_page = 0
         self.cursor_row = 0
@@ -56,7 +60,9 @@ class Grid(UIComponent):
         self.selected_row = -1
         self.selected_col = -1
         self.selected_item_index = -1
-        self.needs_redraw = True
+        
+        if items_changed:
+            self.needs_redraw = True
         
         # Trigger page change callback
         if self.on_page_change:
@@ -187,73 +193,69 @@ class Grid(UIComponent):
         if not self.visible or not self.focusable:
             return False
             
-        # Handle string events from the input manager - only when focused
-        if isinstance(event, str):
-            # Only handle keyboard navigation when this component is focused
-            if not self.focused:
-                return False
+        # Handle tuple-based events from the input manager
+        if not isinstance(event, tuple) or len(event) != 2:
+            return False
+            
+        event_type, event_data = event
+            
+        # Only handle keyboard navigation when this component is focused
+        if not self.focused:
+            return False
                 
-            if event == "UP":
-                runtime_globals.game_sound.play("menu")
-                return self.move_cursor(0, -1)
-            elif event == "DOWN":
-                runtime_globals.game_sound.play("menu")
-                return self.move_cursor(0, 1)
-            elif event == "LEFT":
-                runtime_globals.game_sound.play("menu")
-                return self.move_cursor(-1, 0)
-            elif event == "RIGHT":
-                runtime_globals.game_sound.play("menu")
-                return self.move_cursor(1, 0)
-            elif event == "L":  # Page left
-                runtime_globals.game_sound.play("menu")
-                return self.change_page(-1)
-            elif event == "R":  # Page right
-                runtime_globals.game_sound.play("menu")
-                return self.change_page(1)
-            elif event == "A":  # Select item
-                selected_item = self.get_selected_item()
-                if selected_item:
-                    runtime_globals.game_sound.play("menu")
-                    # Actually select the current item for highlighting
-                    self.select_current_item()
-                    # Trigger selection change callback to notify parent of selection
-                    if self.on_selection_change:
-                        self.on_selection_change(selected_item)
-                    return True
-        
-        # Handle mouse events
-        elif hasattr(event, 'type'):
-            return self.handle_mouse_event(event)
-            
-        return False
-        
-    def handle_mouse_event(self, event):
-        """Handle mouse events for grid interaction"""
-        # Mouse motion/hover is now handled by UIManager via get_mouse_sub_rect()
-        # Only handle mouse clicks here
-        if event.type == pygame.MOUSEBUTTONDOWN:
-            # Only handle clicks within the grid bounds
-            mouse_x, mouse_y = event.pos
-            relative_x = mouse_x - self.rect.x
-            relative_y = mouse_y - self.rect.y
-            
-            if 0 <= relative_x < self.rect.width and 0 <= relative_y < self.rect.height:
+        if event_type == "UP":
+            runtime_globals.game_sound.play("menu")
+            return self.move_cursor(0, -1)
+        elif event_type == "DOWN":
+            runtime_globals.game_sound.play("menu")
+            return self.move_cursor(0, 1)
+        elif event_type == "LEFT":
+            runtime_globals.game_sound.play("menu")
+            return self.move_cursor(-1, 0)
+        elif event_type == "RIGHT":
+            runtime_globals.game_sound.play("menu")
+            return self.move_cursor(1, 0)
+        elif event_type == "L":  # Page left
+            runtime_globals.game_sound.play("menu")
+            return self.change_page(-1)
+        elif event_type == "R":  # Page right
+            runtime_globals.game_sound.play("menu")
+            return self.change_page(1)
+        elif event_type == "A":  # Select item
+            selected_item = self.get_selected_item()
+            # Allow selecting even if item is None (empty cell) - let parent decide what to do
+            runtime_globals.game_sound.play("menu")
+            # Actually select the current item for highlighting
+            self.select_current_item()
+            # Trigger selection change callback to notify parent of selection
+            if self.on_selection_change:
+                self.on_selection_change(selected_item)
+            return True
+        elif event_type == "LCLICK":
+            # Handle mouse clicks for selection
+            if event_data and "pos" in event_data:
                 # Select the currently focused item on click
                 current_items = self.get_current_page_items()
                 item_index = self.cursor_row * self.columns + self.cursor_col
                 
                 if 0 <= item_index < len(current_items):
+                    runtime_globals.game_sound.play("menu")
                     self.select_current_item()
                     # Trigger selection change callback only on actual click/selection
                     if self.on_selection_change:
                         self.on_selection_change(self.get_selected_item())
                     return True
+            
         return False
         
     def render(self):
         """Render the grid component"""
-        surface = pygame.Surface((self.rect.width, self.rect.height), pygame.SRCALPHA)
+        # Reuse a cached render surface to avoid per-frame allocations
+        target_size = (self.rect.width, self.rect.height)
+        if not hasattr(self, "_render_surface") or self._render_surface is None or self._render_surface.get_size() != target_size:
+            self._render_surface = pygame.Surface(target_size, pygame.SRCALPHA)
+        surface = self._render_surface
+        surface.fill((0, 0, 0, 0))
         
         # Draw background if specified
         if self.background_color:
@@ -261,17 +263,24 @@ class Grid(UIComponent):
             
         current_items = self.get_current_page_items()
         
+        # Get UI scale factor
+        ui_scale = self.manager.ui_scale if self.manager else 1.0
+        
         # Draw grid cells
         for row in range(self.rows):
             for col in range(self.columns):
                 item_index = row * self.columns + col
                 
-                # Calculate cell position
-                cell_x = self.cell_padding + col * (self.cell_width + self.cell_padding)
-                cell_y = self.cell_padding + row * (self.cell_height + self.cell_padding)
+                # Calculate cell position (base coordinates scaled by ui_scale)
+                cell_x = int((self.cell_padding + col * (self.cell_width + self.cell_padding)) * ui_scale)
+                cell_y = int((self.cell_padding + row * (self.cell_height + self.cell_padding)) * ui_scale)
                 
-                # Draw cell background
-                cell_rect = pygame.Rect(cell_x, cell_y, self.cell_width, self.cell_height)
+                # Draw cell background (scaled dimensions)
+                cell_rect = pygame.Rect(
+                    cell_x, cell_y,
+                    int(self.cell_width * ui_scale),
+                    int(self.cell_height * ui_scale)
+                )
                 
                 # Check if this is the focused cell (cursor position) for border highlight
                 is_focused = row == self.cursor_row and col == self.cursor_col and self.focused
@@ -298,13 +307,13 @@ class Grid(UIComponent):
                         original_width = sprite_rect.width
                         original_height = sprite_rect.height
                         
-                        # Reserve space for text if it exists
-                        available_height = self.cell_height
+                        # Reserve space for text if it exists (in scaled pixels)
+                        available_height = int(self.cell_height * ui_scale)
                         if item.text:
-                            available_height -= 16  # Reserve space for text at bottom
+                            available_height -= int(16 * ui_scale)  # Reserve space for text at bottom
                         
-                        # Calculate scaling factors for width and height
-                        scale_x = (self.cell_width - 4) / original_width  # -4 for padding
+                        # Calculate scaling factors for width and height (scaled dimensions)
+                        scale_x = (int((self.cell_width - 4) * ui_scale)) / original_width  # -4 for padding
                         scale_y = available_height / original_height
                         
                         # Use the smaller scale to maintain aspect ratio
@@ -328,15 +337,15 @@ class Grid(UIComponent):
                             # Center sprite in entire cell
                             sprite_rect.centery = cell_rect.centery
                         
-                        surface.blit(scaled_sprite, sprite_rect)
+                        blit_with_cache(surface, scaled_sprite, sprite_rect.topleft)
                     
                     # Draw text if available (below sprite or centered if no sprite)
                     if item.text and self.manager:
-                        # Get font for text rendering
-                        font = self.get_font("text")
+                        # Get font for text rendering (scaled)
+                        font = self.get_font("text", custom_size=int(12 * ui_scale))
                         
-                        # Calculate available text width
-                        available_text_width = self.cell_width - 4  # -4 for padding
+                        # Calculate available text width (scaled)
+                        available_text_width = int((self.cell_width - 4) * ui_scale)  # -4 for padding
                         
                         # Choose text color based on selection state
                         text_color = (0, 0, 0) if is_selected else self.text_color  # Black if selected, white if not
@@ -357,17 +366,19 @@ class Grid(UIComponent):
                         if item.sprite:
                             # Position text below sprite
                             text_rect.centerx = cell_rect.centerx
-                            text_rect.bottom = cell_rect.bottom - 2
+                            text_rect.bottom = cell_rect.bottom - int(2 * ui_scale)
                         else:
                             # Center text in cell
                             text_rect.center = cell_rect.center
                             
-                        surface.blit(text_surface, text_rect)
+                        blit_with_cache(surface, text_surface, text_rect.topleft)
                 
                 # Draw border cursor if this is the focused cell (for navigation)
-                if is_focused:
-                    # Draw a subtle border around the focused cell
-                    pygame.draw.rect(surface, self.cursor_color, cell_rect, 1)  # Thin border
+                # Skip in touch mode - focus highlights are for keyboard/mouse navigation only
+                if is_focused and runtime_globals.INPUT_MODE != runtime_globals.TOUCH_MODE:
+                    # Draw a subtle border around the focused cell (scaled border width)
+                    border_width = max(1, int(1 * ui_scale))
+                    pygame.draw.rect(surface, self.cursor_color, cell_rect, border_width)
                     
         return surface
         

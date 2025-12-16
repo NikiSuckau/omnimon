@@ -4,7 +4,7 @@ Base UI Component - Foundation for all UI elements
 import pygame
 
 from core import runtime_globals
-from core.utils.pygame_utils import blit_with_shadow
+from core.utils.pygame_utils import blit_with_shadow, blit_with_cache
 
 
 class UIComponent:
@@ -33,6 +33,10 @@ class UIComponent:
         # Screen-wide positioning - when True, component bypasses UI area constraints
         # and can be positioned anywhere on the screen using screen coordinates
         self.use_screen_coordinates = False  # Default: use UI area coordinates
+        
+        # Dynamic components are not cached in master UI surface and render separately
+        # Set to True for animated components like carousels, animated sprites, etc.
+        self.is_dynamic = False
         
         runtime_globals.game_console.log(f"[{self.__class__.__name__}] Created with base rect: {self.rect}")
         
@@ -96,8 +100,9 @@ class UIComponent:
         self.needs_redraw = True
         
     def update(self):
-        # Handle mouse hover detection if input manager is available
-        self.handle_mouse_hover()
+        # Handle mouse hover detection only for focusable components
+        if self.focusable:
+            self.handle_mouse_hover()
         
         # Reset click state after a brief period
         if self.clicked and pygame.time.get_ticks() - self.click_time > 200:
@@ -109,7 +114,7 @@ class UIComponent:
         if not runtime_globals or not hasattr(runtime_globals, 'game_input') or not runtime_globals.game_input:
             return
             
-        if not runtime_globals.game_input.mouse_enabled:
+        if not (runtime_globals.INPUT_MODE in [runtime_globals.MOUSE_MODE, runtime_globals.TOUCH_MODE]):
             return
             
         # Don't override focus during keyboard navigation mode
@@ -123,23 +128,38 @@ class UIComponent:
         if was_focused != self.focused:
             self.needs_redraw = True
             
-    def draw(self, surface):
+    def draw(self, surface, ui_local=False):
+        """Draw the component to the surface
+        
+        Args:
+            surface: Target surface to draw on
+            ui_local: If True, use UI-local coordinates (for master surface rendering)
+                     If False, use screen coordinates (for direct screen rendering)
+        """
         if not self.visible:
             return
             
         if self.needs_redraw or self.cached_surface is None:
             self.cached_surface = self.render()
             self.needs_redraw = False
+        
+        # Calculate position based on rendering context
+        if ui_local and self.manager:
+            # When drawing to master UI surface, use UI-relative position (subtract offset)
+            pos = (self.rect.x - self.manager.ui_offset_x, self.rect.y - self.manager.ui_offset_y)
+        else:
+            # When drawing directly to screen, use screen position
+            pos = self.rect.topleft
             
         # Check if component-level shadows should be applied
         should_shadow = self.manager and self.manager.should_render_shadow(self, "component")
         
         if should_shadow:
             # Blit the entire component surface with shadow
-            blit_with_shadow(surface, self.cached_surface, self.rect)
+            blit_with_shadow(surface, self.cached_surface, pygame.Rect(pos[0], pos[1], self.rect.width, self.rect.height))
         else:
             # Blit normally without shadow
-            surface.blit(self.cached_surface, self.rect)
+            blit_with_cache(surface, self.cached_surface, pos)
 
     def render(self):
         """Create and return the component surface at proper scale - to be implemented by subclasses"""
@@ -151,11 +171,11 @@ class UIComponent:
         if not self.visible or not self.focusable:
             return False
             
-        # Only handle string events from the input manager
-        if isinstance(event, str):
-            if event == "A":
-                self.on_click()
-                return True
+        # Handle tuple-based events from the input manager
+        event_type, event_data = event
+        if event_type in ["A", "LCLICK"]:
+            self.on_click()
+            return True
                     
         return False
         
@@ -281,9 +301,4 @@ class UIComponent:
         
         # Try to load the font with error handling
         from core.utils.asset_utils import font_load
-        try:
-            return font_load(font_path, font_size)
-        except (pygame.error, FileNotFoundError):
-            # Fallback to default pygame font if loading fails
-            fallback_size = custom_size or 16
-            return font_load(None, fallback_size)
+        return font_load(font_path, font_size)

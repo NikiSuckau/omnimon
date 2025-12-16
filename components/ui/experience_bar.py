@@ -4,7 +4,7 @@ Experience Bar Component - Shows experience progress with custom bar graphics
 import pygame
 from components.ui.component import UIComponent
 from core.utils.pygame_utils import blit_with_cache
-from core import constants
+from core import constants, runtime_globals
 
 
 class ExperienceBar(UIComponent):
@@ -288,7 +288,8 @@ class ExperienceBar(UIComponent):
             blit_with_cache(surface, self.bar_surface, (fill_x, fill_y))
         
         # Draw highlight if focused and has tooltip
-        if self.focused and hasattr(self, 'tooltip_text') and self.tooltip_text:
+        # Skip in touch mode - focus highlights are for keyboard/mouse navigation only
+        if self.focused and hasattr(self, 'tooltip_text') and self.tooltip_text and runtime_globals.INPUT_MODE != runtime_globals.TOUCH_MODE:
             colors = self.manager.get_theme_colors()
             highlight_color = colors.get("highlight", colors["fg"])  # Safe fallback
             pygame.draw.rect(surface, highlight_color, surface.get_rect(), 2)

@@ -9,6 +9,7 @@ import core.constants as constants
 from core.utils.scene_utils import change_scene
 from core import runtime_globals
 from core.utils.utils_unlocks import unlock_item
+from core.utils.module_utils import get_module
 import components.ui.ui_constants as ui_constants
 from components.ui.image import Image
 from components.ui.label import Label
@@ -231,21 +232,34 @@ class BattleEncounterVersus(BattleEncounter):
             winner.finish_versus(True)
             loser.finish_versus(False)
 
-            # Versus unlock logic: modules may declare unlocks of type 'versus'
-            # with conditions such as making two pets of the same module battle
-            # where one has version >= specified version.
-            module_unlocks = getattr(self.module, 'unlocks', []) or []
-            for unlock in module_unlocks:
-                if unlock.get('type') == 'versus':
-                    # Requirement: two participants of same module and
-                    # one of them meets the version requirement.
-                    ver_req = unlock.get('version', None)
-                    # If ver_req is specified and one of the two pets has
-                    # at least that version, award to both participants
-                    if ver_req is not None:
-                        if (getattr(self.pet1, 'module', None) == getattr(self.pet2, 'module', None)):
-                            if getattr(self.pet1, 'version', 0) >= ver_req or getattr(self.pet2, 'version', 0) >= ver_req:
-                                unlock_item(self.module.name, 'versus', unlock.get('name'))
+            # Versus unlock logic: check if both pets are from the same module
+            # and meet version requirements for versus unlocks
+            pet1_module = getattr(self.pet1, 'module', None)
+            pet2_module = getattr(self.pet2, 'module', None)
+            
+            # Only process versus unlocks if both pets are from the same module
+            if pet1_module and pet2_module and pet1_module == pet2_module:
+                pet_module = get_module(pet1_module)
+                if pet_module:
+                    module_unlocks = getattr(pet_module, 'unlocks', []) or []
+                    for unlock in module_unlocks:
+                        if unlock.get('type') == 'versus':
+                            ver_req = unlock.get('version', None)
+                            unlock_name = unlock.get('name')
+                            if unlock_name:
+                                # Check if at least one pet meets the version requirement
+                                pet1_version = getattr(self.pet1, 'version', 0)
+                                pet2_version = getattr(self.pet2, 'version', 0)
+                                
+                                if ver_req is not None:
+                                    # Version requirement specified - check if either pet meets it
+                                    if pet1_version == ver_req or pet2_version == ver_req:
+                                        unlock_item(pet1_module, 'versus', unlock_name)
+                                        runtime_globals.game_console.log(f"[Versus] Unlocked {unlock_name} for {pet1_module}")
+                                else:
+                                    # No version requirement - unlock for any versus battle in this module
+                                    unlock_item(pet1_module, 'versus', unlock_name)
+                                    runtime_globals.game_console.log(f"[Versus] Unlocked {unlock_name} for {pet1_module}")
             # Return to the main scene
             change_scene("game")
 

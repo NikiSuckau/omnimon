@@ -49,6 +49,8 @@ class GamePet:
         self.gcell_fragment = False
         self.vital_activities = []
 
+        self.bonus_stats = [0, 0, 0]  # HP, ATK, POWER bonuses from items
+
     def set_data(self, data):
         self.module = data["module"]
         self.name = data["name"]
@@ -111,9 +113,13 @@ class GamePet:
         self.protein_feedings = 0
         self.protein_overdose = 0
         self.shake_counter = 0
-        self.death_save_counter = 0
         self.pvp_wins = 0
         self.pvp_battles = 0
+        
+        # Death save system variables
+        self.death_save_b_counter = 0
+        self.death_save_shake_counter = 0
+        self.death_save_immunity = 0
 
         self.quests_completed = 0
 
@@ -238,7 +244,7 @@ class GamePet:
             sick = True
         elif self.state == "angry":
             overlay = runtime_globals.misc_sprites.get(f"Mad{anim_phase + 1}")
-        elif getattr(self, "dying", False):
+        elif getattr(self, "dying", False) or self.death_save_b_counter > 0 or self.death_save_shake_counter > 0:
             overlay = runtime_globals.misc_sprites.get(f"Sick{anim_phase + 1}")
 
         if overlay:
@@ -289,6 +295,9 @@ class GamePet:
             self.age += 1
             runtime_globals.game_console.log(f"{self.name} aged to {self.age}")
 
+        # Update immunity timer (only when not sleeping)
+        
+
         # Check for evolutions once a minute, considering variable constants
         if self.timer % (constants.FRAME_RATE * 60) == 0:
             if self.state not in ("nap", "dead"):
@@ -298,8 +307,14 @@ class GamePet:
                 self.update_care_mistakes()
                 self.update_vital_values_loss()
             if self.state != "nap":
+                self.update_death_save_counters()
                 self.update_death_check()
-            
+
+                if self.death_save_immunity > 0:
+                    self.death_save_immunity -= 1
+                    if self.death_save_immunity == 0:
+                        runtime_globals.game_console.log(f"[Death Save] {self.name} immunity expired!")
+
             if self.back_to_sleep > 0:
                 self.back_to_sleep -= 1
                 if self.back_to_sleep == 0 and self.state != "nap" and self.should_sleep():
@@ -488,33 +503,43 @@ class GamePet:
         if module.death_care_mistake > 0 and self.mistakes >= module.death_care_mistake:
             result = True
 
-        if result and module.death_save_by_b_press:
-            if self.death_save_counter == -1:
-                runtime_globals.game_sound.play("alert")
+        # Death save system - activate if death conditions met and not immune
+        if result and self.death_save_immunity == 0 and not self.dying:
+            if module.death_save_by_b_press > 0 and self.death_save_b_counter == 0:
+                # Activate B-press death save
+                self.death_save_b_counter = module.death_save_by_b_press
                 self.dying = True
-                self.death_save_counter = 100
+                runtime_globals.game_sound.play("alarm")
+                runtime_globals.game_console.log(f"[Death Save] {self.name} needs {module.death_save_by_b_press} B presses in 60 seconds!")
                 return False
-            elif self.death_save_counter > 0:
-                return True
-            else:
-                self.death_save_counter = -1
-
-        if result and module.death_save_by_shake:
-            if self.shake_counter == -1:
-                self.shake_counter = 50
+            elif module.death_save_by_shake > 0 and self.death_save_shake_counter == 0:
+                # Activate shake death save
+                self.death_save_shake_counter = module.death_save_by_shake
                 self.dying = True
-                runtime_globals.game_sound.play("alert")
+                runtime_globals.game_sound.play("alarm")
+                runtime_globals.game_console.log(f"[Death Save] {self.name} needs {module.death_save_by_shake} shakes in 60 seconds!")
                 return False
-            elif self.shake_counter > 0:
-                return True
-            else:
-                self.shake_counter = -1
 
         return result
 
+    def update_death_save_counters(self):
+        """Update death save counters and handle success/failure."""
+        # Countdown the timer
+        if self.dying:
+            # Timer expired - check if saved or died
+            if self.death_save_b_counter <= 0 and self.death_save_shake_counter <= 0:
+                # Successfully saved! Grant 60-minute immunity and reset counters
+                self.death_save_immunity = 60  # 60 minutes
+                self.death_save_b_counter = 0
+                self.death_save_shake_counter = 0
+                self.dying = False
+                self.set_state("happy2")
+                runtime_globals.game_sound.play("happy")
+                runtime_globals.game_console.log(f"[Death Save] {self.name} was saved! 60-minute immunity granted.")
+
     def update_death_check(self):
         """Checks pet death conditions and updates the sprite accordingly."""
-        if self.check_death_conditions():
+        if self.check_death_conditions() and self.death_save_immunity == 0:
             self.set_state("dead")
             runtime_globals.game_sound.play("death")
 
@@ -558,21 +583,23 @@ class GamePet:
                     self.overfeed += 1
                 self.set_state("nope")
             else:
+                self.check_disturbed_sleep()
                 self.set_state("eat", True)
-                self.hunger = min(self.stomach, self.hunger + module.meat_hunger_gain)
+                self.hunger = min(self.stomach, self.hunger + (module.meat_hunger_gain * amount))
                 if self.stage > 1 and self.weight < 99:
-                    self.weight += module.meat_weight_gain
+                    self.weight = min(99, self.weight + module.meat_weight_gain)
                 self.care_food_mistake_timer = 0
                 accepted = True
                 runtime_globals.game_console.log(f"{self.name} ate food (hunger). Hunger {self.hunger}")
         elif food_type == "strength":
+            self.check_disturbed_sleep()
             self.set_state("eat")
-            self.strength = min(4, self.strength + module.protein_strengh_gain)
+            self.strength = min(4, self.strength + (module.protein_strengh_gain * amount))
             self.protein_feedings += 1
             if self.stage > 1 and self.weight < 99:
-                self.weight += module.protein_weight_gain
+                self.weight = min(99, self.weight + module.protein_weight_gain)
             if self.protein_feedings % 4 == 0:
-                self.protein_overdose += 1
+                self.protein_overdose = min(get_module(self.module).protein_overdose_max, self.protein_overdose + 1)
                 self.protein_feedings = 0
                 if self.dp < self.energy:
                     self.dp = min(self.energy, self.dp + module.protein_dp_gain)
@@ -589,6 +616,7 @@ class GamePet:
         else:
             # For other food types, only accept if pet can battle
             if self.can_battle():
+                self.check_disturbed_sleep()
                 self.set_state("eat")
                 accepted = True
                 runtime_globals.game_console.log(f"{self.name} ate food ({food_type}).")
@@ -600,7 +628,6 @@ class GamePet:
     def set_sick(self):
         self.sick = self.heal_doses
         self.injuries += 1
-        self.death_save_counter = 0
         self.set_state("sick")
 
     def update_evolution(self):
@@ -859,6 +886,9 @@ class GamePet:
     def can_battle(self):
         return self.stage > 1 and self.power > 0 and self.state != "dead" and self.atk_main > 0 and self.dp > 0
     
+    def can_battle_pvp(self):
+        return self.stage > 1 and self.power > 0 and self.state != "dead" and self.atk_main > 0 and self.dp > 0 and self.edited == False
+    
     def can_train(self):
         return self.stage > 0 and self.state != "dead" and self.atk_main > 0
 
@@ -886,11 +916,20 @@ class GamePet:
             hp += 2
         if self.level >= 10:
             hp += 2
+        
+        # Add bonus from status_change items
+        if hasattr(self, 'bonus_stats') and len(self.bonus_stats) > 0:
+            hp += self.bonus_stats[0]
+        
         return hp
     
     def get_power(self, bonus = 0):
         ruleset = get_module(self.module).ruleset
         power = self.power + bonus
+        
+        # Add bonus from vb status_change items
+        if hasattr(self, 'bonus_stats') and len(self.bonus_stats) > 2:
+            power += self.bonus_stats[2]
 
         if ruleset == "dmc":
             multi = 1
@@ -976,6 +1015,11 @@ class GamePet:
             attack += 1
         if self.level >= 7:
             attack += 1
+        
+        # Add bonus from status_change items
+        if hasattr(self, 'bonus_stats') and len(self.bonus_stats) > 1:
+            attack += self.bonus_stats[1]
+        
         return attack
     
     def finish_training(self, won = False, grade=0, phase2=False):
@@ -1003,12 +1047,15 @@ class GamePet:
         # Add/Remove G-Cell points for training if module uses G-Cells
         if getattr(module, 'use_gcells', False):
             if won:
+                runtime_globals.game_console.log(f"[DEBUG] Training success for {self.name}")
                 gcell_points = getattr(module, 'gcell_training_success', 0)
             else:
                 # Training failure - different points based on phase
                 if phase2:
+                    runtime_globals.game_console.log(f"[DEBUG] Training phase 2 failure for {self.name}")
                     gcell_points = getattr(module, 'gcell_training_phase2_failure', 0)
                 else:
+                    runtime_globals.game_console.log(f"[DEBUG] Training phase 1 failure for {self.name}")
                     gcell_points = getattr(module, 'gcell_training_phase1_failure', 0)
 
             self.add_gcell_points(gcell_points)
@@ -1242,6 +1289,14 @@ class GamePet:
             self.gcell_points = 0
         if not hasattr(self, "gcell_fragment"):
             self.gcell_fragment = False
+        if not hasattr(self, "death_save_b_counter"):
+            self.death_save_b_counter = 0
+        if not hasattr(self, "death_save_shake_counter"):
+            self.death_save_shake_counter = 0
+        if not hasattr(self, "death_save_immunity"):
+            self.death_save_immunity = 0
+        if not hasattr(self, "bonus_stats"):
+            self.bonus_stats = [0, 0, 0]
 
     def get_blue_gcells(self):
         """

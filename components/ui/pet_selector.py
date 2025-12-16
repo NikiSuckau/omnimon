@@ -6,6 +6,7 @@ import math
 from components.ui.component import UIComponent
 from core import runtime_globals
 from core.animation import PetFrame
+from core.utils.pygame_utils import blit_with_cache
 
 
 class PetSelector(UIComponent):
@@ -272,13 +273,28 @@ class PetSelector(UIComponent):
         if self.manager:
             theme_colors = self.manager.get_theme_colors()
             # Use theme colors directly
-            self.hexagon_color = theme_colors.get("bg", (40, 40, 80))  # Background for non-selected hexagons
-            self.enabled_color = theme_colors.get("fg", (255, 255, 255))  # Border for enabled (non-focused) hexagons
-            self.disabled_color = theme_colors.get("grey", (128, 128, 128))  # For disabled hexagons
-            self.border_color = theme_colors.get("fg", (255, 255, 255))  # Default border color
-            self.selected_color = theme_colors.get("bg", (40, 40, 80))  # Background for selected hexagons
-            self.highlight_color = theme_colors.get("highlight", (255, 255, 0))  # Border for focused hexagon
-            self.needs_redraw = True
+            new_hexagon_color = theme_colors.get("bg", (40, 40, 80))  # Background for non-selected hexagons
+            new_enabled_color = theme_colors.get("fg", (255, 255, 255))  # Border for enabled (non-focused) hexagons
+            new_disabled_color = theme_colors.get("grey", (128, 128, 128))  # For disabled hexagons
+            new_border_color = theme_colors.get("fg", (255, 255, 255))  # Default border color
+            new_selected_color = theme_colors.get("bg", (40, 40, 80))  # Background for selected hexagons
+            new_highlight_color = theme_colors.get("highlight", (255, 255, 0))  # Border for focused hexagon
+            
+            # Only mark for redraw if colors actually changed
+            if (new_hexagon_color != getattr(self, 'hexagon_color', None) or
+                new_enabled_color != getattr(self, 'enabled_color', None) or
+                new_disabled_color != getattr(self, 'disabled_color', None) or
+                new_border_color != getattr(self, 'border_color', None) or
+                new_selected_color != getattr(self, 'selected_color', None) or
+                new_highlight_color != getattr(self, 'highlight_color', None)):
+                
+                self.hexagon_color = new_hexagon_color
+                self.enabled_color = new_enabled_color
+                self.disabled_color = new_disabled_color
+                self.border_color = new_border_color
+                self.selected_color = new_selected_color
+                self.highlight_color = new_highlight_color
+                self.needs_redraw = True
             
     def on_manager_set(self):
         """Called when component is added to UI manager"""
@@ -403,8 +419,12 @@ class PetSelector(UIComponent):
         if not self.pets or not self.cell_positions:
             return pygame.Surface((self.rect.width, self.rect.height), pygame.SRCALPHA)
             
-        # Create the surface for this component
-        surface = pygame.Surface((self.rect.width, self.rect.height), pygame.SRCALPHA)
+        # Create/reuse the surface for this component
+        target_size = (self.rect.width, self.rect.height)
+        if not hasattr(self, "_render_surface") or self._render_surface is None or self._render_surface.get_size() != target_size:
+            self._render_surface = pygame.Surface(target_size, pygame.SRCALPHA)
+        surface = self._render_surface
+        surface.fill((0, 0, 0, 0))
         
         # Get the radius for hexagons (from calculated size or fallback)
         radius = (self.calculated_cell_size // 2) if hasattr(self, 'calculated_cell_size') else (self.base_cell_size // 2)
@@ -455,8 +475,9 @@ class PetSelector(UIComponent):
                 fill_color = self.hexagon_color
                 border_color = self.highlight_color if is_highlighted else self.enabled_color
                 alpha = 255
-            elif is_highlighted:
+            elif is_highlighted and runtime_globals.INPUT_MODE != runtime_globals.TOUCH_MODE:
                 # Focused/highlighted: highlight border (only when component has focus)
+                # Skip in touch mode - focus highlights are for keyboard/mouse navigation only
                 fill_color = self.hexagon_color
                 border_color = self.highlight_color
                 alpha = 255
@@ -496,7 +517,7 @@ class PetSelector(UIComponent):
                     if border_color:
                         pygame.draw.polygon(temp_surface, border_color, temp_points, scaled_border_width)
                     temp_surface.set_alpha(alpha)
-                    surface.blit(temp_surface, (scaled_center[0] - scaled_radius - 2, scaled_center[1] - scaled_radius - 2))
+                    blit_with_cache(surface, temp_surface, (scaled_center[0] - scaled_radius - 2, scaled_center[1] - scaled_radius - 2))
                 else:
                     pygame.draw.polygon(surface, fill_color, points)
                     if border_color:
@@ -538,7 +559,7 @@ class PetSelector(UIComponent):
                             sprite = sprite.copy()
                             sprite.set_alpha(100)  # Semi-transparent
                             
-                        surface.blit(sprite, sprite_rect)
+                        blit_with_cache(surface, sprite, sprite_rect.topleft)
                 except Exception as e:
                     # Fallback if sprite loading fails
                     runtime_globals.game_console.log(f"[PetSelector] Failed to load sprite for pet {pet_index}: {e}")
@@ -548,26 +569,21 @@ class PetSelector(UIComponent):
         
     def handle_event(self, event):
         """Handle input events"""
-        if isinstance(event, str):
-            return self.handle_input_action(event)
-        elif hasattr(event, 'type'):
-            return self.handle_pygame_event(event)
-        return False
-        
-    def handle_pygame_event(self, event):
-        """Handle pygame events"""
+        if not isinstance(event, tuple) or len(event) != 2:
+            return False
+            
         if not self.is_interactive:
             return False
             
-        if event.type == pygame.MOUSEMOTION:
-            return self.handle_mouse_motion(event.pos)
-        #elif event.type == pygame.MOUSEBUTTONDOWN:
-        #    if event.button == 1:  # Left click
-        #        return self.handle_mouse_click(event.pos, event.button)
+        event_type, event_data = event
+        
+        # Handle mouse motion for hover
+        if event_type == "MOUSE_MOTION":
+            if event_data and "pos" in event_data:
+                return self.handle_mouse_motion(event_data["pos"])
                 
-        return False
-    
-    def handle_input_action(self, action):
+        # Handle directional input
+        action = event_type
         """Handle input actions for navigation and selection"""
         if not self.is_interactive or not self.focused:
             return False

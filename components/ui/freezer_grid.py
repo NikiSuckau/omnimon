@@ -5,6 +5,7 @@ import pygame
 from components.ui.grid import Grid, GridItem
 from core import runtime_globals
 import core.constants as constants
+from core.utils.pygame_utils import blit_with_cache
 
 
 class FreezerGrid(Grid):
@@ -60,7 +61,12 @@ class FreezerGrid(Grid):
         """Render the freezer grid with attribute-colored backgrounds"""
         from core import runtime_globals
         
-        surface = pygame.Surface((self.rect.width, self.rect.height), pygame.SRCALPHA)
+        # Reuse a cached render surface to avoid per-frame allocations
+        target_size = (self.rect.width, self.rect.height)
+        if not hasattr(self, "_render_surface") or self._render_surface is None or self._render_surface.get_size() != target_size:
+            self._render_surface = pygame.Surface(target_size, pygame.SRCALPHA)
+        surface = self._render_surface
+        surface.fill((0, 0, 0, 0))
         
         current_items = self.get_current_page_items()
         
@@ -121,12 +127,12 @@ class FreezerGrid(Grid):
                             # Blit flag overlay at top of cell
                             flag_x = cell_rect.centerx - new_width // 2
                             flag_y = cell_rect.y + int(2 * self.manager.ui_scale)
-                            surface.blit(scaled_flag, (flag_x, flag_y))
+                            blit_with_cache(surface, scaled_flag, (flag_x, flag_y))
                         
                         # Draw pet sprite below flag
                         sprite_x = cell_rect.centerx - new_width // 2
                         sprite_y = cell_rect.y + int(4 * self.manager.ui_scale)
-                        surface.blit(scaled_sprite, (sprite_x, sprite_y))
+                        blit_with_cache(surface, scaled_sprite, (sprite_x, sprite_y))
                     
                     # Draw empty slot dash
                     elif not item.data and item.text and self.manager:
@@ -134,10 +140,11 @@ class FreezerGrid(Grid):
                         text_surface = font.render(item.text, True, (128, 128, 128))
                         text_rect = text_surface.get_rect()
                         text_rect.center = cell_rect.center
-                        surface.blit(text_surface, text_rect)
+                        blit_with_cache(surface, text_surface, text_rect.topleft)
                 
                 # Draw focus border
-                if is_focused:
+                # Skip in touch mode - focus highlights are for keyboard/mouse navigation only
+                if is_focused and runtime_globals.INPUT_MODE != runtime_globals.TOUCH_MODE:
                     # Get theme color for border
                     if self.manager:
                         colors = self.manager.get_theme_colors()

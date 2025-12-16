@@ -3,6 +3,7 @@
 #=====================================================================
 import pygame
 
+from components.ui.ui_constants import TEXT_FONT
 from core import runtime_globals
 from core.animation import PetFrame
 from components.ui.ui_manager import UIManager
@@ -32,6 +33,7 @@ class Training:
         self.flash_frame = 0
         self.impact_counter = 0
         self.attacks_prepared = False
+        self.phase2_reached = False
 
         # Animated sprite component for full-screen animations
         self.animated_sprite = AnimatedSprite(ui_manager)
@@ -169,7 +171,7 @@ class Training:
         self.check_and_award_trophies()
 
         for pet in self.pets:
-            pet.finish_training(won, grade=self.get_attack_count())
+            pet.finish_training(won, grade=self.get_attack_count(), phase2=self.phase2_reached)
 
         distribute_pets_evenly()
         change_scene("game")
@@ -179,7 +181,7 @@ class Training:
             """Draw a small trophy icon with +1 in the bottom right corner"""
             from core.utils.asset_utils import font_load
             trophy_size = int(24 * runtime_globals.UI_SCALE)
-            font = font_load(None, int(24 * runtime_globals.UI_SCALE))
+            font = font_load(TEXT_FONT, int(24 * runtime_globals.UI_SCALE))
             plus_text = font.render(f"+{quantity}", True, constants.FONT_COLOR_YELLOW)
 
             # Draw trophy icon in bottom right
@@ -220,8 +222,13 @@ class Training:
 
     def draw_pets(self, surface, frame_enum=PetFrame.IDLE1):
         # Initialize cache if not present or pets changed
-        if not hasattr(self, '_pet_sprite_cache') or set(self._pet_sprite_cache.keys()) != set(self.pets):
+        # Cache the pets tuple to avoid expensive set comparisons every frame
+        current_pets = tuple(self.pets)  # tuple for hashable comparison
+        if (not hasattr(self, '_pet_sprite_cache') or 
+            not hasattr(self, '_cached_pets_tuple') or 
+            self._cached_pets_tuple != current_pets):
             self._init_pet_sprite_cache()
+            self._cached_pets_tuple = current_pets
 
         # Use the correct frame_enum for animation
         if self.attack_frame:
@@ -271,12 +278,14 @@ class Training:
     def draw_result(self, surface):
         pass
 
-    def handle_event(self, input_action):
-        if self.phase == "charge" and input_action == "A":
+    def handle_event(self, event):
+        event_type, event_data = event
+        
+        if self.phase == "charge" and event_type == "A":
             runtime_globals.game_sound.play("menu")
             self.strength = min(getattr(self, "strength", 0) + 1, getattr(self, "bar_level", 14))
-        elif self.phase in ["wait_attack", "attack_move", "impact", "result"] and input_action in ["B", "START"]:
+        elif self.phase in ["wait_attack", "attack_move", "impact", "result"] and event_type in ["B", "START"]:
             self.finish_training()
-        elif self.phase in ["alert", "charge"] and input_action == "B":
+        elif self.phase in ["alert", "charge"] and event_type == "B":
             runtime_globals.game_sound.play("cancel")
             change_scene("game")

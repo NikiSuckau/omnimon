@@ -98,47 +98,42 @@ class SceneBattle:
         
         # Update current view
         if self.current_view:
-            try:
-                self.current_view.update()
-            except Exception as e:
-                runtime_globals.game_console.log(f"[SceneBattle] ERROR updating view {self.current_view_name}: {e}")
+            self.current_view.update()
     
     def draw(self, surface: pygame.Surface):
         """Draw the current view."""
         # Clear screen
         self.window_background.draw(surface)
         
-        # Draw UI manager (handles UI components)
-        self.ui_manager.draw(surface)
+        # Hide UI during battle views (only show HP bar which is drawn by battle encounter)
+        if self.current_view_name not in ["versus_battle", "adventure_battle"]:
+            # Draw UI manager (handles UI components)
+            self.ui_manager.draw(surface)
         
         # Draw current view (handles additional drawing like battle encounters)
         if self.current_view:
-            try:
-                self.current_view.draw(surface)
-            except Exception as e:
-                runtime_globals.game_console.log(f"[SceneBattle] ERROR drawing view {self.current_view_name}: {e}")
+            self.current_view.draw(surface)
     
     def handle_event(self, event):
         """Handle input events."""
-        # For MOUSEMOTION events, let the view handle them first (for minigame shake detection)
+        if not isinstance(event, tuple) or len(event) != 2:
+            return
+        
+        event_type, event_data = event
+        
+        # For MOUSE_MOTION events, let the view handle them first (for minigame shake detection)
         # Then let UI manager handle them for cursor updates
-        if hasattr(event, 'type') and event.type == pygame.MOUSEMOTION:
+        if event_type == "MOUSE_MOTION":
             if self.current_view:
-                try:
-                    self.current_view.handle_event(event)
-                except Exception as e:
-                    runtime_globals.game_console.log(f"[SceneBattle] ERROR handling event in view {self.current_view_name}: {e}")
+                self.current_view.handle_event(event)
             # Let UI manager also handle for cursor/hover effects
             self.ui_manager.handle_event(event)
             return
         
-        # Handle pygame events through UI manager first
+        # Handle events through UI manager first
         if self.ui_manager.handle_event(event):
             return  # Event was handled by UI manager
         
         # Delegate to current view for any additional event handling
         if self.current_view:
-            try:
-                self.current_view.handle_event(event)
-            except Exception as e:
-                runtime_globals.game_console.log(f"[SceneBattle] ERROR handling event in view {self.current_view_name}: {e}")
+            self.current_view.handle_event(event)

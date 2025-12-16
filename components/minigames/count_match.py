@@ -160,9 +160,14 @@ class CountMatch:
                 ready_frame = self.get_pet_attribute_ready_frame()
                 self.animated_sprite.current_frame = ready_frame
 
-    def handle_event(self, input_action):
+    def handle_event(self, event):
         """Handle input events for the minigame."""
-        if self.phase == "count" and input_action in ("Y", "SHAKE"):
+        if not isinstance(event, tuple) or len(event) != 2:
+            return False
+        
+        event_type, event_data = event
+        
+        if self.phase == "count" and event_type in ("Y", "SHAKE"):
             self.press_counter += 1
             if self.press_counter % 2 == 0:
                 # First press (counter=2): move from Count4 to Count3
@@ -186,28 +191,24 @@ class CountMatch:
             return True
         return False
         
-    def handle_pygame_event(self, event):
-        """Handle pygame events including shake detection."""
-        if self.phase == "count":
-            # Check for shake gestures via mouse/touch
-            shake_detected = self.shake_detector.handle_pygame_event(event)
-            if shake_detected:
-                # Directly trigger shake event
-                return self.handle_event("SHAKE")
-        return False
-        
     def update(self):
         """Update the minigame state each frame."""
+        # Fast path: if not counting, only update cooldowns
         self.shake_detector.update()
-        
-        # Fallback: Process current mouse position for shake detection if in count phase
-        if self.phase == "count":
-            mouse_pos = pygame.mouse.get_pos()
-            if mouse_pos != getattr(self, '_last_mouse_pos', None):
-                # Create a fake mouse motion event
-                fake_event = type('Event', (), {'type': pygame.MOUSEMOTION, 'pos': mouse_pos})()
-                self.handle_pygame_event(fake_event)
-                self._last_mouse_pos = mouse_pos
+        if self.phase != "count":
+            return
+
+        # Detect shake from mouse/touch motion and generate SHAKE events
+        # Minimize work by short-circuiting when mouse position hasn't changed
+        last_pos = getattr(self, '_last_mouse_pos', None)
+        mouse_pos = pygame.mouse.get_pos()
+        if mouse_pos == last_pos:
+            return
+
+        # Feed new mouse position to shake detector and synthesize event only on detection
+        if self.shake_detector.add_mouse_position(mouse_pos):
+            self.handle_event(("SHAKE", None))
+        self._last_mouse_pos = mouse_pos
 
     def get_press_counter(self):
         """Get the current press counter."""

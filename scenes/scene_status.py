@@ -38,9 +38,8 @@ class SceneStatus:
             self.ui_manager.set_input_manager(runtime_globals.game_input)
             
             # Get screen dimensions
-            screen = pygame.display.get_surface()
-            self.screen_width = screen.get_width()
-            self.screen_height = screen.get_height()
+            self.screen_width = runtime_globals.SCREEN_WIDTH
+            self.screen_height = runtime_globals.SCREEN_HEIGHT
             
             # Current selected pet
             self.selected_pet = None
@@ -410,17 +409,19 @@ class SceneStatus:
         """
         Handle events in the status scene.
         """
+        if not isinstance(event, tuple) or len(event) != 2:
+            return
         
-        # Handle pygame events through UI manager first
+        event_type, event_data = event
+        
+        # Handle events through UI manager first
         if self.ui_manager.handle_event(event):
             return
         
-        # Handle string action events (from input manager)
-        elif isinstance(event, str):
-            if event == "B":
-                runtime_globals.game_sound.play("cancel")
-                change_scene("game")
-                return
+        if event_type == "B":
+            runtime_globals.game_sound.play("cancel")
+            change_scene("game")
+            return
 
     def on_pet_selected(self, pet):
         """Update the display when a pet is selected"""
@@ -542,7 +543,7 @@ class SceneStatus:
             
         if "Power" in visible_stats:
             self.power_combined.visible = True
-            power = str(pet.power)
+            power = str(pet.power + getattr(pet, 'bonus_stats', [0,0,0])[2])
             if module.ruleset == "vb":
                 power += f"({pet.star}★)"
             self.power_combined.set_value(power)

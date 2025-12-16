@@ -129,7 +129,12 @@ class Tooltip:
                 self.fade_start_time = 0
         
     def render(self):
-        surface = pygame.Surface((self.rect.width, self.rect.height), pygame.SRCALPHA)
+        # Reuse a cached render surface to avoid per-frame allocations
+        target_size = (self.rect.width, self.rect.height)
+        if not hasattr(self, "_render_surface") or self._render_surface is None or self._render_surface.get_size() != target_size:
+            self._render_surface = pygame.Surface(target_size, pygame.SRCALPHA)
+        surface = self._render_surface
+        surface.fill((0, 0, 0, 0))
         
         # Use the scaled font size and border size
         from core.utils.asset_utils import font_load
@@ -147,15 +152,15 @@ class Tooltip:
         bg_color = (*PURPLE_LIGHT, self.alpha)
         border_radius = max(2, border_size * 2)
         pygame.draw.rect(bg_surface, bg_color, (0, 0, self.rect.width, self.rect.height), 
-                        border_radius=border_radius)
-        surface.blit(bg_surface, (0, 0))
+                border_radius=border_radius)
+        blit_with_cache(surface, bg_surface, (0, 0))
         
         # Draw border with alpha
         border_surface = pygame.Surface((self.rect.width, self.rect.height), pygame.SRCALPHA)
         border_color = (*PURPLE_DARK, self.alpha)
         pygame.draw.rect(border_surface, border_color, (0, 0, self.rect.width, self.rect.height), 
-                        width=border_size, border_radius=border_radius)
-        surface.blit(border_surface, (0, 0))
+                width=border_size, border_radius=border_radius)
+        blit_with_cache(surface, border_surface, (0, 0))
         
         # Draw text lines with alpha
         text_y = self.padding
@@ -168,8 +173,13 @@ class Tooltip:
         
         return surface
         
-    def draw(self, surface):
-        """Draw the tooltip"""
+    def draw(self, surface, ui_local=False):
+        """Draw the tooltip
+        
+        Args:
+            surface: Target surface to draw on
+            ui_local: If True, use UI-local coordinates (ignored for modal tooltip)
+        """
         if self.visible:
             rendered = self.render()
-            surface.blit(rendered, self.rect.topleft)
+            blit_with_cache(surface, rendered, self.rect.topleft)

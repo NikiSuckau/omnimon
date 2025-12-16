@@ -2,6 +2,7 @@
 Sleep Scene Background - Animated background that moves based on Sleep/Wake mode
 """
 import pygame
+from core.utils.pygame_utils import blit_with_cache
 from components.ui.component import UIComponent
 
 
@@ -56,17 +57,22 @@ class SleepSceneBackground(UIComponent):
             
     def render(self):
         """Render the animated background system"""
-        surface = pygame.Surface((self.rect.width, self.rect.height), pygame.SRCALPHA)
+        # Reuse a cached render surface to reduce allocations
+        target_size = (self.rect.width, self.rect.height)
+        if not hasattr(self, "_render_surface") or self._render_surface is None or self._render_surface.get_size() != target_size:
+            self._render_surface = pygame.Surface(target_size, pygame.SRCALPHA)
+        surface = self._render_surface
+        surface.fill((0, 0, 0, 0))
         
         # Draw background sprite with offset (no additional scaling for position)
         if self.background_sprite:
             # Apply offset directly - the sprite is already the right scale
             background_pos = (0, self.background_y_offset)
-            surface.blit(self.background_sprite, background_pos)
+            blit_with_cache(surface, self.background_sprite, background_pos)
             
         # Draw skyline on top (should fit perfectly as it's 240x240 at base scale)
         if self.skyline_sprite:
             # Skyline covers the full UI area perfectly
-            surface.blit(self.skyline_sprite, (0, 0))
+            blit_with_cache(surface, self.skyline_sprite, (0, 0))
             
         return surface

@@ -5,6 +5,7 @@ import pygame
 import math
 from components.ui.component import UIComponent
 from core import runtime_globals
+from core.utils.pygame_utils import blit_with_cache
 from core.animation import PetFrame
 from core.constants import FRAME_RATE
 
@@ -181,9 +182,14 @@ class JogressDisplay(UIComponent):
         """Update default colors based on current UI theme"""
         if self.manager:
             gray_colors = self.get_theme_colors("GRAY")
-            self.default_fill = gray_colors["bg"]
-            self.default_border = gray_colors["fg"]
-            self.needs_redraw = True
+            new_fill = gray_colors["bg"]
+            new_border = gray_colors["fg"]
+            
+            # Only mark redraw if colors actually changed
+            if self.default_fill != new_fill or self.default_border != new_border:
+                self.default_fill = new_fill
+                self.default_border = new_border
+                self.needs_redraw = True
             
     def on_manager_set(self):
         """Called when component is added to UI manager"""
@@ -424,7 +430,7 @@ class JogressDisplay(UIComponent):
                 
             # Center sprite in hexagon
             sprite_rect.center = scaled_center
-            surface.blit(sprite, sprite_rect)
+            blit_with_cache(surface, sprite, sprite_rect.topleft)
             
         except Exception as e:
             runtime_globals.game_console.log(f"[JogressDisplay] Failed to draw pet sprite: {e}")
@@ -483,7 +489,12 @@ class JogressDisplay(UIComponent):
     def render(self):
         """Render the component using the render-based pattern"""
         # Create the surface for this component
-        surface = pygame.Surface((self.rect.width, self.rect.height), pygame.SRCALPHA)
+        # Reuse a cached render surface to avoid per-frame allocations
+        target_size = (self.rect.width, self.rect.height)
+        if not hasattr(self, "_render_surface") or self._render_surface is None or self._render_surface.get_size() != target_size:
+            self._render_surface = pygame.Surface(target_size, pygame.SRCALPHA)
+        surface = self._render_surface
+        surface.fill((0, 0, 0, 0))
         
         if not self.top_hexagon_center or not self.bottom_left_center or not self.bottom_right_center:
             return surface
@@ -519,12 +530,12 @@ class JogressDisplay(UIComponent):
                             adjusted_rect = revealed_sprite.get_rect()
                             adjusted_rect.centerx = dna_rect.centerx
                             adjusted_rect.bottom = dna_rect.bottom
-                            surface.blit(revealed_sprite, adjusted_rect)
+                            blit_with_cache(surface, revealed_sprite, adjusted_rect.topleft)
                         else:
-                            surface.blit(dna_sprite, dna_rect)
+                            blit_with_cache(surface, dna_sprite, dna_rect.topleft)
                 else:
                     # Animation complete or not active, draw full sprite
-                    surface.blit(dna_sprite, dna_rect)
+                    blit_with_cache(surface, dna_sprite, dna_rect.topleft)
             
         # Draw bottom hexagons (pet slots)
         for slot_index in range(2):
@@ -582,7 +593,7 @@ class JogressDisplay(UIComponent):
                 
                 # Center the sprite at the hexagon position
                 sprite_rect.center = scaled_center
-                surface.blit(jogress_ready_sprite, sprite_rect)
+                blit_with_cache(surface, jogress_ready_sprite, sprite_rect.topleft)
             else:
                 # Fallback: draw default gray hexagon if sprite fails to load
                 self.draw_hexagon(
@@ -631,14 +642,14 @@ class JogressDisplay(UIComponent):
                     right_sprite_rect.centery = scaled_center[1]
                     
                     # Draw both sprites
-                    surface.blit(scaled_sprite, left_sprite_rect)
-                    surface.blit(scaled_sprite, right_sprite_rect)
+                    blit_with_cache(surface, scaled_sprite, left_sprite_rect.topleft)
+                    blit_with_cache(surface, scaled_sprite, right_sprite_rect.topleft)
                     
                 else:
                     # Single evolution - draw one sprite centered at original size (no scaling)
                     sprite_rect = result_sprite.get_rect()
                     sprite_rect.center = scaled_center
-                    surface.blit(result_sprite, sprite_rect)
+                    blit_with_cache(surface, result_sprite, sprite_rect.topleft)
         # Note: When not compatible or animation not active, top hexagon is hidden (no else block)
         
         return surface

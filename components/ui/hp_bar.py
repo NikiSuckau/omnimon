@@ -3,6 +3,7 @@ from components.ui.component import UIComponent
 from core import runtime_globals
 from components.ui.ui_constants import *
 from core.utils.asset_utils import image_load
+from core.utils.pygame_utils import blit_with_cache
 
 
 class HPBar(UIComponent):
@@ -407,7 +408,12 @@ class HPBar(UIComponent):
     # Rendering
     # -----------------------
     def render(self):
-        surface = pygame.Surface((self.rect.width, self.rect.height), pygame.SRCALPHA)
+        # Reuse a cached render surface to avoid per-frame allocations
+        target_size = (self.rect.width, self.rect.height)
+        if not hasattr(self, "_render_surface") or self._render_surface is None or self._render_surface.get_size() != target_size:
+            self._render_surface = pygame.Surface(target_size, pygame.SRCALPHA)
+        surface = self._render_surface
+        surface.fill((0, 0, 0, 0))
         scale = self.manager.ui_scale if self.manager else 1
 
         left_bar_w = int(self.base_bar_width * scale)
@@ -466,10 +472,10 @@ class HPBar(UIComponent):
                     pixel = white_bar_scaled.get_at((x, y))
                     if pixel[3] > 0:  # if not transparent
                         white_bar_scaled.set_at((x, y), (255, 255, 255, 255))
-            surface.blit(white_bar_scaled, (left_x, bar_y + left_shake_offset))
+            blit_with_cache(surface, white_bar_scaled, (left_x, bar_y + left_shake_offset))
         else:
             # Draw normal bar
-            surface.blit(self.left_bar_surface, (left_x, bar_y))
+            blit_with_cache(surface, self.left_bar_surface, (left_x, bar_y))
         
         # Draw right bar (or flash)
         if right_flashing:
@@ -482,10 +488,10 @@ class HPBar(UIComponent):
                     pixel = white_bar_scaled.get_at((x, y))
                     if pixel[3] > 0:  # if not transparent
                         white_bar_scaled.set_at((x, y), (255, 255, 255, 255))
-            surface.blit(white_bar_scaled, (right_left, bar_y + right_shake_offset))
+            blit_with_cache(surface, white_bar_scaled, (right_left, bar_y + right_shake_offset))
         else:
             # Draw normal bar
-            surface.blit(self.right_bar_surface, (right_left, bar_y))
+            blit_with_cache(surface, self.right_bar_surface, (right_left, bar_y))
 
         # Draw damage overlay (only if not flashing)
         for side in ("left", "right"):
@@ -552,7 +558,7 @@ class HPBar(UIComponent):
             # Center the base sprite within the center area
             img_x = center_left + (center_s - center_img_size) // 2
             img_y = bar_y + (bar_h - center_img_size) // 2
-            surface.blit(self.center_image_scaled, (img_x, img_y))
+            blit_with_cache(surface, self.center_image_scaled, (img_x, img_y))
             
             # For adventure mode, draw BattleIcon overlay with 2px margin
             if self.mode == "adventure" and self.top_image:
@@ -569,13 +575,13 @@ class HPBar(UIComponent):
                     # Center the overlay within the base sprite
                     overlay_x = img_x + margin
                     overlay_y = img_y + margin
-                    surface.blit(self.top_image_scaled, (overlay_x, overlay_y))
+                    blit_with_cache(surface, self.top_image_scaled, (overlay_x, overlay_y))
         else:
             # Draw placeholder if no center image
             placeholder = pygame.Surface((center_s, center_s), pygame.SRCALPHA)
             placeholder.fill((0, 0, 0, 0))
             pygame.draw.rect(placeholder, (60, 60, 60), placeholder.get_rect(), border_radius=4)
-            surface.blit(placeholder, (center_left, (self.rect.height - center_s) // 2))
+            blit_with_cache(surface, placeholder, (center_left, (self.rect.height - center_s) // 2))
 
         return surface
 

@@ -80,55 +80,55 @@ class Menu(UIComponent):
         if not self.visible:
             return False
         
-        # Handle string input actions
-        if isinstance(event, str):
-            if event == "UP":
-                runtime_globals.game_sound.play("menu")
-                self.selected_index = (self.selected_index - 1) % len(self.options)
-                self.needs_redraw = True
-                return True
-            elif event == "DOWN":
-                runtime_globals.game_sound.play("menu")
-                self.selected_index = (self.selected_index + 1) % len(self.options)
-                self.needs_redraw = True
-                return True
-            elif event == "LCLICK":
-                # For mouse clicks, check if click is inside menu
-                if self.manager and hasattr(self.manager, '_input_manager'):
-                    mouse_pos = self.manager._input_manager.get_mouse_position()
-                    if self.rect.collidepoint(mouse_pos):
-                        # Click inside menu - select option
-                        runtime_globals.game_sound.play("menu")
-                        if self.on_select:
-                            self.on_select(self.selected_index)
-                        self.close()
-                    else:
-                        # Click outside menu - cancel
-                        runtime_globals.game_sound.play("cancel")
-                        if self.on_cancel:
-                            self.on_cancel()
-                        self.close()
-                return True
-            elif event == "A":
-                runtime_globals.game_sound.play("menu")
-                if self.on_select:
-                    self.on_select(self.selected_index)
-                self.close()
-                return True
-            elif event == "B":  # B button cancels
-                runtime_globals.game_sound.play("cancel")
-                if self.on_cancel:
-                    self.on_cancel()
-                self.close()
-                return True
-            else:
-                # Any other input just blocks (don't close on unrecognized input)
-                return True
-                
-        # Handle mouse events
-        elif hasattr(event, 'type'):
-            if event.type == pygame.MOUSEMOTION:
-                mouse_x, mouse_y = event.pos
+        # Handle tuple-based events
+        if not isinstance(event, tuple) or len(event) != 2:
+            return False
+            
+        event_type, event_data = event
+        
+        if event_type == "UP":
+            runtime_globals.game_sound.play("menu")
+            self.selected_index = (self.selected_index - 1) % len(self.options)
+            self.needs_redraw = True
+            return True
+        elif event_type == "DOWN":
+            runtime_globals.game_sound.play("menu")
+            self.selected_index = (self.selected_index + 1) % len(self.options)
+            self.needs_redraw = True
+            return True
+        elif event_type == "LCLICK":
+            # For mouse clicks, check if click is inside menu
+            if event_data and "pos" in event_data:
+                mouse_pos = event_data["pos"]
+                if self.rect.collidepoint(mouse_pos):
+                    # Click inside menu - select option
+                    runtime_globals.game_sound.play("menu")
+                    if self.on_select:
+                        self.on_select(self.selected_index)
+                    self.close()
+                else:
+                    # Click outside menu - cancel
+                    runtime_globals.game_sound.play("cancel")
+                    if self.on_cancel:
+                        self.on_cancel()
+                    self.close()
+            return True
+        elif event_type == "A":
+            runtime_globals.game_sound.play("menu")
+            if self.on_select:
+                self.on_select(self.selected_index)
+            self.close()
+            return True
+        elif event_type == "B":  # B button cancels
+            runtime_globals.game_sound.play("cancel")
+            if self.on_cancel:
+                self.on_cancel()
+            self.close()
+            return True
+        elif event_type == "MOUSE_MOTION":
+            # Handle mouse motion for hover effects
+            if event_data and "pos" in event_data:
+                mouse_x, mouse_y = event_data["pos"]
                 relative_x = mouse_x - self.rect.x
                 relative_y = mouse_y - self.rect.y
                 
@@ -142,15 +142,16 @@ class Menu(UIComponent):
                         if self.selected_index != option_index:
                             self.selected_index = option_index
                             self.needs_redraw = True
-                
-                # Block all mouse motion events
-                return True
+            return True
+        
         # Block all other events while menu is visible
-        return False
+        return True
         
     def render(self):
         """Render the menu using UI theme colors"""
-        surface = pygame.Surface((self.rect.width, self.rect.height), pygame.SRCALPHA)
+        if getattr(self, 'cached_surface', None) is None or self.cached_surface.get_size() != (self.rect.width, self.rect.height):
+            self.cached_surface = pygame.Surface((self.rect.width, self.rect.height), pygame.SRCALPHA)
+        surface = self.cached_surface
         
         if not self.manager:
             return surface
@@ -191,7 +192,8 @@ class Menu(UIComponent):
                 # Draw subtle highlight with lower opacity
                 highlight_surface = pygame.Surface((highlight_rect.width, highlight_rect.height), pygame.SRCALPHA)
                 highlight_surface.fill((*highlight_color, 50))  # 50 alpha for subtle highlight
-                surface.blit(highlight_surface, (highlight_rect.x, highlight_rect.y))
+                from core.utils.pygame_utils import blit_with_cache
+                blit_with_cache(surface, highlight_surface, (highlight_rect.x, highlight_rect.y))
             else:
                 text_color = fg_color
             
@@ -199,6 +201,7 @@ class Menu(UIComponent):
             text_surface = font.render(option, True, text_color)
             text_x = self.rect.width // 2 - text_surface.get_width() // 2
             text_y = y_pos + (option_height // 2) - (text_surface.get_height() // 2)
-            surface.blit(text_surface, (text_x, text_y))
+            from core.utils.pygame_utils import blit_with_cache
+            blit_with_cache(surface, text_surface, (text_x, text_y))
         
         return surface

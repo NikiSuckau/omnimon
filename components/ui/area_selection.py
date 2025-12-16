@@ -5,6 +5,7 @@ import pygame
 from components.ui.component import UIComponent
 from core import runtime_globals
 from components.ui.ui_constants import GREEN_LIGHT, YELLOW_BRIGHT_LIGHT, YELLOW_BRIGHT_LIGHT
+from core.utils.pygame_utils import blit_with_cache
 
 
 class AreaSelection(UIComponent):
@@ -131,12 +132,18 @@ class AreaSelection(UIComponent):
             return area_data["area"], area_data["round"] or 1
         return 1, 1
     
-    def handle_event(self, action):
+    def handle_event(self, event):
         """Handle keyboard/gamepad input - can only select cleared or current areas"""
         if not self.visible or not self.focusable:
             return False
         
-        if action == "LEFT":
+        # Handle tuple-based events
+        if not isinstance(event, tuple) or len(event) != 2:
+            return False
+            
+        event_type, event_data = event
+        
+        if event_type == "LEFT":
             # Move to previous available area (completed or current only)
             new_index = self.selected_index - 1
             while new_index >= 0:
@@ -151,7 +158,7 @@ class AreaSelection(UIComponent):
                 new_index -= 1
             runtime_globals.game_sound.play("cancel")
             return True
-        elif action == "RIGHT":
+        elif event_type == "RIGHT":
             # Move to next available area (completed or current only)
             new_index = self.selected_index + 1
             while new_index < len(self.areas):
@@ -166,7 +173,7 @@ class AreaSelection(UIComponent):
                 new_index += 1
             runtime_globals.game_sound.play("cancel")
             return True
-        elif action == "A":
+        elif event_type == "A":
             # Select current area
             if 0 <= self.selected_index < len(self.areas):
                 area_data = self.areas[self.selected_index]
@@ -184,9 +191,64 @@ class AreaSelection(UIComponent):
         # Scroll disabled - use LEFT/RIGHT to navigate between areas
         return False
     
-    def handle_drag(self, action, input_manager):
-        """Handle mouse drag for scrolling - disabled in favor of click selection"""
-        # Drag disabled - use click to select areas
+    def handle_drag(self, event):
+        """Handle mouse drag for horizontal scrolling"""
+        if not isinstance(event, tuple) or len(event) != 2:
+            return False
+        
+        event_type, event_data = event
+        
+        if not (runtime_globals.INPUT_MODE in [runtime_globals.MOUSE_MODE, runtime_globals.TOUCH_MODE]):
+            return False
+        
+        if event_type == "DRAG_START":
+            mouse_pos = event_data.get("pos")
+            if not mouse_pos:
+                return False
+                
+            relative_x = mouse_pos[0] - self.rect.x
+            relative_y = mouse_pos[1] - self.rect.y
+            
+            # Check if mouse is within component bounds
+            if not (0 <= relative_x < self.rect.width and 0 <= relative_y < self.rect.height):
+                return False
+            
+            # Start drag - store last position for incremental updates
+            self._drag_last_pos = mouse_pos
+            self._is_dragging = True
+            runtime_globals.game_console.log("[AreaSelection] Drag started")
+            return True
+        
+        elif event_type == "DRAG_MOTION" and hasattr(self, '_is_dragging') and self._is_dragging:
+            current_pos = event_data.get("pos")
+            if not current_pos:
+                return False
+            
+            # Calculate incremental movement from last position (horizontal only)
+            dx = current_pos[0] - self._drag_last_pos[0]
+            
+            # Apply horizontal scroll (drag right = scroll right, so negate)
+            self.scroll_offset -= dx
+            
+            # Clamp scroll to valid range
+            max_scroll = self._calculate_max_scroll()
+            self.scroll_offset = max(0, min(max_scroll, self.scroll_offset))
+            
+            # Also update target to prevent animation fighting
+            self.target_scroll_offset = self.scroll_offset
+            
+            self.needs_redraw = True
+            
+            # Update last position for next motion event
+            self._drag_last_pos = current_pos
+            return True
+        
+        elif event_type == "DRAG_END":
+            if hasattr(self, '_is_dragging') and self._is_dragging:
+                self._is_dragging = False
+                runtime_globals.game_console.log("[AreaSelection] Drag ended")
+                return True
+        
         return False
     
     def handle_mouse_click(self, mouse_pos, action):
@@ -391,6 +453,7 @@ class AreaSelection(UIComponent):
             
             # Only draw label if visible in viewport
             if label_rect.right > 0 and label_rect.left < self.rect.width:
-                surface.blit(label_surface, label_rect)
+                from core.utils.pygame_utils import blit_with_cache
+                blit_with_cache(surface, label_surface, label_rect.topleft)
         
         return surface

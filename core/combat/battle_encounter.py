@@ -178,6 +178,7 @@ class BattleEncounter:
             self.hp_boost = 0
             self.attack_boost = 0
             self.strength_bonus = 0
+            self.power_bonus = 0
         else:
             self.load_enemies()
 
@@ -201,6 +202,13 @@ class BattleEncounter:
             if strength_effect:
                 self.strength_bonus = strength_effect.get("amount", 0)
                 runtime_globals.game_console.log(f"[BattleEncounter] Strength boost applied: +{self.strength_bonus}")
+
+            # --- Apply Power boost from status_boost items ---
+            self.power_bonus = 0
+            power_effect = self.get_battle_effect("power")
+            if power_effect:
+                self.power_bonus = power_effect.get("amount", 0)
+                runtime_globals.game_console.log(f"[BattleEncounter] Power boost applied: +{self.power_bonus}")
 
         self.battle_player = GameBattle(get_battle_targets(), self.enemies, self.hp_boost, self.attack_boost, self.module)
         # PvP ordering flag: when True, enemy actions are processed before pets
@@ -331,6 +339,12 @@ class BattleEncounter:
         # Update battle_player with PvP teams (my pets vs enemy objects)
         self.battle_player = GameBattle(my_pets, enemy_objects, 0, 0, self.module)
         self.enemies = enemy_objects
+        
+        # Update HP bar for PvP mode
+        if hasattr(self, 'hp_bar') and self.hp_bar:
+            self.hp_bar.set_mode('versus', module=self.module)
+            self.hp_bar.set_totals(self.battle_player.team1_total_hp, self.battle_player.team2_total_hp)
+            self.hp_bar.set_values(self.battle_player.team1_total_hp, self.battle_player.team2_total_hp)
         
         # Initialize debug logs for PvP
         if constants.DEBUG_MODE:
@@ -1211,6 +1225,7 @@ class BattleEncounter:
                         pet_y = self.get_y(defender_idx, len(self.battle_player.team1))
                         pet_x = self.get_team1_x(defender_idx)
                         runtime_globals.game_message.add("MISS", (pet_x + (16 * runtime_globals.UI_SCALE), pet_y - (10 * runtime_globals.UI_SCALE)), (255, 0, 0))
+                
                 self.battle_player.team2_projectiles[i] = []
 
         # Check if all pets/enemies are in result phase
@@ -1337,6 +1352,29 @@ class BattleEncounter:
                 if self.module.area_exists(self.area):
                     game_globals.battle_round[self.module.name] = self.round
                     game_globals.battle_area[self.module.name] = max(self.area, game_globals.battle_area[self.module.name])
+            
+            # Increment total victories for this module
+            if self.module.name not in game_globals.total_victories:
+                game_globals.total_victories[self.module.name] = 0
+            game_globals.total_victories[self.module.name] += 1
+            runtime_globals.game_console.log(f"[Battle] Total victories for {self.module.name}: {game_globals.total_victories[self.module.name]}")
+            
+            # Check for battle unlocks
+            try:
+                module_unlocks = getattr(self.module, 'unlocks', []) or []
+                for unlock in module_unlocks:
+                    if unlock.get('type') == 'battle':
+                        req = unlock.get('amount', None)
+                        name = unlock.get('name')
+                        if req is None or not name:
+                            continue
+                        # Check if total victories >= required amount
+                        current_victories = game_globals.total_victories.get(self.module.name, 0)
+                        if current_victories >= int(req):
+                            unlock_item(self.module.name, 'battle', name)
+                            runtime_globals.game_console.log(f"[Battle] Unlocked {name} after {current_victories} victories")
+            except Exception as e:
+                runtime_globals.game_console.log(f"[Battle] Error processing battle unlocks: {e}")
         else:
             runtime_globals.game_sound.play("fail")
             # perdeu
@@ -1576,33 +1614,37 @@ class BattleEncounter:
                 total = len(pets)
                 # Use larger sprites and better horizontal distribution
                 base_sprite_size = runtime_globals.PET_WIDTH  # Use full size instead of half
-                sprite_width = int(base_sprite_size * width_scale)
-                sprite_height = int((runtime_globals.PET_HEIGHT * width_scale))
+                sprite_width = int(base_sprite_size)
+                sprite_height = int(base_sprite_size)
                 
                 # Calculate spacing to distribute evenly across width
                 margin = int(20 * width_scale)  # Side margins
-                available_width = runtime_globals.SCREEN_WIDTH - (2 * margin)
+                gap_between_pets = int(16 * width_scale)  # Gap between pets
                 
-                # Calculate spacing between pets
+                # Calculate the actual width occupied by all pets
                 if total > 1:
-                    spacing = available_width // total
-                    # Ensure sprites don't overlap by limiting spacing
-                    max_sprite_width = spacing - int(8 * width_scale)  # Minimum 8px gap between pets
-                    if sprite_width > max_sprite_width:
-                        sprite_width = max_sprite_width
-                        sprite_height = max_sprite_width  # Keep square aspect ratio
+                    # Total width = all sprites + gaps between them
+                    total_pets_width = (total * sprite_width) + ((total - 1) * gap_between_pets)
+                    
+                    # If pets don't fit, scale them down
+                    available_width = runtime_globals.SCREEN_WIDTH - (2 * margin)
+                    if total_pets_width > available_width:
+                        # Recalculate sprite size to fit
+                        total_pets_width = available_width
+                        sprite_width = (available_width - ((total - 1) * gap_between_pets)) // total
+                        sprite_height = sprite_width  # Keep square
                 else:
-                    spacing = available_width
+                    # Single pet - just the sprite width
+                    total_pets_width = sprite_width
                 
-                # Center the pet group
-                total_width = spacing * total
-                offset_x = margin + (available_width - total_width) // 2
+                # Center the pet group horizontally
+                offset_x = (runtime_globals.SCREEN_WIDTH - total_pets_width) // 2
                 pets_y = int(50 * height_scale)
                 
                 # Create per-pet reward labels with doubled font size
                 self.result_pet_labels = []
                 for i, pet in enumerate(pets):
-                    pet_center_x = offset_x + i * spacing + sprite_width // 2
+                    pet_center_x = offset_x + (i * (sprite_width + gap_between_pets)) + sprite_width // 2
                     label_y_start = pets_y + sprite_height + int(12 * height_scale)
                     
                     pet_labels = []
@@ -1622,7 +1664,7 @@ class BattleEncounter:
                         
                         if gcell_points != 0:
                             # Use title font for doubled size
-                            gcell_label = Label(0, current_y, f"GC {gcell_points:+d}", is_title=False, color_override=win_color if gcell_points > 0 else white_color, shadow_mode="full", custom_size=16)
+                            gcell_label = Label(0, current_y, f"GC {gcell_points:+d}", is_title=False, color_override=win_color if gcell_points > 0 else white_color, shadow_mode="full", custom_size=int(16*runtime_globals.UI_SCALE))
                             gcell_label.manager = self.ui_manager
                             pet_labels.append((gcell_label, pet_center_x))
                             current_y += int(28 * height_scale)  # More spacing for larger font
@@ -1641,7 +1683,7 @@ class BattleEncounter:
                                 level_color = win_color
                         
                         # Use title font for doubled size
-                        level_label = Label(0, current_y, f"Lv {level}{level_up_indicator}", is_title=False, color_override=level_color, shadow_mode="full", custom_size=16)
+                        level_label = Label(0, current_y, f"Lv {level}{level_up_indicator}", is_title=False, color_override=level_color, shadow_mode="full", custom_size=int(16*runtime_globals.UI_SCALE))
                         level_label.manager = self.ui_manager
                         pet_labels.append((level_label, pet_center_x))
                         current_y += int(28 * height_scale)  # More spacing for larger font
@@ -1658,7 +1700,7 @@ class BattleEncounter:
                                 exp_gained = 0
                         
                         # Use title font for doubled size
-                        exp_label = Label(0, current_y, f"Exp +{exp_gained}", is_title=False, color_override=win_color if exp_gained > 0 else white_color, shadow_mode="full", custom_size=16)
+                        exp_label = Label(0, current_y, f"Exp +{exp_gained}", is_title=False, color_override=win_color if exp_gained > 0 else white_color, shadow_mode="full", custom_size=int(16*runtime_globals.UI_SCALE))
                         exp_label.manager = self.ui_manager
                         pet_labels.append((exp_label, pet_center_x))
                         current_y += int(28 * height_scale)  # More spacing for larger font
@@ -1677,7 +1719,7 @@ class BattleEncounter:
                     prize_value_color = white_color
                 
                 # Create separate labels for "Prize:" and the value with title font
-                self.result_prize_label_text = Label(prize_label_x, prize_y, "Prize:", is_title=False, color_override=white_color, shadow_mode="full", custom_size=32)
+                self.result_prize_label_text = Label(prize_label_x, prize_y, "Prize:", is_title=False, color_override=white_color, shadow_mode="full", custom_size=int(32*runtime_globals.UI_SCALE))
                 self.result_prize_label_text.manager = self.ui_manager
                 
                 # Position value label to the right (will calculate after rendering label text)
@@ -1700,7 +1742,7 @@ class BattleEncounter:
             width_scale = runtime_globals.SCREEN_WIDTH / 240
             height_scale = runtime_globals.SCREEN_HEIGHT / 240
             prize_value_x = self.result_prize_label_text.rect.x + prize_label_surface.get_width() + int(8 * width_scale)
-            prize_value_label = Label(prize_value_x, self.result_prize_label_text.rect.y, self.result_prize_value_text, is_title=False, color_override=self.result_prize_value_color, shadow_mode="full", custom_size=32)
+            prize_value_label = Label(prize_value_x, self.result_prize_label_text.rect.y, self.result_prize_value_text, is_title=False, color_override=self.result_prize_value_color, shadow_mode="full", custom_size=int(32*runtime_globals.UI_SCALE))
             prize_value_label.manager = self.ui_manager
             prize_value_surface = prize_value_label.render()
             surface.blit(prize_value_surface, (prize_value_x, self.result_prize_label_text.rect.y))
@@ -1736,32 +1778,36 @@ class BattleEncounter:
             
             # Use larger sprites and better horizontal distribution
             base_sprite_size = runtime_globals.PET_WIDTH  # Use full size instead of half
-            sprite_width = int(base_sprite_size * width_scale)
-            sprite_height = int((runtime_globals.PET_HEIGHT * width_scale))
+            sprite_width = int(base_sprite_size)
+            sprite_height = int(base_sprite_size)
             
             # Calculate spacing to distribute evenly across width
             margin = int(20 * width_scale)  # Side margins
-            available_width = runtime_globals.SCREEN_WIDTH - (2 * margin)
+            gap_between_pets = int(16 * width_scale)  # Gap between pets
             
-            # Calculate spacing between pets
+            # Calculate the actual width occupied by all pets
             if total > 1:
-                spacing = available_width // total
-                # Ensure sprites don't overlap by limiting spacing
-                max_sprite_width = spacing - int(8 * width_scale)  # Minimum 8px gap between pets
-                if sprite_width > max_sprite_width:
-                    sprite_width = max_sprite_width
-                    sprite_height = max_sprite_width  # Keep square aspect ratio
+                # Total width = all sprites + gaps between them
+                total_pets_width = (total * sprite_width) + ((total - 1) * gap_between_pets)
+                
+                # If pets don't fit, scale them down
+                available_width = runtime_globals.SCREEN_WIDTH - (2 * margin)
+                if total_pets_width > available_width:
+                    # Recalculate sprite size to fit
+                    total_pets_width = available_width
+                    sprite_width = (available_width - ((total - 1) * gap_between_pets)) // total
+                    sprite_height = sprite_width  # Keep square
             else:
-                spacing = available_width
+                # Single pet - just the sprite width
+                total_pets_width = sprite_width
             
-            # Center the pet group
-            total_width = spacing * total
-            offset_x = margin + (available_width - total_width) // 2
+            # Center the pet group horizontally
+            offset_x = (runtime_globals.SCREEN_WIDTH - total_pets_width) // 2
             pets_y = int(50 * height_scale)
             
             # Draw each pet sprite and their labels
             for i, pet in enumerate(pets):
-                pet_x = offset_x + i * spacing
+                pet_x = offset_x + (i * (sprite_width + gap_between_pets))
                 pet_center_x = pet_x + sprite_width // 2
                 
                 # Draw pet sprite (animated)
@@ -2052,41 +2098,17 @@ class BattleEncounter:
     # Region: Event Handling
     #========================
 
-    def handle_event(self, input_action):
+    def handle_event(self, event):
         """
         Handles input events for the battle encounter, phase and ruleset specific.
-        Supports both string actions and pygame events.
         """
-        # Handle pygame events for minigames
-        if hasattr(input_action, 'type'):  # It's a pygame event
-            if self.phase == "charge":
-                if self.module.ruleset == 'dmc' and self.dummy_charge:
-                    # Dummy charge handles pygame events for A/LCLICK input
-                    if self.dummy_charge.handle_event(input_action):
-                        self.strength = self.dummy_charge.strength
-                elif self.module.ruleset == 'penc' and self.count_match:
-                    shake_event = self.count_match.handle_pygame_event(input_action)
-                    if shake_event:
-                        self.press_counter = self.count_match.get_press_counter()
-                        self.rotation_index = self.count_match.get_rotation_index()
-                elif self.module.ruleset == 'vb' and self.shake_punch:
-                    # Shake punch handles pygame events for shake detection
-                    self.shake_punch.handle_pygame_event(input_action)
-                    self.strength = self.shake_punch.get_strength()
-                elif self.module.ruleset == 'dmx':
-                    # XAI roll and bar handle pygame events for keyboard/mouse input
-                    if self.xai_phase == 1 and self.xai_roll:
-                        if self.xai_roll.handle_event(input_action):
-                            self.xai_number = self.xai_roll.get_result()
-                    elif self.xai_phase == 2 and self.xai_bar:
-                        if self.xai_bar.handle_event(input_action):
-                            self.strength = self.xai_bar.get_result()
-                            self.xai_phase = 3
-                            self.bar_timer = pygame.time.get_ticks()
+        if not isinstance(event, tuple) or len(event) != 2:
             return
         
+        event_type, event_data = event
+        
         # Handle string actions
-        if input_action == "B":
+        if event_type == "B":
             if self.phase == "battle":
                 runtime_globals.game_sound.play("cancel")
                 self.phase = "result"
@@ -2096,45 +2118,54 @@ class BattleEncounter:
                 change_scene("game")
         elif self.module.ruleset == 'dmc':
             if self.phase == "charge":
-                if input_action in ("A", "LCLICK"):
+                if event_type in ("A", "LCLICK"):
                     # Let the minigame handle the input
-                    if self.dummy_charge and self.dummy_charge.handle_event(input_action):
+                    if self.dummy_charge and self.dummy_charge.handle_event(event):
                         self.strength = self.dummy_charge.strength
+        elif self.module.ruleset == 'penc':
+            if self.phase == "charge" and event_type in ("Y", "SHAKE"):
+                if self.count_match and self.count_match.handle_event(event):
+                    self.press_counter = self.count_match.get_press_counter()
+                    self.rotation_index = self.count_match.get_rotation_index()
+        elif self.module.ruleset == 'vb':
+            if self.phase == "charge" and event_type in ("Y", "SHAKE"):
+                if self.shake_punch and self.shake_punch.handle_event(event):
+                    self.strength = self.shake_punch.get_strength()
         elif self.module.ruleset == 'dmx':
             if self.phase == "charge":
                 # Use XAI minigame handle_event methods for consistency
-                if self.xai_phase == 1 and input_action == "A" and self.xai_roll:
+                if self.xai_phase == 1 and event_type in ["A", "LCLICK"] and self.xai_roll:
                     # --- Seven Switch: force XAI roll to 7 if status_boost is active ---
                     xai_effect = self.get_battle_effect("xai_roll")
                     if xai_effect and xai_effect.get("amount", 0) == 7:
                         self.xai_roll.stop()
+                        self.xai_roll.stop_target_frame = 6
                         self.xai_number = 7
-                        self.xai_roll.current_frame = 6  # 0-based index for 7
                     else:
                         if not self.xai_roll.rolling:
                             self.xai_roll.roll()
                         elif not self.xai_roll.stopping:
                             self.xai_roll.stop()
                             self.xai_number = self.xai_roll.get_result()
-                elif self.xai_phase == 2 and input_action == "A" and self.xai_bar:
+                elif self.xai_phase == 2 and event_type in ["A", "LCLICK"] and self.xai_bar:
                     self.xai_bar.stop()
                     self.strength = self.xai_bar.get_result() or 1
                     self.xai_phase = 3
                     self.bar_timer = pygame.time.get_ticks()
         elif self.module.ruleset == 'penc':
-            if input_action == "Y" or input_action == "SHAKE":
+            if event_type == "Y" or event_type == "SHAKE":
                 if self.phase == "alert":
                     self.frame_counter = combat_constants.ALERT_DURATION_FRAMES
                 elif self.phase == "charge":
                     # Let the minigame handle the input
-                    if self.count_match and self.count_match.handle_event(input_action):
+                    if self.count_match and self.count_match.handle_event(event):
                         self.press_counter = self.count_match.get_press_counter()
                         self.rotation_index = self.count_match.get_rotation_index()
         elif self.module.ruleset == 'vb':
             if self.phase == "charge":
-                if input_action in ("Y", "SHAKE"):
+                if event_type in ("Y", "SHAKE"):
                     # Let the minigame handle the input
-                    if self.shake_punch and self.shake_punch.handle_event(input_action):
+                    if self.shake_punch and self.shake_punch.handle_event(event):
                         self.strength = self.shake_punch.get_strength()
 
     #========================
@@ -2203,7 +2234,7 @@ class BattleEncounter:
                 index=i,
                 hp=self.battle_player.team1_hp[i],
                 attribute=pet.attribute,
-                power=pet.get_power(),
+                power=pet.get_power(self.power_bonus),
                 handicap=0,
                 buff=self.attack_boost,
                 mini_game=self.get_minigame_strength(),

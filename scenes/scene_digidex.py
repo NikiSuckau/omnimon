@@ -169,25 +169,29 @@ class SceneDigidex:
         # Draw UI components via manager
         self.ui_manager.draw(surface)
 
-    def handle_event(self, input_action):
-        # Handle raw pygame events (like MouseMotion) - UIManager needs these for update_mouse_focus()
-        if self.ui_manager.handle_event(input_action):
+    def handle_event(self, event):
+        if not isinstance(event, tuple) or len(event) != 2:
+            return False
+        
+        event_type, event_data = event
+        
+        # Handle events through UIManager
+        if self.ui_manager.handle_event(event):
             return True
         
         # Enable keyboard navigation mode for keyboard/scroll inputs
-        if isinstance(input_action, str) and input_action in ["B"]:
+        if event_type in ["B"]:
             self.ui_manager.keyboard_navigation_mode = True
         
-            # Handle B button for back navigation
-            if input_action == "B":
-                if self.state == 'tree':
-                    self._on_tree_back()
-                    runtime_globals.game_sound.play("cancel")
-                    return True
-                elif self.state == 'list':
-                    change_scene('game')
-                    runtime_globals.game_sound.play("cancel")
-                    return True
+            if self.state == 'tree':
+                self._on_tree_back()
+                runtime_globals.game_sound.play("cancel")
+                return True
+            elif self.state == 'list':
+                change_scene('game')
+                runtime_globals.game_sound.play("cancel")
+                return True
+                
     
     def _on_list_selection(self, selected_pet):
         """Callback when a pet is selected in the list view"""

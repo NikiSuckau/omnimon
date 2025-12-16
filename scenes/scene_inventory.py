@@ -16,6 +16,7 @@ from components.ui.text_panel import TextPanel
 from components.window_background import WindowBackground
 from core import runtime_globals, game_globals
 import core.constants as constants
+from core.utils.module_utils import get_module
 from core.utils.pet_utils import get_selected_pets
 from core.utils.scene_utils import change_scene
 from core.utils.inventory_utils import get_inventory_value, remove_from_inventory, add_to_inventory
@@ -58,6 +59,15 @@ class SceneInventory:
         """Load items from inventory, similar to the old inventory menu."""
         items = []
         
+        # Create item object class
+        class InventoryItem:
+            def __init__(self, item_id, game_item, icon, quantity=-1, anim_path=None):
+                self.id = item_id
+                self.game_item = game_item
+                self.icon = icon
+                self.quantity = quantity
+                self.anim_path = anim_path
+        
         # Add default items (Protein and Vitamin) as the first options, without amount
         default_sprite_folder = os.path.join("assets", "items")
         for default_item in runtime_globals.default_items.values():
@@ -67,19 +77,13 @@ class SceneInventory:
                 icon = image_load(sprite_path).convert_alpha()
             else:
                 icon = pygame.Surface((48, 48), pygame.SRCALPHA)
-            
-            # Create item object with icon
-            class InventoryItem:
-                def __init__(self, item_id, game_item, icon, quantity=-1, anim_path=None):
-                    self.id = item_id
-                    self.game_item = game_item
-                    self.icon = icon
-                    self.quantity = quantity
-                    self.anim_path = anim_path
                     
             # Add description for default items
             items.append(InventoryItem(default_item.id, default_item, icon, -1, anim_path))
 
+        # Track items by ID to avoid duplicates across modules
+        items_by_id = {}
+        
         # Add items from inventory (from all modules)
         for module in runtime_globals.game_modules.values():
             if hasattr(module, "items"):
@@ -88,17 +92,26 @@ class SceneInventory:
                         continue
                     amount = get_inventory_value(item.id)
                     if amount > 0:
-                        sprite_name = item.sprite_name
-                        if not sprite_name.lower().endswith(".png"):
-                            sprite_name += ".png"
-                        sprite_path = os.path.join(module.folder_path, "items", sprite_name)
-                        anim_path = os.path.join(module.folder_path, "items", f"{sprite_name.split('.')[0]}_anim.png")
-                        if os.path.exists(sprite_path):
-                            icon = image_load(sprite_path).convert_alpha()
+                        # Check if we already have this item ID
+                        if item.id in items_by_id:
+                            # Add to existing quantity
+                            items_by_id[item.id].quantity += amount
                         else:
-                            icon = pygame.Surface((48, 48), pygame.SRCALPHA)
-                        
-                        items.append(InventoryItem(item.id, item, icon, amount, anim_path))
+                            # Create new item entry
+                            sprite_name = item.sprite_name
+                            if not sprite_name.lower().endswith(".png"):
+                                sprite_name += ".png"
+                            sprite_path = os.path.join(module.folder_path, "items", sprite_name)
+                            anim_path = os.path.join(module.folder_path, "items", f"{sprite_name.split('.')[0]}_anim.png")
+                            if os.path.exists(sprite_path):
+                                icon = image_load(sprite_path).convert_alpha()
+                            else:
+                                icon = pygame.Surface((48, 48), pygame.SRCALPHA)
+                            
+                            items_by_id[item.id] = InventoryItem(item.id, item, icon, amount, anim_path)
+        
+        # Add all unique items to the list
+        items.extend(items_by_id.values())
         
         return items
 
@@ -198,7 +211,7 @@ class SceneInventory:
 
             if runtime_globals.food_index >= len(inventory_items):
                 runtime_globals.food_index = 0
-            self.item_list.set_selected_index(runtime_globals.food_index)
+            self.item_list.set_selected_index(runtime_globals.food_index, instant_scroll=True)
             if inventory_items:
                 # Set initial item description and update pet selector
                 initial_item = inventory_items[runtime_globals.food_index]
@@ -235,30 +248,29 @@ class SceneInventory:
         self.ui_manager.draw(surface)
         
     def handle_event(self, event) -> None:
-        """Handle events in the inventory scene."""
-        
-        if isinstance(event, str):
-            print(f"[SceneInventory] Received string event: {event}")
+        """Handle events in the inventory scene."""        
+        event_type, event_data = event
 
-        # Handle pygame events through UI manager first
+        if event_type in ["A", "LCLICK"]:
+            print(f"[SceneInventory] Handling event: {event_type} with data: {event_data}")
+
+        # Handle events through UI manager first
         if self.ui_manager.handle_event(event):
             return
         
-        # Handle string action events (from input manager)
-        elif isinstance(event, str):
-            if event == "B":
-                runtime_globals.game_sound.play("cancel")
-                # Preserve the currently selected food index before leaving the scene
-                if self.item_list:
-                    runtime_globals.food_index = self.item_list.selected_index
-                else:
-                    runtime_globals.food_index = 0
-                change_scene("game")
-                return
-            elif event == "SELECT":
-                # Handle SELECT key same as SELECTION button
-                self.on_selection_button()
-                return
+        if event_type == "B":
+            runtime_globals.game_sound.play("cancel")
+            # Preserve the currently selected food index before leaving the scene
+            if self.item_list:
+                runtime_globals.food_index = self.item_list.selected_index
+            else:
+                runtime_globals.food_index = 0
+            change_scene("game")
+            return
+        elif event_type == "SELECT":
+            # Handle SELECT key same as SELECTION button
+            self.on_selection_button()
+            return
 
     def on_item_activated(self, item, index, use_immediately=False):
         """Called when an item is activated - use immediately for keyboard, just select for mouse"""
@@ -338,110 +350,219 @@ class SceneInventory:
             self.pet_selector.set_enabled_pets(enabled_indices)
             
     def _use_item(self, item, index):
-        """Internal method to use an item - handles the actual usage logic"""
-       
+        """Internal method to use an item - dispatches to effect-specific handlers"""
         # Get targets (selected pets)
         targets = get_selected_pets()
         if not targets:
             runtime_globals.game_sound.play("cancel")
             runtime_globals.game_console.log("[SceneInventory] No pets selected for feeding")
             return
-            
         
-        # Handle different item effects
-        if item.game_item.effect == "component":
-            # Component crafting - check if player has enough items
-            current_amount = get_inventory_value(item.id)
-            required_amount = item.game_item.amount
-            
-            if current_amount < required_amount:
-                runtime_globals.game_sound.play("cancel")
-                runtime_globals.game_console.log(f"[SceneInventory] Not enough {item.game_item.name} (have {current_amount}, need {required_amount})")
-                return
-            runtime_globals.game_sound.play("menu")
-            # Remove the required amount
-            remove_from_inventory(item.id, required_amount)
-            
-            # Find the component item in the same module
-            component_item = None
-            for module in runtime_globals.game_modules.values():
-                if hasattr(module, "items"):
-                    for it in module.items:
-                        if it.name == item.game_item.component_item:
-                            component_item = it
-                            break
-                    if component_item:
-                        break
-                        
-            if component_item:
-                add_to_inventory(component_item.id, 1)
-                runtime_globals.game_console.log(f"[SceneInventory] Crafted {component_item.name} from {item.game_item.name}")
-            else:
-                runtime_globals.game_console.log(f"[SceneInventory] Component item '{item.game_item.component_item}' not found in module")
-            # Save selected index so inventory selection persists when returning to game
-            if self.item_list:
-                runtime_globals.food_index = self.item_list.selected_index
-            else:
-                runtime_globals.food_index = 0
-            change_scene("game")
-            runtime_globals.game_sound.play("happy2")
+        # Dispatch to appropriate handler based on item effect
+        effect = item.game_item.effect
+        status = item.game_item.status
+        if effect == "component":
+            self._use_component_item(item)
+        elif effect == "status_boost":
+            self._use_status_boost_item(item, targets)
+        elif effect == "status_change" and status not in ["hunger", "strength"]:
+            self._use_status_change_item(item, targets)
+        else:
+            self._use_feeding_item(item, targets)
+    
+    def _use_component_item(self, item):
+        """Handle component crafting items"""
+        current_amount = get_inventory_value(item.id)
+        required_amount = item.game_item.amount
+        
+        if current_amount < required_amount:
+            runtime_globals.game_sound.play("cancel")
+            runtime_globals.game_console.log(f"[SceneInventory] Not enough {item.game_item.name} (have {current_amount}, need {required_amount})")
             return
         
-        runtime_globals.game_sound.play("menu")    
-        # Handle status boost items
-        if item.game_item.effect == "status_boost":
-            eff = game_globals.battle_effects.get(item.game_item.status, {"amount": 0, "boost_time": 0, "module": item.game_item.module})
-            eff["amount"] += item.game_item.amount
-            eff["boost_time"] += item.game_item.boost_time
-            eff["module"] = item.game_item.module
-            eff["item_id"] = item.game_item.id
-            game_globals.battle_effects[item.game_item.status] = eff
+        runtime_globals.game_sound.play("menu")
+        remove_from_inventory(item.id, required_amount)
+        
+        # Find the component item in the same module
+        component_item = None
+        for module in runtime_globals.game_modules.values():
+            if hasattr(module, "items"):
+                for it in module.items:
+                    if it.name == item.game_item.component_item:
+                        component_item = it
+                        break
+                if component_item:
+                    break
+        
+        if component_item:
+            add_to_inventory(component_item.id, 1)
+            runtime_globals.game_message.add_slide(f"{component_item.name} obtained!", (255, 255, 0), 56 * runtime_globals.UI_SCALE, runtime_globals.FONT_SIZE_SMALL)
+            runtime_globals.game_console.log(f"[SceneInventory] Crafted {component_item.name} from {item.game_item.name}")
+        else:
+            runtime_globals.game_console.log(f"[SceneInventory] Component item '{item.game_item.component_item}' not found in module")
+        
+        runtime_globals.game_sound.play("happy2")
+        self._return_to_game()
+    
+    def _use_status_boost_item(self, item, targets):
+        """Handle status boost items (battle effects)"""
+        runtime_globals.game_sound.play("menu")
+        
+        eff = game_globals.battle_effects.get(item.game_item.status, {"amount": 0, "boost_time": 0, "module": item.game_item.module})
+        eff["amount"] = item.game_item.amount
+        eff["boost_time"] += item.game_item.boost_time
+        eff["module"] = item.game_item.module
+        eff["item_id"] = item.game_item.id
+        game_globals.battle_effects[item.game_item.status] = eff
+        
+        # Continue to feeding animation
+        self._use_feeding_item(item, targets)
+    
+    def _use_status_change_item(self, item, targets):
+        """Handle status change items (direct stat modifications)"""
+        status_to_change = item.game_item.status
+        amount = item.game_item.amount
+        affected_pets = []  # Track pets that received stat changes
+        
+        # For capped stats, check if all pets have reached the cap
+        if status_to_change in ['hp', 'attack', 'power']:
+            all_capped = True
+            bonus_index = {'hp': 0, 'attack': 1, 'power': 2}[status_to_change]
+            cap_attr = {'hp': 'hp_max_item_boost', 'attack': 'atk_max_item_boost', 'power': 'power_max_item_boost'}[status_to_change]
             
-        # Feed the item to pets
-        runtime_globals.game_pet_eating = {}
+            for pet in targets:
+                pet_module = get_module(pet.module)
+                cap = getattr(pet_module, cap_attr, 0)
+                current_bonus = pet.bonus_stats[bonus_index]
+                if current_bonus < cap:
+                    all_capped = False
+                    break
+            
+            if all_capped:
+                runtime_globals.game_sound.play("cancel")
+                runtime_globals.game_console.log(f"[SceneInventory] All pets have reached {status_to_change} cap")
+                return
+            
+            # Apply bonus to pets that haven't reached cap
+            for pet in targets:
+                pet_module = get_module(pet.module)
+                cap = getattr(pet_module, cap_attr, 0)
+                current_bonus = pet.bonus_stats[bonus_index]
+                if current_bonus < cap:
+                    new_bonus = min(cap, current_bonus + amount)
+                    pet.bonus_stats[bonus_index] = new_bonus
+                    affected_pets.append(pet)
+                    runtime_globals.game_console.log(f"[SceneInventory] {pet.name} {status_to_change} bonus: {current_bonus} -> {new_bonus} (cap: {cap})")
+        
+        # For uncapped or direct stats
+        elif status_to_change == 'strength':
+            for pet in targets:
+                old_strength = pet.strength
+                pet.strength = min(4, pet.strength + amount)
+                if pet.strength != old_strength:
+                    affected_pets.append(pet)
+                    runtime_globals.game_console.log(f"[SceneInventory] {pet.name} strength: {pet.strength}")
+        
+        elif status_to_change == 'dp':
+            for pet in targets:
+                old_dp = pet.dp
+                pet.dp = min(pet.energy, pet.dp + amount)
+                if pet.dp != old_dp:
+                    affected_pets.append(pet)
+                    runtime_globals.game_console.log(f"[SceneInventory] {pet.name} dp: {pet.dp}/{pet.energy}")
+        
+        elif status_to_change == 'timer':
+            for pet in targets:
+                pet.timer += amount * constants.FRAME_RATE * 60  # Convert minutes to frames
+                affected_pets.append(pet)
+                runtime_globals.game_console.log(f"[SceneInventory] {pet.name} timer increased by {amount} minutes")
+        
+        elif status_to_change == 'vital_values':
+            for pet in targets:
+                old_vital = pet.vital_values
+                pet.vital_values = min(9999, pet.vital_values + amount)
+                if pet.vital_values != old_vital:
+                    affected_pets.append(pet)
+                    runtime_globals.game_console.log(f"[SceneInventory] {pet.name} vital_values: {pet.vital_values}")
+        
+        if len(affected_pets) == 0:
+            runtime_globals.game_sound.play("cancel")
+            runtime_globals.game_console.log(f"[SceneInventory] No pets affected by {item.game_item.name}")
+            return
+
+        runtime_globals.game_sound.play("menu")
+        for pet in affected_pets:
+            pet.check_disturbed_sleep()
+            pet.set_state("eat", True)
+        
+        # Set up eating animation for affected pets
+        self._setup_eating_animation(item, affected_pets)
+        
+        # Remove item from inventory
+        if item.id not in [ditem.id for ditem in runtime_globals.default_items.values()]:
+            remove_from_inventory(item.id)
+        
+        runtime_globals.game_console.log(f"[SceneInventory] Applied {item.game_item.name} to {len(affected_pets)} pets")
+        self._return_to_game()
+    
+    def _use_feeding_item(self, item, targets):
+        """Handle regular feeding items (hunger/strength)"""
+        runtime_globals.game_sound.play("menu")
+        
         food_status = item.game_item.status
         food_amount = item.game_item.amount
+        accepted_pets = []
         
         for pet in targets:
             pet.check_disturbed_sleep()
-            try:
-                pet_index = game_globals.pet_list.index(pet)
-            except ValueError:
-                continue
-                
             accepted = pet.set_eating(food_status, food_amount)
             if accepted:
                 pet.animation_counter = 0
-                anim_path = item.anim_path
-                anim_frames = None
-                if anim_path and os.path.exists(anim_path):
-                    anim_image = image_load(anim_path).convert_alpha()
-                    w, h = anim_image.get_width() // 4, anim_image.get_height()
-                    anim_frames = [
-                        pygame.transform.scale(
-                            anim_image.subsurface((i * w, 0, w, h)).copy(),
-                            (int(runtime_globals.PET_WIDTH * 0.75), int(runtime_globals.PET_HEIGHT * 0.75))
-                        )
-                        for i in range(4)
-                    ]
-                # Create sprite for eating animation
-                if item.icon:
-                    scaled_sprite = pygame.transform.scale(
-                        item.icon, (int(runtime_globals.PET_WIDTH * 0.75), int(runtime_globals.PET_HEIGHT * 0.75))
+                accepted_pets.append(pet)
+        
+        # Set up eating animation for pets that accepted the food
+        self._setup_eating_animation(item, accepted_pets)
+        
+        # Remove from inventory for non-default items
+        if item.id not in [ditem.id for ditem in runtime_globals.default_items.values()]:
+            remove_from_inventory(item.id)
+        
+        runtime_globals.game_console.log(f"[SceneInventory] Fed {len(accepted_pets)} pets with {item.game_item.name}")
+        self._return_to_game()
+    
+    def _setup_eating_animation(self, item, pets):
+        """Set up eating animation for a list of pets"""
+        runtime_globals.game_pet_eating = {}
+        
+        for pet in pets:
+            pet_index = game_globals.pet_list.index(pet)
+            
+            # Load animation frames if available
+            anim_frames = None
+            if hasattr(item, 'anim_path') and item.anim_path and os.path.exists(item.anim_path):
+                anim_image = image_load(item.anim_path).convert_alpha()
+                w, h = anim_image.get_width() // 4, anim_image.get_height()
+                anim_frames = [
+                    pygame.transform.scale(
+                        anim_image.subsurface((i * w, 0, w, h)).copy(),
+                        (int(runtime_globals.PET_WIDTH * 0.75), int(runtime_globals.PET_HEIGHT * 0.75))
                     )
-                    
+                    for i in range(4)
+                ]
+            
+            # Create scaled sprite for item icon
+            if hasattr(item, 'icon') and item.icon:
+                scaled_sprite = pygame.transform.scale(
+                    item.icon, (int(runtime_globals.PET_WIDTH * 0.75), int(runtime_globals.PET_HEIGHT * 0.75))
+                )
                 runtime_globals.game_pet_eating[pet_index] = {
                     "item": item,
                     "sprite": scaled_sprite,
                     "anim_frames": anim_frames
                 }
-                
-                # Remove from inventory for non-default items
-                if item.id not in [ditem.id for ditem in runtime_globals.default_items.values()]:
-                    remove_from_inventory(item.id)
-                    
-        runtime_globals.game_console.log(f"[SceneInventory] Fed {len(runtime_globals.game_pet_eating)} pets with {item.game_item.name}")
-        # Preserve selection for next time the inventory is opened
+    
+    def _return_to_game(self):
+        """Save selection and return to game scene"""
         if self.item_list:
             runtime_globals.food_index = self.item_list.selected_index
         else:

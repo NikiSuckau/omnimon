@@ -93,7 +93,10 @@ class MogeraTraining(Training):
         self.animated_sprite.update()
         
         if self.phase == "alert":
-            if self.frame_counter >= combat_constants.ALERT_DURATION_FRAMES:
+            # Call parent's alert phase update to handle sound and timing
+            self.update_alert_phase()
+            # Override the phase transition to go to counter instead of charge
+            if self.phase == "charge":  # Parent set it to charge
                 self.phase = "counter"
                 self.frame_counter = 0
                 # Create counter game now that pet sprites are loaded
@@ -151,14 +154,16 @@ class MogeraTraining(Training):
         # Adjust bar difficulty: 3 counters = hardest (14), 5 counters = easiest (10)
         # Bar level is how many presses needed to reach max
         if self.countered_count == 5:
-            self.bar_level = 10
+            self.bar_level = 4
         elif self.countered_count == 4:
-            self.bar_level = 12
+            self.bar_level = 2
         else:  # 3 counters
-            self.bar_level = 14
+            self.bar_level = 0
         
+        self.phase2_reached = True
+
         self.charge_game = DummyCharge(self.ui_manager)
-        self.charge_game.bar_level = self.bar_level
+        self.charge_game.strength = self.bar_level
         
         self.current_phase = 3
         self.phase = "charge"
@@ -255,18 +260,19 @@ class MogeraTraining(Training):
 
     def handle_event(self, event):
         """Handle input events"""
+        event_type, event_data = event
+        
         if self.phase == "counter":
-            # Pass pygame events to UI manager for button clicks
-            if isinstance(event, pygame.event.Event):
-                self.ui_manager.handle_event(event)
+            # Pass to UI manager for button clicks
+            self.ui_manager.handle_event(event)
             
-            # Pass string events to counter game
+            # Pass to counter game
             if self.counter_game:
                 if self.counter_game.handle_event(event):
                     return
             
             # Allow exit during counter phase
-            if isinstance(event, str) and event in ("START", "B"):
+            if event_type in ("START", "B"):
                 runtime_globals.game_sound.play("cancel")
                 change_scene("game")
         
@@ -275,21 +281,21 @@ class MogeraTraining(Training):
                 return
             
             # Allow skip to result with B or START
-            if isinstance(event, str) and event in ("START", "B"):
+            if event_type in ("START", "B"):
                 runtime_globals.game_sound.play("cancel")
                 self.phase = "result"
                 self.frame_counter = 0
         
         elif self.phase in ("wait_attack", "attack_move", "impact"):
             # Only allow B or START to skip to result, not A
-            if isinstance(event, str) and event in ("B", "START"):
+            if event_type in ("B", "START"):
                 runtime_globals.game_sound.play("cancel")
                 self.phase = "result"
                 self.frame_counter = 0
         
         elif self.phase == "result":
             # Allow any button to exit from result
-            if isinstance(event, str) and event in ("A", "B", "START"):
+            if event_type in ("A", "B", "START"):
                 runtime_globals.game_sound.play("cancel")
                 self.phase = "result"
                 self.frame_counter = 0

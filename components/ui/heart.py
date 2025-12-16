@@ -121,7 +121,8 @@ class HeartMeter(UIComponent):
             blit_with_cache(surface, heart, (heart_x, heart_y))
         
         # Draw highlight if focused (mouse hover or keyboard focus)
-        if self.focused:
+        # Skip in touch mode - focus highlights are for keyboard/mouse navigation only
+        if self.focused and runtime_globals.INPUT_MODE != runtime_globals.TOUCH_MODE:
             colors = self.manager.get_theme_colors()
             highlight_color = colors.get("highlight", colors["fg"])  # Safe fallback
             pygame.draw.rect(surface, highlight_color, surface.get_rect(), 2)

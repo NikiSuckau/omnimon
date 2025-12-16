@@ -273,7 +273,6 @@ class SceneSettingsMenu:
             self.ui_manager.add_component(label)
         
         # Set mouse mode and initial focus
-        self.ui_manager.set_mouse_mode()
         if self.option_buttons:
             self.ui_manager.set_focused_component(self.option_buttons[0])
     
@@ -385,7 +384,7 @@ class SceneSettingsMenu:
     def _update_view_visibility(self):
         """Update visibility of components based on current mode."""
         # Check if mouse is enabled
-        mouse_enabled = getattr(runtime_globals.game_input, 'mouse_enabled', False)
+        mouse_enabled = (runtime_globals.INPUT_MODE == runtime_globals.MOUSE_MODE or runtime_globals.INPUT_MODE == runtime_globals.TOUCH_MODE)
         
         # Main settings components (visible in main mode only)
         for button in self.option_buttons:
@@ -455,7 +454,7 @@ class SceneSettingsMenu:
     def update(self) -> None:
         """Updates the settings menu."""
         # Check if mouse mode changed and update visibility accordingly
-        mouse_enabled = getattr(runtime_globals.game_input, 'mouse_enabled', False)
+        mouse_enabled = (runtime_globals.INPUT_MODE == runtime_globals.MOUSE_MODE or runtime_globals.INPUT_MODE == runtime_globals.TOUCH_MODE)
         if not hasattr(self, '_last_mouse_enabled'):
             self._last_mouse_enabled = mouse_enabled
         
@@ -474,81 +473,79 @@ class SceneSettingsMenu:
         self.ui_manager.draw(surface)
     
     def handle_event(self, event) -> None:
-        """Handle pygame events and input actions."""
-        if not event:
+        """Handle input events."""
+        if not isinstance(event, tuple) or len(event) != 2:
             return
         
-        # Handle string input actions from buttons/keyboard
-        elif isinstance(event, str):
-            input_action = event
-            
-            # Check if mouse is enabled
-            mouse_enabled = getattr(runtime_globals.game_input, 'mouse_enabled', False)
-            
-            # Handle mode-specific inputs
-            if self.mode == "background":
-                # B always works to go back
-                if input_action == "B":
+        event_type, event_data = event
+        
+        # Check if mouse is enabled
+        mouse_enabled = (runtime_globals.INPUT_MODE == runtime_globals.MOUSE_MODE or runtime_globals.INPUT_MODE == runtime_globals.TOUCH_MODE)
+        
+        # Handle mode-specific inputs
+        if self.mode == "background":
+            # B always works to go back
+            if event_type == "B":
+                self._on_exit()
+                return
+            # Block keyboard shortcuts if mouse is enabled (force button usage)
+            if not mouse_enabled:
+                if event_type in ("LEFT", "RIGHT"):
+                    self.change_background(increase=(event_type == "RIGHT"))
+                    return
+                elif event_type == "SELECT":
+                    # Toggle high-resolution via method
+                    self._on_toggle_highres()
+                    return
+        
+        elif self.mode == "unlockables":
+            module_count = len(self.unlockables_data)
+            if module_count == 0:
+                if event_type == "B":
                     self._on_exit()
-                    return
-                # Block keyboard shortcuts if mouse is enabled (force button usage)
-                if not mouse_enabled:
-                    if input_action in ("LEFT", "RIGHT"):
-                        self.change_background(increase=(input_action == "RIGHT"))
-                        return
-                    elif input_action == "SELECT":
-                        # Toggle high-resolution via method
-                        self._on_toggle_highres()
-                        return
+                return
             
-            elif self.mode == "unlockables":
-                module_count = len(self.unlockables_data)
-                if module_count == 0:
-                    if input_action == "B":
-                        self._on_exit()
-                    return
+            # B always works to go back
+            if event_type == "B":
+                self._on_exit()
+                return
+            
+            # Block keyboard shortcuts if mouse is enabled (force button usage)
+            if not mouse_enabled:
+                module_idx = self.current_unlock_module_index
+                item_idx = self.current_unlock_item_index
+                unlocked = self.unlockables_data[module_idx]["unlocked"]
                 
-                # B always works to go back
-                if input_action == "B":
-                    self._on_exit()
+                if event_type == "LEFT":
+                    self.current_unlock_module_index = (module_idx - 1) % module_count
+                    self.current_unlock_item_index = 0
+                    runtime_globals.game_sound.play("menu")
+                    self._update_unlockables_labels()
                     return
-                
-                # Block keyboard shortcuts if mouse is enabled (force button usage)
-                if not mouse_enabled:
-                    module_idx = self.current_unlock_module_index
-                    item_idx = self.current_unlock_item_index
-                    unlocked = self.unlockables_data[module_idx]["unlocked"]
-                    
-                    if input_action == "LEFT":
-                        self.current_unlock_module_index = (module_idx - 1) % module_count
-                        self.current_unlock_item_index = 0
+                elif event_type == "RIGHT":
+                    self.current_unlock_module_index = (module_idx + 1) % module_count
+                    self.current_unlock_item_index = 0
+                    runtime_globals.game_sound.play("menu")
+                    self._update_unlockables_labels()
+                    return
+                elif event_type == "UP":
+                    if unlocked:
+                        self.current_unlock_item_index = (item_idx - 1) % len(unlocked)
                         runtime_globals.game_sound.play("menu")
                         self._update_unlockables_labels()
                         return
-                    elif input_action == "RIGHT":
-                        self.current_unlock_module_index = (module_idx + 1) % module_count
-                        self.current_unlock_item_index = 0
+                elif event_type == "DOWN":
+                    if unlocked:
+                        self.current_unlock_item_index = (item_idx + 1) % len(unlocked)
                         runtime_globals.game_sound.play("menu")
                         self._update_unlockables_labels()
-                        return
-                    elif input_action == "UP":
-                        if unlocked:
-                            self.current_unlock_item_index = (item_idx - 1) % len(unlocked)
-                            runtime_globals.game_sound.play("menu")
-                            self._update_unlockables_labels()
-                        return
-                    elif input_action == "DOWN":
-                        if unlocked:
-                            self.current_unlock_item_index = (item_idx + 1) % len(unlocked)
-                            runtime_globals.game_sound.play("menu")
-                            self._update_unlockables_labels()
-                        return
-            elif input_action == "B":
+                    return
+            elif event_type == "B":
                 runtime_globals.game_sound.play("cancel")
                 change_scene("game")
                 return
             # Main settings mode - handle LEFT/RIGHT for focused option button
-            elif self.mode == "main" and input_action in ("LEFT", "RIGHT"):
+            elif self.mode == "main" and event_type in ("LEFT", "RIGHT"):
                 if self.ui_manager.focused_index >= 0 and self.ui_manager.focused_index < len(self.ui_manager.focusable_components):
                     focused = self.ui_manager.focusable_components[self.ui_manager.focused_index]
                 else:
@@ -557,8 +554,8 @@ class SceneSettingsMenu:
                     option_idx = self.option_buttons.index(focused)
                     option_names = ["Show Clock", "Sound", "Global Wake", "Global Sleep", "Screen Timeout"]
                     if option_idx < len(option_names):
-                        if input_action in ("LEFT", "RIGHT"):
-                            self._on_setting_change(option_names[option_idx], increase=(input_action == "RIGHT"))
+                        if event_type in ("LEFT", "RIGHT"):
+                            self._on_setting_change(option_names[option_idx], increase=(event_type == "RIGHT"))
                 return
         
         # Handle pygame events (mouse clicks, etc.)

@@ -123,7 +123,7 @@ class DigidexList(UIComponent):
 
     def handle_mouse_hover(self):
         """Handle mouse hover for highlighting list items (separate from keyboard focus)"""
-        if not runtime_globals.game_input.is_mouse_enabled():
+        if not (runtime_globals.INPUT_MODE in [runtime_globals.MOUSE_MODE, runtime_globals.TOUCH_MODE]):
             old_hover = getattr(self, 'hover_index', -1)
             self.hover_index = -1
             if old_hover != -1:
@@ -245,28 +245,32 @@ class DigidexList(UIComponent):
         return self.manager.ui_to_screen_rect(base_item_rect)
     
     def handle_event(self, event):
-        # Handle list navigation
-        if isinstance(event, str):
-            if event == "UP":
-                self.navigate_up()
+        # Handle list navigation - tuple-based events
+        if not isinstance(event, tuple) or len(event) != 2:
+            return False
+            
+        event_type, event_data = event
+        
+        if event_type == "UP":
+            self.navigate_up()
+            runtime_globals.game_sound.play("menu")
+            return True
+        elif event_type == "DOWN":
+            self.navigate_down()
+            runtime_globals.game_sound.play("menu")
+            return True
+        elif event_type == "A":
+            # Select current pet - trigger callback
+            selected = self.get_selected_pet()
+            if selected and selected.known and self.on_selection_callback:
+                self.on_selection_callback(selected)
                 runtime_globals.game_sound.play("menu")
-                return True
-            elif event == "DOWN":
-                self.navigate_down()
-                runtime_globals.game_sound.play("menu")
-                return True
-            elif event == "A":
-                # Select current pet - trigger callback
-                selected = self.get_selected_pet()
-                if selected and selected.known and self.on_selection_callback:
-                    self.on_selection_callback(selected)
-                    runtime_globals.game_sound.play("menu")
-                return True
+            return True
         return False
     
     def handle_mouse_click(self, mouse_pos, action):
         """Handle direct mouse clicks on list items"""
-        if not runtime_globals.game_input.is_mouse_enabled():
+        if not (runtime_globals.INPUT_MODE in [runtime_globals.MOUSE_MODE, runtime_globals.TOUCH_MODE]):
             return False
         
         # Don't handle clicks during drag
@@ -315,7 +319,7 @@ class DigidexList(UIComponent):
     
     def handle_scroll(self, action):
         """Handle scroll wheel events for list navigation"""
-        if not runtime_globals.game_input.is_mouse_enabled():
+        if not (runtime_globals.INPUT_MODE in [runtime_globals.MOUSE_MODE, runtime_globals.TOUCH_MODE]):
             return False
         
         if action == "SCROLL_UP":
@@ -329,16 +333,24 @@ class DigidexList(UIComponent):
         
         return False
     
-    def handle_drag(self, action, input_manager):
+    def handle_drag(self, event):
         """Handle drag events for vertical scrolling"""
-        if not runtime_globals.game_input.is_mouse_enabled():
+        if not isinstance(event, tuple) or len(event) != 2:
+            return False
+        
+        event_type, event_data = event
+        
+        if not (runtime_globals.INPUT_MODE in [runtime_globals.MOUSE_MODE, runtime_globals.TOUCH_MODE]):
             return False
         
         if not self.manager:
             return False
         
-        if action == "DRAG_START":
-            mouse_pos = input_manager.get_mouse_position()
+        if event_type == "DRAG_START":
+            mouse_pos = event_data.get("pos")
+            if not mouse_pos:
+                return False
+                
             mouse_ui_pos = self.manager.screen_to_ui_pos(mouse_pos)
             if not mouse_ui_pos:
                 return False
@@ -357,8 +369,10 @@ class DigidexList(UIComponent):
             self._is_dragging = True
             return True
         
-        elif action == "DRAG_MOTION" and self._is_dragging:
-            current_pos = input_manager.get_mouse_position()
+        elif event_type == "DRAG_MOTION" and self._is_dragging:
+            current_pos = event_data.get("pos")
+            if not current_pos:
+                return False
             dy = current_pos[1] - self._drag_start_pos[1]
             
             self._drag_accumulated += dy
@@ -388,7 +402,7 @@ class DigidexList(UIComponent):
             self._drag_start_pos = current_pos
             return True
         
-        elif action == "DRAG_END":
+        elif event_type == "DRAG_END":
             self._is_dragging = False
             self._drag_start_pos = None
             self._drag_accumulated = 0
@@ -445,14 +459,16 @@ class DigidexList(UIComponent):
             # Draw sprite
             if pet.sprite:
                 scaled_sprite = pygame.transform.scale(pet.sprite, (icon_size, icon_size))
-                surface.blit(scaled_sprite, (list_x + left_padding, y_pos + int(5 * ui_scale)))
+                from core.utils.pygame_utils import blit_with_cache
+                blit_with_cache(surface, scaled_sprite, (list_x + left_padding, y_pos + int(5 * ui_scale)))
             
             # Draw name and info with shadow
             name_text = font.render(pet.name[:15], True, colors["fg"])
             blit_with_shadow(surface, name_text, (list_x + left_padding + icon_size + int(5 * ui_scale), y_pos + int(8 * ui_scale)))
             
             info_text = small_font.render(f"{pet.attribute if pet.attribute != '' else 'Free'} | Stage {constants.STAGES[pet.stage]}", True, (200, 200, 200))
-            surface.blit(info_text, (list_x + left_padding + icon_size + int(5 * ui_scale), y_pos + int(28 * ui_scale)))
+            from core.utils.pygame_utils import blit_with_shadow
+            blit_with_shadow(surface, info_text, (list_x + left_padding + icon_size + int(5 * ui_scale), y_pos + int(28 * ui_scale)))
             
             # Highlight selected or hovered item
             is_hovered = (idx == self.hover_index)
@@ -461,8 +477,10 @@ class DigidexList(UIComponent):
             if is_selected or (is_hovered and self.focused):
                 # Use highlight color if hovered and focused, or line color if just selected
                 # Fallback to line color if highlight not available
+                # Skip focus highlighting in touch mode - it's for keyboard/mouse navigation only
                 highlight_color = colors.get("highlight", colors["line"])
-                border_color = highlight_color if is_hovered and self.focused else colors["line"]
+                show_focus = (is_hovered and self.focused) and runtime_globals.INPUT_MODE != runtime_globals.TOUCH_MODE
+                border_color = highlight_color if show_focus else colors["line"]
                 border_width = max(1, int(2 * ui_scale))
                 pygame.draw.rect(surface, border_color, (list_x, y_pos, list_width, item_height), border_width)
         

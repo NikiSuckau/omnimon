@@ -10,58 +10,18 @@ IS_PYGAME2 = PYGAME_VERSION >= (2, 0, 0)
 COMPATIBLE_SRCALPHA = pygame.SRCALPHA
 
 #=====================================================================
-# Load config values
+# Default Configuration Values
+# Actual values are loaded from config.json in main.py/main_nuitka.py
 #=====================================================================
-CONFIG_PATH = "config/config.json"
-DEFAULT_CONFIG = {
-    "SCREEN_WIDTH": 240,
-    "SCREEN_HEIGHT": 240,
-    "FRAME_RATE": 30,
-    "MAX_PETS": 4,
-    "FULLSCREEN": False,
-    "DEBUG_MODE": False,
-    "DEBUG_FILE_LOGGING": False,
-    "SHOW_FPS": False,
-    "DEBUG_BLIT_LOGGING": False,
-    "DEBUG_BATTLE_INFO": False
-}
+FRAME_RATE = 30  # Default frame rate
+MAX_PETS = 4  # Default maximum number of pets
 
-try:
-    from core.utils.asset_utils import open_json
-    with open_json(CONFIG_PATH) as f:
-        user_config = json.load(f)
-except Exception:
-    user_config = {}
-
-# Resolution loaded from config - will be applied to runtime_globals
-CONFIG_SCREEN_WIDTH = user_config.get("SCREEN_WIDTH", DEFAULT_CONFIG["SCREEN_WIDTH"])
-# Same sanity logic needed in main.py and main_nuitka.py setup_display()
-if not CONFIG_SCREEN_WIDTH:
-    CONFIG_SCREEN_WIDTH = 240
-if CONFIG_SCREEN_WIDTH < 100:
-    CONFIG_SCREEN_WIDTH = 100
-CONFIG_SCREEN_HEIGHT = user_config.get("SCREEN_HEIGHT", DEFAULT_CONFIG["SCREEN_HEIGHT"])
-# Same sanity logic needed in main.py and main_nuitka.py setup_display()
-if not CONFIG_SCREEN_HEIGHT:
-    CONFIG_SCREEN_HEIGHT = 240
-if CONFIG_SCREEN_HEIGHT < 100:
-    CONFIG_SCREEN_HEIGHT = 100
-FRAME_RATE = user_config.get("FRAME_RATE", DEFAULT_CONFIG["FRAME_RATE"])
-# Bare minimum required in game_pet.py update_idle_movement() to not divide by zero
-if FRAME_RATE < 3:
-    FRAME_RATE = 3
-MAX_PETS = user_config.get("MAX_PETS", DEFAULT_CONFIG["MAX_PETS"])
-# Required to not divide by zero
-if MAX_PETS < 1:
-    MAX_PETS = 1
-FULLSCREEN = user_config.get("FULLSCREEN", DEFAULT_CONFIG["FULLSCREEN"])
-
-# Debug and logging configuration
-DEBUG_MODE = user_config.get("DEBUG_MODE", user_config.get("DEBUG", DEFAULT_CONFIG["DEBUG_MODE"]))  # Backward compatibility
-DEBUG_FILE_LOGGING = user_config.get("DEBUG_FILE_LOGGING", user_config.get("LOGGING", DEFAULT_CONFIG["DEBUG_FILE_LOGGING"]))  # Backward compatibility
-SHOW_FPS = user_config.get("SHOW_FPS", DEFAULT_CONFIG["SHOW_FPS"])
-DEBUG_BLIT_LOGGING = user_config.get("DEBUG_BLIT_LOGGING", user_config.get("LOG_BLITS", DEFAULT_CONFIG["DEBUG_BLIT_LOGGING"]))  # Backward compatibility
-DEBUG_BATTLE_INFO = user_config.get("DEBUG_BATTLE_INFO", DEFAULT_CONFIG["DEBUG_BATTLE_INFO"])
+# Debug and logging configuration defaults
+DEBUG_MODE = True
+DEBUG_FILE_LOGGING = False
+SHOW_FPS = True
+DEBUG_BLIT_LOGGING = False
+DEBUG_BATTLE_INFO = False
 
 # Legacy aliases for backward compatibility
 DEBUG = DEBUG_MODE

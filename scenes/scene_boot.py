@@ -69,7 +69,7 @@ class SceneBoot:
         except Exception:
             pass
 
-        if platform.system() == "Windows":
+        if platform.system() == "Windows" or runtime_globals.IS_ANDROID:
             image_path = constants.CONTROLLERS_PC_PATH
         elif is_batocera:
             image_path = constants.CONTROLLERS_BATO_PATH  # Or a Batocera-specific image if you have one
@@ -100,7 +100,7 @@ class SceneBoot:
         Draws the boot background.
         """
         self.background.draw(surface)
-        if self.boot_timer <= 80 * (constants.FRAME_RATE / 30):
+        if self.boot_timer <= 80 * (constants.FRAME_RATE / 30) and not runtime_globals.IS_ANDROID:
             # Center the controller sprite on screen
             sprite_rect = self.controller_sprite.get_rect(center=(runtime_globals.SCREEN_WIDTH // 2, runtime_globals.SCREEN_HEIGHT // 2))
             blit_with_cache(surface, self.controller_sprite, sprite_rect)
@@ -110,12 +110,13 @@ class SceneBoot:
             sprite_rect = self.logo.get_rect(center=(runtime_globals.SCREEN_WIDTH // 2, runtime_globals.SCREEN_HEIGHT // 2))
             blit_with_cache(surface, self.logo, sprite_rect)
 
-    def handle_event(self, input_action) -> None:
+    def handle_event(self, event) -> None:
         """
         Handles key press events, allowing early skip with ENTER.
         """
+        event_type, event_data = event
 
-        if input_action in ["A", "START", "LCLICK"]:
+        if event_type in ["A", "B", "START", "LCLICK"]:
             runtime_globals.game_console.log("[SceneBoot] Skipped boot timer with ENTER")
             self.boot_timer = 0
 

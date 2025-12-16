@@ -23,6 +23,7 @@ from components.ui.ui_constants import BASE_RESOLUTION
 from components.window_background import WindowBackground
 from core import game_globals, runtime_globals
 import core.constants as constants
+from core.utils.pet_utils import get_battle_pvp_targets
 from core.utils.scene_utils import change_scene
 from core.utils.pygame_utils import blit_with_shadow, get_font
 
@@ -174,7 +175,7 @@ class SceneConnect:
         selector_y = 40
         
         self.pet_selector = PetSelector(selector_x, selector_y, selector_width, selector_height)
-        self.pet_selector.set_pets(game_globals.pet_list)
+        self.pet_selector.set_pets(get_battle_pvp_targets())
         self.pet_selector.set_interactive(True)
         # PetSelector supports multiple selections by default
         self.pet_selector.visible = False
@@ -616,32 +617,36 @@ class SceneConnect:
             import traceback
             runtime_globals.game_console.log(f"[SceneConnect] Traceback: {traceback.format_exc()}")
 
-    def handle_event(self, input_action) -> None:
+    def handle_event(self, event) -> None:
         """
         Handles keyboard and GPIO button inputs for the connect scene.
         """
-        runtime_globals.game_console.log(f"[SceneConnect] Input received: {input_action} in phase: {self.phase}")
+        if not isinstance(event, tuple) or len(event) != 2:
+            return False
+        
+        event_type, event_data = event
+        runtime_globals.game_console.log(f"[SceneConnect] Input received: {event_type} in phase: {self.phase}")
         
         # Let UI manager handle events (it will check for mouse internally)
-        if self.ui_manager.handle_event(input_action):
+        if self.ui_manager.handle_event(event):
             runtime_globals.game_console.log("[SceneConnect] UI component handled event")
             return
         
         # Phase-specific keyboard/button input
         if self.phase == "menu":
-            self.handle_menu_input(input_action)
+            self.handle_menu_input(event_type)
         elif self.phase == "pet_selection":
-            self.handle_pet_selection_input(input_action)
+            self.handle_pet_selection_input(event_type)
         elif self.phase == "host_join_menu":
-            self.handle_host_join_input(input_action)
+            self.handle_host_join_input(event_type)
         elif self.phase == "hosting":
-            self.handle_hosting_input(input_action)
+            self.handle_hosting_input(event_type)
         elif self.phase == "joining" or self.phase == "device_list":
-            self.handle_device_list_input(input_action)
+            self.handle_device_list_input(event_type)
         elif self.phase == "module_check":
-            self.handle_module_check_input(input_action)
+            self.handle_module_check_input(event_type)
         elif self.phase == "battle_confirm":
-            self.handle_battle_confirm_input(input_action)
+            self.handle_battle_confirm_input(event_type)
 
     def handle_menu_input(self, input_action) -> None:
         """Handles input for the main menu phase (keyboard navigation)."""
@@ -722,11 +727,11 @@ class SceneConnect:
         """
         if self.selected_index == 0:  # Wifi option
             runtime_globals.game_sound.play("menu")
-            runtime_globals.game_console.log(f"[SceneConnect] Transitioning to pet selection. Available pets: {len(game_globals.pet_list)}")
+            runtime_globals.game_console.log(f"[SceneConnect] Transitioning to pet selection. Available pets: {len(get_battle_pvp_targets())}")
             self.phase = "pet_selection"
             self.pet_list_window.selection_label = "Network Battle"
             self.pet_list_window.select_mode = True
-            self.pet_list_window.max_selection = len(game_globals.pet_list)  # Allow selecting all pets
+            self.pet_list_window.max_selection = len(get_battle_pvp_targets())  # Allow selecting all pets
             runtime_globals.game_console.log("[SceneConnect] WiFi option selected - entering pet selection")
 
     def show_host_join_menu(self) -> None:

@@ -95,7 +95,6 @@ class SceneEggSelection:
         self.setup_ui()
         
         # Set mouse mode and focus on the recommended option (Modern if first pet, otherwise Classic)
-        self.ui_manager.set_mouse_mode()
         if self.is_first_pet and self.modern_button:
             self.ui_manager.set_focused_component(self.modern_button)
         elif self.classic_button:
@@ -750,54 +749,56 @@ class SceneEggSelection:
         
     def handle_event(self, event) -> None:
         """Handle events in the egg selection scene."""
+        if not isinstance(event, tuple) or len(event) != 2:
+            return
         
-        # Handle pygame events through UI manager first
+        event_type, event_data = event
+        
+        # Handle events through UI manager first
         if self.ui_manager.handle_event(event):
             return
         
-        # Handle string action events (from input manager)
-        elif isinstance(event, str):
-            # Handle phase-specific input actions
-            if self.phase == "category":
-                if event == "B":
-                    # B key has same effect as Exit button (if enabled)
-                    if not self.is_first_pet:
-                        self.on_exit_selection()
-                        return
-            elif self.phase == "module_selection":
-                if event == "R":
-                    # R key acts as right arrow (next module)
-                    self.on_next_module()
+        # Handle phase-specific input actions
+        if self.phase == "category":
+            if event_type == "B":
+                # B key has same effect as Exit button (if enabled)
+                if not self.is_first_pet:
+                    self.on_exit_selection()
                     return
-                elif event == "L":
-                    # L key acts as left arrow (previous module)
-                    self.on_prev_module()
-                    return
-                elif event == "B":
-                    # B key acts as back button
-                    self.on_back_to_category()
-                    return
-                elif event == "START":
-                    # START key acts as select button
-                    self.on_select_module()
-                    return
-            elif self.phase == "egg_selection":
-                if event == "B":
-                    # B key acts as back button
-                    self.on_egg_back_to_module()
-                    return
-                elif event == "START":
-                    # START key acts as select button
-                    self.on_egg_select()
-                    return
-                elif event == "L":
-                    # L key acts as page left
-                    self.on_egg_prev_page()
-                    return
-                elif event == "R":
-                    # R key acts as page right
-                    self.on_egg_next_page()
-                    return
+        elif self.phase == "module_selection":
+            if event_type == "R":
+                # R key acts as right arrow (next module)
+                self.on_next_module()
+                return
+            elif event_type == "L":
+                # L key acts as left arrow (previous module)
+                self.on_prev_module()
+                return
+            elif event_type == "B":
+                # B key acts as back button
+                self.on_back_to_category()
+                return
+            elif event_type == "START":
+                # START key acts as select button
+                self.on_select_module()
+                return
+        elif self.phase == "egg_selection":
+            if event_type == "B":
+                # B key acts as back button
+                self.on_egg_back_to_module()
+                return
+            elif event_type == "START":
+                # START key acts as select button
+                self.on_egg_select()
+                return
+            elif event_type == "L":
+                # L key acts as page left
+                self.on_egg_prev_page()
+                return
+            elif event_type == "R":
+                # R key acts as page right
+                self.on_egg_next_page()
+                return
 
     # Button callback methods for category selection
     def on_classic_selection(self):

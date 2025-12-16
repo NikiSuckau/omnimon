@@ -44,12 +44,13 @@ class DummyCharge:
     def update(self):
         pass
 
-    def handle_event(self, input_action):
-        """Process pygame events (mouse/button presses)."""
-        if input_action in ["A", "LCLICK"]:
+    def handle_event(self, event):
+        """Process input events (button presses)."""
+        event_type, event_data = event
+        
+        if event_type in ["A", "LCLICK"]:
             runtime_globals.game_sound.play("menu")
             self.strength = min(getattr(self, "strength", 0) + 1, getattr(self, "bar_level", 14))
-
             return True
         return False
 

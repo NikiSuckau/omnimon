@@ -7,6 +7,8 @@ import pygame
 import core.constants as constants
 import components.ui.ui_constants as ui_constants
 from components.ui.component import UIComponent
+from core import runtime_globals
+from core.utils.pygame_utils import blit_with_cache
 
 
 class AnimatedSprite(UIComponent):
@@ -21,6 +23,9 @@ class AnimatedSprite(UIComponent):
         super().__init__(0, 0, runtime_globals.SCREEN_WIDTH, runtime_globals.SCREEN_HEIGHT)
         self.ui_manager = ui_manager
         
+        # Mark as dynamic since this is an animated component
+        self.is_dynamic = True
+        
         # Animation data
         self.sprites = []  # List of pygame.Surface sprites
         self.background_colors = []  # List of background colors (tuples)
@@ -32,6 +37,7 @@ class AnimatedSprite(UIComponent):
         self.start_time = 0
         self.current_frame = 0
         self.frame_counter = 0
+        self._frame_interval = 1  # Precomputed frame interval in ticks
         
         # Special modes
         self.manual_mode = False  # For countdown mode where frames are controlled manually
@@ -40,6 +46,9 @@ class AnimatedSprite(UIComponent):
         self._surface_cache = {}  # Cache for rendered surfaces
         self._overlay_cache = {}  # Cache for blurred overlays
         self._last_screen_size = (0, 0)
+        # Reusable full-screen render target to avoid per-frame allocations
+        self._render_target = None
+        self._render_target_size = (0, 0)
         # Predefined colors (use shared UI constants)
         # NOTE: we store them as attributes for backwards compatibility with
         # existing code that accessed self.COMBAT_BLUE/self.BLACK/self.YELLOW
@@ -73,6 +82,11 @@ class AnimatedSprite(UIComponent):
             self.background_colors.append((0, 0, 0))
             
         self.frame_rate = frame_rate
+        # Precompute frame interval to avoid per-frame division
+        try:
+            self._frame_interval = max(1, int(constants.FRAME_RATE / max(1, frame_rate)))
+        except Exception:
+            self._frame_interval = 1
         
         # Clear caches when animation data changes
         self._surface_cache.clear()
@@ -125,13 +139,14 @@ class AnimatedSprite(UIComponent):
             
         # Calculate frame timing
         if len(self.sprites) > 1:
-            # Calculate frame transitions based on frame rate
-            frame_interval = max(1, int(constants.FRAME_RATE / self.frame_rate))
-            
+            # Use precomputed frame interval
             self.frame_counter += 1
-            if self.frame_counter >= frame_interval:
+            if self.frame_counter >= self._frame_interval:
                 self.frame_counter = 0
-                self.current_frame = (self.current_frame + 1) % len(self.sprites)
+                nxt = self.current_frame + 1
+                if nxt >= len(self.sprites):
+                    nxt = 0
+                self.current_frame = nxt
         else:
             self.current_frame = 0
             
@@ -166,16 +181,14 @@ class AnimatedSprite(UIComponent):
             new_size = (int(sw * scale), int(sh * scale))
             overlay = pygame.transform.smoothscale(sprite, new_size)
             
-            # Apply blur effect by downscaling and upscaling multiple times
-            blur_iterations = 4
-            blur_factor = 0.15  # Scale down to 15% for blur effect
-            
+            # Apply blur effect by downscaling and upscaling
+            # Fewer iterations to reduce processing cost
+            blur_iterations = 2
+            blur_factor = 0.2  # Scale down to 20% for blur effect
             for _ in range(blur_iterations):
-                # Downscale for blur
                 blur_w = max(1, int(overlay.get_width() * blur_factor))
                 blur_h = max(1, int(overlay.get_height() * blur_factor))
                 overlay = pygame.transform.smoothscale(overlay, (blur_w, blur_h))
-                # Upscale back to original size
                 overlay = pygame.transform.smoothscale(overlay, new_size)
             
             # Set 50% opacity
@@ -206,8 +219,12 @@ class AnimatedSprite(UIComponent):
         if surface is not None:
             return surface
             
-        # Create new surface
-        surface = pygame.Surface((runtime_globals.SCREEN_WIDTH, runtime_globals.SCREEN_HEIGHT))
+        # Ensure reusable render target exists and matches current size
+        target_size = (runtime_globals.SCREEN_WIDTH, runtime_globals.SCREEN_HEIGHT)
+        if self._render_target is None or self._render_target_size != target_size:
+            self._render_target = pygame.Surface(target_size)
+            self._render_target_size = target_size
+        surface = self._render_target
         
         # Fill with background color
         surface.fill(bg_color)
@@ -216,26 +233,33 @@ class AnimatedSprite(UIComponent):
         overlay = self._create_blurred_overlay(sprite, f"overlay_{frame_index}")
         if overlay:
             overlay_rect = overlay.get_rect(center=(runtime_globals.SCREEN_WIDTH // 2, runtime_globals.SCREEN_HEIGHT // 2))
-            surface.blit(overlay, overlay_rect)
+            from core.utils.pygame_utils import blit_with_cache
+            blit_with_cache(surface, overlay, overlay_rect.topleft)
         
         # Draw centered sprite
         if sprite:
             sprite_rect = sprite.get_rect(center=(runtime_globals.SCREEN_WIDTH // 2, runtime_globals.SCREEN_HEIGHT // 2))
-            surface.blit(sprite, sprite_rect)
+            from core.utils.pygame_utils import blit_with_cache
+            blit_with_cache(surface, sprite, sprite_rect.topleft)
         
-        # Cache the surface
+        # Cache the surface reference (render target is reused)
         self._surface_cache[cache_key] = surface
         return surface
     
-    def draw(self, surface):
-        """Draw the animated sprite component."""
+    def draw(self, surface, ui_local=False):
+        """Draw the animated sprite component.
+        
+        Args:
+            surface: Target surface to draw on
+            ui_local: If True, use UI-local coordinates (ignored for full-screen sprite)
+        """
         if not self.is_playing or not self.sprites:
             return
             
-        # Render current frame
+        # Render current frame (always at 0,0 for full-screen sprite)
         frame_surface = self._render_frame(self.current_frame)
         if frame_surface:
-            surface.blit(frame_surface, (0, 0))
+            blit_with_cache(surface, frame_surface, (0, 0))
     
     def clear_cache(self):
         """Clear all cached surfaces."""

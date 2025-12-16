@@ -144,7 +144,6 @@ class SceneLibrary:
         self._update_quest_panels()
         
         # Set mouse mode and initial focus
-        self.ui_manager.set_mouse_mode()
         if self.freezer_button:
             self.ui_manager.set_focused_component(self.freezer_button)
 
@@ -206,40 +205,34 @@ class SceneLibrary:
         change_scene("game")
     
     def handle_event(self, event) -> None:
-        """Handle pygame events and input actions."""
-        if not event:
+        """Handle input events."""
+        if not isinstance(event, tuple) or len(event) != 2:
             return
+        
+        event_type, event_data = event
         
         # If reward popup is active, let it handle all input first (modal behavior)
         if self.reward_popup and self.reward_popup.is_active():
-            if hasattr(event, 'type'):
-                if self.reward_popup.handle_event(event):
-                    return
-            elif isinstance(event, str):
-                if self.reward_popup.handle_event(event):
-                    return
+            if self.reward_popup.handle_event(event):
+                return
         
-        # Handle pygame events (mouse clicks, etc.)
+        # Handle events through UI manager
         if self.ui_manager.handle_event(event):
             return
         
-        # Handle string input actions from buttons/keyboard
-        elif isinstance(event, str):
-            input_action = event
-            
-            # START button - Claim all completed quests
-            if input_action == "START":
-                from core.utils.quest_event_utils import claim_all_completed_quests
-                rewards = claim_all_completed_quests()
-                if rewards:
-                    self.reward_popup.add_rewards(rewards)
-                    # Increment quest completion counter for all pets
-                    for pet in game_globals.pet_list:
-                        pet.quests_completed += len(rewards)
-                    runtime_globals.game_sound.play("menu")
-                    self._update_quest_panels()
-                return
-            elif input_action == "B":
-                runtime_globals.game_sound.play("cancel")
-                change_scene("game")
-                return
+        # START button - Claim all completed quests
+        if event_type == "START":
+            from core.utils.quest_event_utils import claim_all_completed_quests
+            rewards = claim_all_completed_quests()
+            if rewards:
+                self.reward_popup.add_rewards(rewards)
+                # Increment quest completion counter for all pets
+                for pet in game_globals.pet_list:
+                    pet.quests_completed += len(rewards)
+                runtime_globals.game_sound.play("menu")
+                self._update_quest_panels()
+            return
+        elif event_type == "B":
+            runtime_globals.game_sound.play("cancel")
+            change_scene("game")
+            return

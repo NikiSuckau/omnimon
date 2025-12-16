@@ -4,6 +4,7 @@ DP Bar Component - Shows DP (Discipline Points) as a row of filled/empty indicat
 import pygame
 from components.ui.component import UIComponent
 from core.utils.pygame_utils import blit_with_cache
+from core import runtime_globals
 
 
 class DPBar(UIComponent):
@@ -85,7 +86,8 @@ class DPBar(UIComponent):
             blit_with_cache(surface, dp, (dp_x, dp_start_y))
         
         # Draw highlight if focused and has tooltip
-        if self.focused and hasattr(self, 'tooltip_text') and self.tooltip_text:
+        # Skip in touch mode - focus highlights are for keyboard/mouse navigation only
+        if self.focused and hasattr(self, 'tooltip_text') and self.tooltip_text and runtime_globals.INPUT_MODE != runtime_globals.TOUCH_MODE:
             colors = self.manager.get_theme_colors()
             highlight_color = colors.get("highlight", colors["fg"])  # Safe fallback
             pygame.draw.rect(surface, highlight_color, surface.get_rect(), 2)

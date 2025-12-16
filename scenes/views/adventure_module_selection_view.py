@@ -377,4 +377,6 @@ class AdventureModuleSelectionView:
     
     def handle_event(self, event):
         """Handle input events."""
+        if not isinstance(event, tuple) or len(event) != 2:
+            return
         pass

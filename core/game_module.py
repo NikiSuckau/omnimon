@@ -105,6 +105,10 @@ class GameModule:
                     self.death_save_by_b_press = int(data.get("death_save_by_b_press",0))
                     self.death_save_by_shake = int(data.get("death_save_by_shake",0))
                     self.death_old_age = int(data.get("death_old_age",0))
+                    
+                    self.hp_max_item_boost = int(data.get("hp_max_item_boost", 0))
+                    self.atk_max_item_boost = int(data.get("atk_max_item_boost", 0))
+                    self.power_max_item_boost = int(data.get("power_max_item_boost", 0))
 
                     self.vital_value_base = int(data.get("vital_value_base", 50))
                     self.vital_value_loss = int(data.get("vital_value_loss", 50))

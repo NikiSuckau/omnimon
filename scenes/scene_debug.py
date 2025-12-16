@@ -76,7 +76,8 @@ class SceneDebug:
             ("G-Fragment", self._add_gcell_fragment, "Add G-Cell fragment for DMGZ v1"),
             ("Quest Reset", self._reset_quests, "Reset daily quests"),
             ("Complete Quests", self._complete_quests, "Complete all available quests"),
-            ("Try Event", self._try_event, "Attempt to trigger an event")
+            ("Try Event", self._try_event, "Attempt to trigger an event"),
+            ("+All Items", self._add_all_items, "Add 1 of each item from all modules")
         ]
         
         # Initialize counters
@@ -185,7 +186,6 @@ class SceneDebug:
         self._update_button_texts()
         
         # Set mouse mode and initial focus
-        self.ui_manager.set_mouse_mode()
         if self.option_buttons:
             self.ui_manager.set_focused_component(self.option_buttons[0])
 
@@ -274,11 +274,13 @@ class SceneDebug:
         self.ui_manager.draw(surface)
 
     def handle_event(self, event) -> None:
-        """Handles keyboard, mouse, and GPIO button inputs in the debug scene."""
-        if not event:
+        """Handles input events in the debug scene."""
+        if not isinstance(event, tuple) or len(event) != 2:
             return
         
-        # Handle pygame events (mouse, keyboard) through UI manager first
+        event_type, event_data = event
+        
+        # Handle events through UI manager first
         if self.ui_manager.handle_event(event):
             return
 
@@ -593,3 +595,17 @@ class SceneDebug:
         else:
             runtime_globals.game_console.log("[SceneDebug] No event triggered")
             return False
+
+    def _add_all_items(self) -> bool:
+        """Add 1 of each item from all modules to the inventory."""
+        from core.utils.inventory_utils import add_to_inventory
+        
+        items_added = 0
+        for module_name, module in runtime_globals.game_modules.items():
+            if hasattr(module, 'items') and module.items:
+                for item in module.items:
+                    add_to_inventory(item.id, 1)
+                    items_added += 1
+        
+        runtime_globals.game_console.log(f"[SceneDebug] Added {items_added} items to inventory.")
+        return items_added > 0

@@ -100,24 +100,48 @@ class ArmorDisplay(UIComponent):
         
     def draw_hexagon(self, surface, center, radius, fill_color, border_color, border_width):
         """Draw a hexagon at the specified center with given radius and colors."""
+        # Scale values for screen rendering
+        if self.manager:
+            scaled_center = (
+                self.manager.scale_value(center[0]),
+                self.manager.scale_value(center[1])
+            )
+            scaled_radius = self.manager.scale_value(radius)
+            scaled_border_width = self.manager.scale_value(border_width)
+        else:
+            scaled_center = center
+            scaled_radius = radius
+            scaled_border_width = border_width
+            
         # Calculate hexagon points
         points = []
         for i in range(6):
             angle = (math.pi / 3 * i) + (math.pi / 6)  # Start from top-right corner
-            x = center[0] + radius * math.cos(angle)
-            y = center[1] + radius * math.sin(angle)
+            x = scaled_center[0] + scaled_radius * math.cos(angle)
+            y = scaled_center[1] + scaled_radius * math.sin(angle)
             points.append((int(x), int(y)))
         
         # Draw hexagon
         if len(points) >= 3:
             pygame.draw.polygon(surface, fill_color, points)
-            if border_color and border_width > 0:
-                pygame.draw.polygon(surface, border_color, points, border_width)
+            if border_color and scaled_border_width > 0:
+                pygame.draw.polygon(surface, border_color, points, scaled_border_width)
                 
     def draw_pet_sprite(self, surface, pet, center, radius):
         """Draw a pet sprite centered in the hexagon."""
         if not pet:
             return
+            
+        # Scale center and radius for screen rendering
+        if self.manager:
+            scaled_center = (
+                self.manager.scale_value(center[0]),
+                self.manager.scale_value(center[1])
+            )
+            scaled_radius = self.manager.scale_value(radius)
+        else:
+            scaled_center = center
+            scaled_radius = radius
             
         # Get pet sprite from runtime_globals (already loaded)
         # Use IDLE1 frame (index 0) for display
@@ -125,10 +149,10 @@ class ArmorDisplay(UIComponent):
             
         # Position sprite in hexagon center
         sprite_rect = sprite.get_rect()
-        sprite_rect.center = center
+        sprite_rect.center = scaled_center
         
         # Scale sprite to fit in hexagon (leave some margin)
-        max_size = int(radius * 1.5)  # Allow sprite to be slightly larger than radius
+        max_size = int(scaled_radius * 1.5)  # Allow sprite to be slightly larger than radius
         if sprite_rect.width > max_size or sprite_rect.height > max_size:
             # Scale down to fit
             scale_factor = min(max_size / sprite_rect.width, max_size / sprite_rect.height)
@@ -136,9 +160,10 @@ class ArmorDisplay(UIComponent):
             new_height = int(sprite_rect.height * scale_factor)
             sprite = pygame.transform.scale(sprite, (new_width, new_height))
             sprite_rect = sprite.get_rect()
-            sprite_rect.center = center
+            sprite_rect.center = scaled_center
             
-        surface.blit(sprite, sprite_rect)
+        from core.utils.pygame_utils import blit_with_cache
+        blit_with_cache(surface, sprite, sprite_rect.topleft)
         
     def load_dna_sprite(self):
         """Load the Battle DNA sprite (cached)"""
@@ -168,8 +193,12 @@ class ArmorDisplay(UIComponent):
             
     def render(self):
         """Render the component using the render-based pattern"""
-        # Create the surface for this component
-        surface = pygame.Surface((self.rect.width, self.rect.height), pygame.SRCALPHA)
+        # Reuse a cached render surface to avoid per-frame allocations
+        target_size = (self.rect.width, self.rect.height)
+        if not hasattr(self, "_render_surface") or self._render_surface is None or self._render_surface.get_size() != target_size:
+            self._render_surface = pygame.Surface(target_size, pygame.SRCALPHA)
+        surface = self._render_surface
+        surface.fill((0, 0, 0, 0))
         
         if not self.hexagon_center:
             return surface

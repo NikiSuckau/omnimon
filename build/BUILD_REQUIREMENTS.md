@@ -170,18 +170,34 @@ sudo apt install gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
 - Python 3.8-3.11
 - Buildozer >= 1.4.0
 - python-for-android >= 2023.06.21
+- plyer >= 2.0.0 (for accelerometer support)
 - Android SDK/NDK (auto-downloaded by Buildozer)
 - Java JDK 8 or 11
 
 **Installation**:
 ```bash
-pip install buildozer python-for-android
+pip install buildozer python-for-android plyer
 ```
 
 **System Dependencies** (Ubuntu):
 ```bash
 sudo apt install -y git zip unzip openjdk-8-jdk python3-pip autoconf libtool pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev libtinfo5 cmake libffi-dev libssl-dev
 ```
+
+**Buildozer Spec Requirements**:
+```ini
+# Add to buildozer.spec
+requirements = python3, pygame, plyer
+android.permissions = INTERNET
+
+# Accelerometer support (automatically included with plyer)
+# No additional permissions needed for accelerometer
+```
+
+**Android-Specific Features**:
+- **Accelerometer Shake Detection**: Uses `plyer.accelerometer` for shake events
+- **App Storage**: Uses `android.storage.app_storage_path()` for save files
+- **Touch Input**: Full touch and drag gesture support
 
 **Build Output**: `omnipet.apk`
 **Runtime Requirements**: Android 5.0+ (API level 21+)

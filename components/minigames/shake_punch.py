@@ -3,6 +3,7 @@ Shake Punch Minigame - Handles the punch mechanics for shake training
 """
 import pygame
 import random
+from components.ui.ui_constants import TITLE_FONT
 from core import runtime_globals
 from core.animation import PetFrame
 import core.constants as constants
@@ -156,35 +157,33 @@ class ShakePunch:
         """Check if the punch time limit has been reached."""
         return pygame.time.get_ticks() - self.bar_timer > combat_constants.PUNCH_HOLD_TIME_MS
     
-    def handle_event(self, input_action):
+    def handle_event(self, event):
         """Handle input events for strength building."""
-        if self.phase == "punch" and input_action in ("Y", "SHAKE"):
+        if not isinstance(event, tuple) or len(event) != 2:
+            return False
+        
+        event_type, event_data = event
+        
+        if self.phase == "punch" and event_type in ("Y", "SHAKE"):
             runtime_globals.game_sound.play("menu")
             self.strength = min(self.strength + 1, self.bar_level)
             return True
-        return False
-    
-    def handle_pygame_event(self, event):
-        """Handle pygame events including shake detection."""
-        if self.phase == "punch":
-            # Check for shake gestures via mouse/touch
-            shake_detected = self.shake_detector.handle_pygame_event(event)
-            if shake_detected:
-                # Directly trigger shake event
-                return self.handle_event("SHAKE")
         return False
     
     def update(self):
         """Update the minigame state each frame."""
         self.shake_detector.update()
         
-        # Fallback: Process current mouse position for shake detection if in punch phase
+        # Detect shake from mouse/touch motion and generate SHAKE events
         if self.phase == "punch":
             mouse_pos = pygame.mouse.get_pos()
             if mouse_pos != getattr(self, '_last_mouse_pos', None):
-                # Create a fake mouse motion event
-                fake_event = type('Event', (), {'type': pygame.MOUSEMOTION, 'pos': mouse_pos})()
-                self.handle_pygame_event(fake_event)
+                # Directly feed mouse position to shake detector
+                shake_detected = self.shake_detector.add_mouse_position(mouse_pos)
+                if shake_detected:
+                    # Generate synthetic SHAKE tuple event
+                    shake_event = ("SHAKE", None)
+                    self.handle_event(shake_event)
                 self._last_mouse_pos = mouse_pos
     
     def draw(self, surface):
@@ -225,10 +224,11 @@ class ShakePunch:
             left_rect_surf, right_rect_surf, bg_rect_surf = self._charge_rect_cache[cache_key]
 
         # Draw black background in the center
-        surface.blit(bg_rect_surf, (rect_width, 0))
+        from core.utils.pygame_utils import blit_with_cache
+        blit_with_cache(surface, bg_rect_surf, (rect_width, 0))
         # Draw colored rectangles on left and right
-        surface.blit(left_rect_surf, (0, 0))
-        surface.blit(right_rect_surf, (screen_w - rect_width, 0))
+        blit_with_cache(surface, left_rect_surf, (0, 0))
+        blit_with_cache(surface, right_rect_surf, (screen_w - rect_width, 0))
 
         # --- Draw timer above "PUNCH" ---
         max_ms = combat_constants.PUNCH_HOLD_TIME_MS
@@ -239,7 +239,7 @@ class ShakePunch:
         # Use UI manager's standard text font for timer
         from core.utils.asset_utils import font_load
         timer_font_size = self.ui_manager.get_text_font_size()
-        timer_font = font_load("assets/DigimonBasic.ttf", timer_font_size)
+        timer_font = font_load(TITLE_FONT, timer_font_size)
         timer_text = timer_font.render(str(remaining_sec), True, (255, 255, 255))
         timer_x = (screen_w - timer_text.get_width()) // 2
         # Place timer above "PUNCH" with a little spacing
@@ -248,7 +248,7 @@ class ShakePunch:
 
         # Draw "PUNCH" text centered using UI manager's title font
         punch_font_size = self.ui_manager.get_title_font_size()
-        punch_font = font_load("assets/DigimonBasic.ttf", punch_font_size)
+        punch_font = font_load(TITLE_FONT, punch_font_size)
         punch_text = punch_font.render("PUNCH", True, (255, 255, 255))
         punch_x = (screen_w - punch_text.get_width()) // 2
         punch_y = screen_h // 2 - int(60 * runtime_globals.UI_SCALE)
@@ -257,7 +257,7 @@ class ShakePunch:
         # Draw strength number centered below "PUNCH" using UI manager's title font (larger)
         from core.utils.asset_utils import font_load
         strength_font_size = int(self.ui_manager.get_title_font_size() * 1.5)  # Make it 50% larger than title
-        strength_font = font_load("assets/DigimonBasic.ttf", strength_font_size)
+        strength_font = font_load(TITLE_FONT, strength_font_size)
         strength_text = strength_font.render(str(self.strength), True, (255, 255, 255))
         strength_x = (screen_w - strength_text.get_width()) // 2
         strength_y = punch_y + punch_text.get_height() + int(10 * runtime_globals.UI_SCALE)

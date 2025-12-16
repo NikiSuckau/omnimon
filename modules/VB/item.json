@@ -61,7 +61,7 @@
       "weight_gain": 2
     },
     {
-      "id": "50682c67-c393-4a63-96da-0e606baecd1a",
+      "id": "f7e2d9c4-6b83-4a5f-9d1e-8c3a6f4b2e7d",
       "name": "HP Temp \u002B5",
       "description": "Temporarily Increase HP by 5",
       "sprite_name": "icon_itm301",
@@ -121,7 +121,7 @@
       "weight_gain": 2
     },
     {
-      "id": "2c3b958a-c328-401d-a4a8-f241f40e33c9",
+      "id": "e6d1c8b3-5a72-4f9e-8c4d-7b2e5a9f1c6d",
       "name": "ATK\u002B5",
       "description": "Permanently Increases Attack \u002B5",
       "sprite_name": "icon_itm405",
@@ -133,7 +133,7 @@
       "weight_gain": 0
     },
     {
-      "id": "ca11f597-d2b2-4042-af04-fe2077d2358d",
+      "id": "d5c9b7e2-4f81-4a6c-9e3b-6a1d8c4f2e9b",
       "name": "ATK Temp \u002B1",
       "description": "Temporarily Increase ATK by 1",
       "sprite_name": "icon_itm406",
@@ -169,7 +169,7 @@
       "weight_gain": 2
     },
     {
-      "id": "06d0863d-2009-40c4-a32d-9b6d4fbdaaa5",
+      "id": "c4b8a6d1-3e92-4f7c-8d5e-9f2c7b1a6e4d",
       "name": "POWER\u002B3",
       "description": "Permanently Increases Power by 3",
       "sprite_name": "icon_itm503",
@@ -205,7 +205,7 @@
       "weight_gain": 2
     },
     {
-      "id": "8fa5a677-cef3-44fe-8573-ff0b6d556f65",
+      "id": "b3a7e5c9-2d81-4f6b-9c4e-8a1f6d3c7e2b",
       "name": "POWER Temp\u002B5",
       "description": "Temporarily Increase POWER by 5",
       "sprite_name": "icon_itm506",

@@ -5,6 +5,7 @@ import pygame
 from components.ui.component import UIComponent
 from core import runtime_globals
 from core.utils.asset_utils import image_load
+from core.utils.pygame_utils import blit_with_cache
 
 
 class AdventurePanel(UIComponent):
@@ -65,7 +66,12 @@ class AdventurePanel(UIComponent):
             
     def render(self):
         """Render the adventure panel"""
-        surface = pygame.Surface((self.rect.width, self.rect.height), pygame.SRCALPHA)
+        # Reuse a cached render surface to avoid per-frame allocations
+        target_size = (self.rect.width, self.rect.height)
+        if not hasattr(self, "_render_surface") or self._render_surface is None or self._render_surface.get_size() != target_size:
+            self._render_surface = pygame.Surface(target_size, pygame.SRCALPHA)
+        surface = self._render_surface
+        surface.fill((0, 0, 0, 0))
         
         if not self.module:
             return surface
@@ -105,7 +111,7 @@ class AdventurePanel(UIComponent):
                 icon_rect = icon_sprite.get_rect()
                 icon_rect.left = scaled_padding
                 icon_rect.centery = self.rect.height // 2
-                surface.blit(icon_sprite, icon_rect)
+                blit_with_cache(surface, icon_sprite, icon_rect.topleft)
                 
                 # Draw module name to the right of icon (title font)
                 title_font = self.get_font("title")
@@ -115,7 +121,7 @@ class AdventurePanel(UIComponent):
                 name_rect = name_surface.get_rect()
                 name_rect.left = icon_rect.right + scaled_padding
                 name_rect.top = scaled_padding
-                surface.blit(name_surface, name_rect)
+                blit_with_cache(surface, name_surface, name_rect.topleft)
                 
                 # Draw progress below the name
                 # Determine progress color
@@ -138,7 +144,7 @@ class AdventurePanel(UIComponent):
                 progress_label_rect = progress_label_surface.get_rect()
                 progress_label_rect.left = icon_rect.right + scaled_padding
                 progress_label_rect.top = name_rect.bottom + scaled_padding // 2
-                surface.blit(progress_label_surface, progress_label_rect)
+                blit_with_cache(surface, progress_label_surface, progress_label_rect.topleft)
                 
                 # Draw progress value
                 progress_value_text = f"{self.progress_current}/{self.progress_total}"
@@ -146,7 +152,7 @@ class AdventurePanel(UIComponent):
                 progress_value_rect = progress_value_surface.get_rect()
                 progress_value_rect.right = self.rect.width - scaled_padding
                 progress_value_rect.top = progress_label_rect.top
-                surface.blit(progress_value_surface, progress_value_rect)
+                blit_with_cache(surface, progress_value_surface, progress_value_rect.topleft)
                 
                 # Draw battle effects below progress (if any active for this module)
                 self._draw_battle_effects(surface, icon_rect, progress_label_rect, scaled_padding, text_font, fg_color, sprite_scale)
@@ -224,7 +230,7 @@ class AdventurePanel(UIComponent):
             icon_rect_pos = icon.get_rect()
             icon_rect_pos.left = current_x
             icon_rect_pos.top = start_y
-            surface.blit(icon, icon_rect_pos)
+            blit_with_cache(surface, icon, icon_rect_pos.topleft)
             
             # Draw +amount text next to icon
             from components.ui.ui_constants import GREEN
@@ -233,7 +239,7 @@ class AdventurePanel(UIComponent):
             amount_rect = amount_surface.get_rect()
             amount_rect.left = icon_rect_pos.right + scaled_padding // 2
             amount_rect.centery = icon_rect_pos.centery
-            surface.blit(amount_surface, amount_rect)
+            blit_with_cache(surface, amount_surface, amount_rect.topleft)
             
             # Move to next position
             current_x = amount_rect.right + effect_spacing

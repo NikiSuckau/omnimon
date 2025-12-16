@@ -11,6 +11,7 @@ from core import runtime_globals
 import core.constants as constants
 from core.utils.pygame_utils import get_font
 from core.utils.asset_utils import image_load
+from core.utils.pygame_utils import blit_with_cache
 
 
 class RewardPopupUI(UIComponent):
@@ -107,8 +108,12 @@ class RewardPopupUI(UIComponent):
     
     def render(self):
         """Render the current reward popup to a surface."""
-        # Create transparent surface
-        surface = pygame.Surface((self.rect.width, self.rect.height), pygame.SRCALPHA)
+        # Create/reuse transparent surface
+        target_size = (self.rect.width, self.rect.height)
+        if not hasattr(self, "_render_surface") or self._render_surface is None or self._render_surface.get_size() != target_size:
+            self._render_surface = pygame.Surface(target_size, pygame.SRCALPHA)
+        surface = self._render_surface
+        surface.fill((0, 0, 0, 0))
         
         if self.state == "hidden" or not self.current_reward:
             return surface
@@ -151,7 +156,7 @@ class RewardPopupUI(UIComponent):
         title_text = title_font.render("REWARD!", True, YELLOW)
         title_text.set_alpha(alpha)
         title_x = (surface.get_width() - title_text.get_width()) // 2
-        surface.blit(title_text, (title_x, padding))
+        blit_with_cache(surface, title_text, (title_x, padding))
         
         # Draw reward based on type
         reward_type = reward["reward_type"]
@@ -195,11 +200,11 @@ class RewardPopupUI(UIComponent):
             
             # Draw icon
             icon_y = y + (text_surface.get_height() - icon_scaled.get_height()) // 2
-            surface.blit(icon_scaled, (start_x, icon_y))
+            blit_with_cache(surface, icon_scaled, (start_x, icon_y))
             
             # Draw text
             text_x = start_x + icon_scaled.get_width() + spacing
-            surface.blit(text_surface, (text_x, y))
+            blit_with_cache(surface, text_surface, (text_x, y))
         else:
             # Fallback to text only
             self._render_text_reward(surface, text, y, alpha)
@@ -210,7 +215,7 @@ class RewardPopupUI(UIComponent):
         text_surface = reward_font.render(text, True, (255, 255, 255))
         text_surface.set_alpha(alpha)
         text_x = (surface.get_width() - text_surface.get_width()) // 2
-        surface.blit(text_surface, (text_x, y))
+        blit_with_cache(surface, text_surface, (text_x, y))
     
     def is_active(self) -> bool:
         """Check if the popup system is currently showing rewards."""
@@ -221,15 +226,20 @@ class RewardPopupUI(UIComponent):
         if not self.is_active():
             return False
             
+        # Handle tuple-based events
+        if not isinstance(event, tuple) or len(event) != 2:
+            return False
+            
+        event_type, event_data = event
+            
         # Consume all input when popup is active
         # Pressing A or B will skip the current reward
-        if isinstance(event, str):
-            if event in ["A", "B"]:
-                # Skip to next reward
-                if self.state in ["showing", "fade_in"]:
-                    self.state = "fade_out"
-                    self.fade_timer = 15
-                    self.needs_redraw = True
+        if event_type in ["A", "B"]:
+            # Skip to next reward
+            if self.state in ["showing", "fade_in"]:
+                self.state = "fade_out"
+                self.fade_timer = 15
+                self.needs_redraw = True
                 return True
             # Consume all other input actions
             return True
