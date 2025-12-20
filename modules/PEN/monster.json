@@ -11443,7 +11443,7 @@
       "critical_turn": 5,
       "evolve": [
         {
-          "to": "Omnimon",
+          "to": "Omnipet",
           "stage": 5,
           "attribute": "Vi",
           "jogress": "PenC"
@@ -11524,7 +11524,7 @@
       "critical_turn": 4,
       "evolve": [
         {
-          "to": "Omnimon",
+          "to": "Omnipet",
           "stage": 5,
           "attribute": "Vi",
           "jogress": "PenC"
@@ -11677,14 +11677,14 @@
       "critical_turn": 8,
       "evolve": [
         {
-          "to": "Omnimon",
+          "to": "Omnipet",
           "version": 11,
           "jogress": "WarGreymon"
         }
       ]
     },
     {
-      "name": "Omnimon",
+      "name": "Omnipet",
       "stage": 6,
       "version": 11,
       "special": false,
@@ -11741,7 +11741,7 @@
       "critical_turn": 7,
       "evolve": [
         {
-          "to": "Omnimon",
+          "to": "Omnipet",
           "version": 11,
           "jogress": "MetalGarurumon"
         }

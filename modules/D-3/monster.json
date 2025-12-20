@@ -1273,7 +1273,7 @@
       "critical_turn": 0,
       "evolve": [
         {
-          "to": "Omnimon Alter-B",
+          "to": "Omnipet Alter-B",
           "version": 3,
           "jogress": "AncientGarurumon"
         },
@@ -1622,7 +1622,7 @@
       "evolve": []
     },
     {
-      "name": "Omnimon Alter-B",
+      "name": "Omnipet Alter-B",
       "stage": 7,
       "version": 1,
       "special": false,
@@ -4549,7 +4549,7 @@
       "critical_turn": 0,
       "evolve": [
         {
-          "to": "Omnimon Alter-B",
+          "to": "Omnipet Alter-B",
           "version": 1,
           "jogress": "AncientGreymon"
         },
@@ -4883,7 +4883,7 @@
       ]
     },
     {
-      "name": "Omnimon Alter-B",
+      "name": "Omnipet Alter-B",
       "stage": 7,
       "version": 3,
       "special": false,

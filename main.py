@@ -1,5 +1,5 @@
 """
-Omnimon Virtual Pet Game - Main Entry Point
+Omnipet Virtual Pet Game - Main Entry Point
 Handles pygame initialization, video/audio setup, and display management.
 The game logic is handled by the VirtualPetGame class in game/vpet.py
 """
@@ -12,15 +12,15 @@ import json
 
 import sys, os
 
-from game.core import constants
-from game.core.utils.document_utils import build_module_documentation
-sys.stderr = open(os.devnull, 'w')
+from core import constants
+from core.utils.document_utils import build_module_documentation
+# sys.stderr = open(os.devnull, 'w')  # Commented out to allow error stack traces
 
 # Add game directory to Python path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'game'))
 
-from game.vpet import VirtualPetGame
-from game.core.constants import *
+from vpet import VirtualPetGame
+from core.constants import *
 
 # Game Version
 VERSION = "0.9.9"
@@ -29,7 +29,7 @@ VERSION = "0.9.9"
 PYGAME_VERSION = tuple(map(int, pygame.version.ver.split('.')))
 IS_PYGAME2 = PYGAME_VERSION >= (2, 0, 0)
 
-print(f"[System] Omnimon Virtual Pet v{VERSION}")
+print(f"[System] Omnipet Virtual Pet v{VERSION}")
 print(f"[System] Detected Pygame version: {pygame.version.ver}")
 print(f"[System] Platform: {platform.system()} {platform.release()}")
 
@@ -131,17 +131,51 @@ def setup_pygame():
         pygame.mixer.pre_init(frequency=44100, size=-16, channels=2, buffer=128)
 
 
+def apply_config_to_constants(config):
+    """Apply configuration values to constants module"""
+    from core import constants
+    
+    # Apply frame rate
+    frame_rate = config.get("FRAME_RATE", 30)
+    if frame_rate < 3:
+        frame_rate = 3
+    constants.FRAME_RATE = frame_rate
+    
+    # Apply max pets
+    max_pets = config.get("MAX_PETS", 4)
+    if max_pets < 1:
+        max_pets = 1
+    constants.MAX_PETS = max_pets
+    
+    # Apply debug settings
+    constants.DEBUG_MODE = config.get("DEBUG_MODE", config.get("DEBUG", False))
+    constants.DEBUG_FILE_LOGGING = config.get("DEBUG_FILE_LOGGING", config.get("LOGGING", False))
+    constants.SHOW_FPS = config.get("SHOW_FPS", False)
+    constants.DEBUG_BLIT_LOGGING = config.get("DEBUG_BLIT_LOGGING", config.get("LOG_BLITS", False))
+    constants.DEBUG_BATTLE_INFO = config.get("DEBUG_BATTLE_INFO", False)
+    
+    # Update legacy aliases
+    constants.DEBUG = constants.DEBUG_MODE
+    constants.LOGGING = constants.DEBUG_FILE_LOGGING
+    constants.LOG_BLITS = constants.DEBUG_BLIT_LOGGING
+    
+    print(f"[Config] Applied: FRAME_RATE={constants.FRAME_RATE}, MAX_PETS={constants.MAX_PETS}, DEBUG_MODE={constants.DEBUG_MODE}")
+
+
 def setup_display():
     """Setup the display window with proper resolution and fullscreen detection"""
     global render_surface, final_screen, scale_to_screen, native_width, native_height
 
     config = load_display_config()
     
+    # Apply configuration to constants module
+    apply_config_to_constants(config)
+    
     # Determine if we should run in fullscreen
     fullscreen_requested = (
         "--fullscreen" in sys.argv or
         "-f" in sys.argv or
-        os.getenv("OMNIMON_FULLSCREEN", "").lower() in ("1", "true", "yes") or
+        os.getenv("OMNIPET_FULLSCREEN", "").lower() in ("1", "true", "yes") or
         config.get("FULLSCREEN", False) or
         os.getenv("SDL_VIDEODRIVER") == "kmsdrm" or
         (platform.system() == "Linux" and os.path.exists("/usr/bin/batocera-info"))
@@ -175,7 +209,8 @@ def setup_display():
             scale_to_screen = False
 
     # Update game constants with base resolution
-    constants.update_resolution_constants(width=screen_width, height=screen_height)
+    from core import runtime_globals
+    runtime_globals.update_resolution_constants(width=screen_width, height=screen_height)
 
     if fullscreen_requested:
         screen_mode = pygame.FULLSCREEN | pygame.DOUBLEBUF
@@ -197,7 +232,7 @@ def setup_display():
     # Create the render surface if scaling
     render_surface = pygame.Surface((screen_width, screen_height)) if scale_to_screen else final_screen
 
-    pygame.display.set_caption(f"Omnimon {VERSION}")
+    pygame.display.set_caption(f"Omnipet {VERSION}")
     pygame.mouse.set_visible(False)
     pygame.event.set_allowed([
         pygame.QUIT, 
@@ -214,7 +249,7 @@ def setup_display():
 
 def main():
     """Main function to initialize and run the game"""
-    print("[Init] Starting Omnimon Virtual Pet Game...")
+    print("[Init] Starting Omnipet Virtual Pet Game...")
     
     # Setup pygame and display
     setup_pygame()

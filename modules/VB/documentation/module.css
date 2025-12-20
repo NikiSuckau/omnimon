@@ -320,6 +320,24 @@ body {
     border: 1px solid #e84393;
 }
 
+.unlock-type.pvp {
+    background: #e0bbff;
+    color: #5e3370;
+    border: 1px solid #b39ddb;
+}
+
+.unlock-type.versus {
+    background: #ffe0e0;
+    color: #a94442;
+    border: 1px solid #ffb3b3;
+}
+
+.unlock-type.battle {
+    background: #e0f7fa;
+    color: #006064;
+    border: 1px solid #80deea;
+}
+
 .unlock-name {
     font-weight: 600;
     color: #333;

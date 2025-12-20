@@ -24,13 +24,6 @@
     "F11": "K_F11",
     "F12": "K_F12"
   },
-  "mouse": {
-    "enabled": true,
-    "force_disabled": false,
-    "left_click": "LCLICK",
-    "right_click": "RCLICK",
-    "drag_threshold": 5
-  },
   "gpio": {
     "16": "LEFT",
     "13": "RIGHT",

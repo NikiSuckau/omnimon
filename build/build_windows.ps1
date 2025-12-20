@@ -1,4 +1,4 @@
-# PowerShell Windows build script for Omnimon Virtual Pet Game
+# PowerShell Windows build script for Omnipet Virtual Pet Game
 # Creates a Windows executable using PyInstaller
 
 param(
@@ -6,7 +6,7 @@ param(
 )
 
 $RELEASE_DIR = "..\Release"
-$BUILD_NAME = "Omnimon_Windows_Ver_$Version"
+$BUILD_NAME = "Omnipet_Windows_Ver_$Version"
 $TEMP_DIR = "..\temp_windows_build"
 
 function Write-Status {
@@ -66,8 +66,8 @@ try {
 }
 
 # Check if executable was created
-if (-not (Test-Path "..\dist\Omnimon.exe")) {
-    Write-Error-Message "Omnimon.exe was not created"
+if (-not (Test-Path "..\dist\Omnipet.exe")) {
+    Write-Error-Message "Omnipet.exe was not created"
     exit 1
 }
 
@@ -101,13 +101,17 @@ Get-ChildItem "..\Module Editor" | Where-Object { $_.Name -ne "Source" } | ForEa
 Write-Status "Copying modules..."
 Copy-Item -Recurse "..\modules" "$TEMP_DIR\$BUILD_NAME\"
 
+# Copy network
+Write-Status "Copying network..."
+Copy-Item -Recurse "..\network" "$TEMP_DIR\$BUILD_NAME\"
+
 # Create empty save folder
 Write-Status "Creating save directory..."
 New-Item -ItemType Directory -Path "$TEMP_DIR\$BUILD_NAME\save" -Force | Out-Null
 
 # Copy executable and other files
 Write-Status "Copying executable and additional files..."
-Copy-Item "..\dist\Omnimon.exe" "$TEMP_DIR\$BUILD_NAME\"
+Copy-Item "..\dist\Omnipet.exe" "$TEMP_DIR\$BUILD_NAME\"
 Copy-Item "..\LICENSE.txt" "$TEMP_DIR\$BUILD_NAME\"
 Copy-Item "..\ModuleEditor.bat" "$TEMP_DIR\$BUILD_NAME\"
 

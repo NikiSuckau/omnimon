@@ -2,7 +2,7 @@
 <html>
 
 <head>
-    <title>Manual - Omnimon Documentation</title>
+    <title>Manual - Omnipet Documentation</title>
     <link rel="stylesheet" href="../assets/main.css">
 </head>
 
@@ -81,7 +81,7 @@
                     <li style="margin-bottom: 15px; padding-left: 20px; position: relative;">
                         <strong>START:</strong> In the main game screen, it will open the Settings menu, in some areas
                         of the Battle Menu, it is used to confirm an operation<br>
-                        <img src="../assets/StartVersus.PNG" width="200" height="200" alt="" />
+                        <img src="../assets/SettingsMenu.PNG" width="200" height="200" alt="" />
                     </li>
                     <li style="margin-bottom: 15px; padding-left: 20px; position: relative;">
                         <strong>SELECT:</strong> In the main game, it switches between menu and pet mode, while in other
@@ -96,8 +96,8 @@
                                 is used inside other menus for various functions (for example to feed only a few pets).
                                 A blue outline means the pet is currently selected.</p>
                             <hr>
-                            <img src="../assets/SelectedPets.PNG" width="240" height="94" alt="" /><img
-                                src="../assets/PetsInNeed.PNG" width="240" height="94" alt="" />
+                            <img src="../assets/SelectedPets.PNG" width="240" height="240" alt="" /><img
+                                src="../assets/PetsInNeed.PNG" width="240" height="240" alt="" />
                             <h3 class="feature-title">Selecion Modes - Menus</h3>
                             <p class="feature-description">Inside the menus it's possible to change the "Selection Type"
                                 between all pets capable to use the function or only the pets who need that function.
@@ -1036,7 +1036,7 @@
             <h2 class="section-title" onclick="toggleSection(this)">Module Overview<span class="arrow">▼</span>
             </h2>
             <div class="section-content" style="display:none;">
-                <p>Modules are a key aspect of Omnimon. They define evolution lines and stats of your pets. You can add
+                <p>Modules are a key aspect of Omnipet. They define evolution lines and stats of your pets. You can add
                     and remove modules directly in the modules folder. To enable the training and battle mini-games you
                     need to have at least one active module of a specific ruleset. Dummy and HeadOn require a DMC
                     module. Excite requires a DMX module. Count requires PenC module. It is not necessary to have an
@@ -1050,7 +1050,7 @@
             <h2 class="section-title" onclick="toggleSection(this)">Configuration Files<span class="arrow">▼</span>
             </h2>
             <div class="section-content" style="display:none;">
-                <p>Omnimon uses two main configuration files located in the <code>config</code> folder. These files allow you to customize the game's behavior, display settings, and input controls.</p>
+                <p>Omnipet uses two main configuration files located in the <code>config</code> folder. These files allow you to customize the game's behavior, display settings, and input controls.</p>
                 
                 <h3>config.json - Game Settings</h3>
                 <p>This file contains general game settings that control display, performance, and game limits:</p>
@@ -1098,15 +1098,6 @@
                     <li><strong>START:</strong> Open main menu</li>
                     <li><strong>SELECT:</strong> Secondary select action</li>
                     <li><strong>R:</strong> Right shoulder button</li>
-                </ul>
-
-                <h4>Mouse Section</h4>
-                <p>Configure mouse support and behavior:</p>
-                <ul>
-                    <li><strong>enabled:</strong> Enable or disable mouse support. Default: true</li>
-                    <li><strong>force_disabled:</strong> Force disable mouse completely if some functions still work when enabled is false. Default: false</li>
-                    <li><strong>left_click, right_click:</strong> Mouse button mappings</li>
-                    <li><strong>drag_threshold:</strong> Pixel distance required to register a drag action. Default: 5</li>
                 </ul>
 
                 <h4>GPIO Section</h4>

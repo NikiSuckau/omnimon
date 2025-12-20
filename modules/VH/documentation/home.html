@@ -89,7 +89,7 @@
 
             <!-- Spoiler Warning -->
             <div class="spoiler-warning">
-                <div class="spoiler-icon">⚠️</div>
+                <div class="spoiler-icon">??</div>
                 <div class="spoiler-content">
                     <h3>Spoiler Warning</h3>
                     <p>This documentation contains spoilers about module content including evolution requirements, enemy data, and item effects. Proceed with caution if you want to discover these elements naturally through gameplay.</p>
@@ -184,7 +184,7 @@
                             <span class="attribute-label tooltip">Care Mistake Time:
                                 <span class="tooltiptext">Minutes of empty hunger before triggering a care mistake. Timer resets when pet is fed. Used in death condition calculations and evolution requirements.</span>
                             </span>
-                            <span class="attribute-value 10 CLASS">10</span>
+                            <span class="attribute-value ">10</span>
                         </li>
                         <li class="attribute-item">
                             <span class="attribute-label tooltip">Overfeed Timer:
@@ -268,19 +268,19 @@
                         </li>
                         <li class="attribute-item">
                             <span class="attribute-label tooltip">HP Max Item Boost:
-                                <span class="tooltiptext">Maximum HP boost that can be provided by items in battle. This caps how much additional health points items can grant to pets during combat.</span>
+                                <span class="tooltiptext">Maximum HP boost that can be provided by items. 0 means only temporaty boost items will work.</span>
                             </span>
                             <span class="attribute-value ">10</span>
                         </li>
                         <li class="attribute-item">
                             <span class="attribute-label tooltip">Attack Max Item Boost:
-                                <span class="tooltiptext">Maximum attack boost that can be provided by items in battle. This caps how much additional attack power items can grant to pets during combat.</span>
+                                <span class="tooltiptext">Maximum attack boost that can be provided by items. 0 means only temporaty boost items will work.</span>
                             </span>
                             <span class="attribute-value ">5</span>
                         </li>
                         <li class="attribute-item">
                             <span class="attribute-label tooltip">Power Max Item Boost:
-                                <span class="tooltiptext">Maximum power boost that can be provided by items in battle. This caps how much additional power items can grant to pets during combat.</span>
+                                <span class="tooltiptext">Maximum power boost that can be provided by items. 0 means only temporaty boost items will work.</span>
                             </span>
                             <span class="attribute-value ">20</span>
                         </li>
@@ -366,7 +366,7 @@
                         </li>
                         <li class="attribute-item">
                             <span class="attribute-label tooltip">Reverse Attack Frames:
-                                <span class="tooltiptext">Swaps attack animation frames (ATK1↔ATK2, TRAIN1↔TRAIN2) during sprite loading. Used for visual variety or correcting animation sequences in sprite sets.</span>
+                                <span class="tooltiptext">Swaps attack animation frames (ATK1?ATK2, TRAIN1?TRAIN2) during sprite loading. Used for visual variety or correcting animation sequences in sprite sets.</span>
                             </span>
                             <span class="attribute-value boolean-false">No</span>
                         </li>
@@ -440,6 +440,67 @@
                         <li class="attribute-item">
                             <span class="attribute-label tooltip">Death by Old Age:
                                 <span class="tooltiptext">Days of pet's life before death from old age. When set to 0, old age death is disabled. Higher values allow pets to live longer before dying of natural causes.</span>
+                            </span>
+                            <span class="attribute-value boolean-false">0</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- G-Cell Settings -->
+                <div class="attribute-section">
+                    <h2>G-Cell Settings</h2>
+                    <ul class="attribute-list">
+                        <li class="attribute-item">
+                            <span class="attribute-label tooltip">Use G-Cells:
+                                <span class="tooltiptext">Enables the G-Cell evolution system. G-Cells are colored tick marks that fluctuate based on care, training, battles, and protein feeding. When enabled, pets can evolve based on G-Cell levels and background changes.</span>
+                            </span>
+                            <span class="attribute-value boolean-false">No</span>
+                        </li>
+                        <li class="attribute-item">
+                            <span class="attribute-label tooltip">Random Encounter Win:
+                                <span class="tooltiptext">G-Cell points gained when winning random encounters. Default: +12 points. Random encounters are unexpected battle opportunities that can significantly boost G-Cell progression.</span>
+                            </span>
+                            <span class="attribute-value boolean-false">0</span>
+                        </li>
+                        <li class="attribute-item">
+                            <span class="attribute-label tooltip">Random Encounter Lose:
+                                <span class="tooltiptext">G-Cell points lost when losing random encounters. Default: -6 points. Failed random encounters penalize G-Cell progression more than regular battle losses.</span>
+                            </span>
+                            <span class="attribute-value boolean-false">0</span>
+                        </li>
+                        <li class="attribute-item">
+                            <span class="attribute-label tooltip">Battle Win:
+                                <span class="tooltiptext">G-Cell points gained when winning regular battles. Default: +6 points. Regular battles provide moderate G-Cell advancement and are the primary source of positive G-Cell growth.</span>
+                            </span>
+                            <span class="attribute-value boolean-false">0</span>
+                        </li>
+                        <li class="attribute-item">
+                            <span class="attribute-label tooltip">Battle Lose:
+                                <span class="tooltiptext">G-Cell points lost when losing regular battles. Default: -4 points. Battle defeats reduce G-Cell progression, making consistent wins important for evolution paths.</span>
+                            </span>
+                            <span class="attribute-value boolean-false">0</span>
+                        </li>
+                        <li class="attribute-item">
+                            <span class="attribute-label tooltip">Training Phase2 Failure:
+                                <span class="tooltiptext">G-Cell points gained when failing at advanced training (Phase 2). Default: +2 points. Even training failures provide some G-Cell benefit, encouraging training attempts.</span>
+                            </span>
+                            <span class="attribute-value boolean-false">0</span>
+                        </li>
+                        <li class="attribute-item">
+                            <span class="attribute-label tooltip">Training Phase1 Failure:
+                                <span class="tooltiptext">G-Cell points lost when failing at basic training (Phase 1). Default: -2 points. Early training failures slightly penalize G-Cell progression, emphasizing skill development.</span>
+                            </span>
+                            <span class="attribute-value boolean-false">0</span>
+                        </li>
+                        <li class="attribute-item">
+                            <span class="attribute-label tooltip">Protein:
+                                <span class="tooltiptext">G-Cell points lost when feeding protein. Default: -4 points. Protein feeding reduces G-Cells, creating a balance between strength maintenance and G-Cell evolution paths.</span>
+                            </span>
+                            <span class="attribute-value boolean-false">0</span>
+                        </li>
+                        <li class="attribute-item">
+                            <span class="attribute-label tooltip">Care Mistake:
+                                <span class="tooltiptext">G-Cell points lost per care mistake. Default: -8 points. Care mistakes are the largest G-Cell penalty, emphasizing the importance of proper pet care for G-Cell evolution paths.</span>
                             </span>
                             <span class="attribute-value boolean-false">0</span>
                         </li>

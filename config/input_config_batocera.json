@@ -1,8 +1,5 @@
 {
   "keyboard": {},
-  "mouse": {
-    "enabled": false
-  },
   "gpio": { },
   "joystick": {
     "0": "A",

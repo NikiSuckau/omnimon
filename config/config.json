@@ -1,12 +1,12 @@
 {
-    "SCREEN_WIDTH": 640,
-    "SCREEN_HEIGHT": 640,
-    "FRAME_RATE": 90,
+    "SCREEN_WIDTH": 240,
+    "SCREEN_HEIGHT": 240,
+    "FRAME_RATE": 30,
     "MAX_PETS": 6,
     "FULLSCREEN": false,
     "AUTO_RESOLUTION": false,
     "SHOW_FPS": false,
-    "DEBUG_MODE": true,
+    "DEBUG_MODE": false,
     "DEBUG_BLIT_LOGGING": false,
     "DEBUG_FILE_LOGGING": false,
     "DEBUG_BATTLE_INFO": false

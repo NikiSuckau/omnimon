@@ -1,16 +1,16 @@
 @echo off
-REM Launch script for Omnimon Virtual Pet Game on Windows
+REM Launch script for Omnipet Virtual Pet Game on Windows
 REM Edit config.json to change fullscreen, screen size, and other settings
 
-echo Starting Omnimon Virtual Pet Game...
+echo Starting Omnipet Virtual Pet Game...
 echo Note: You can edit config.json to change display settings
 
 REM Set environment variables for better compatibility
 set SDL_VIDEO_CENTERED=1
 
 REM Check if fullscreen was requested
-if "%1"=="--fullscreen" set OMNIMON_FULLSCREEN=1
-if "%1"=="-f" set OMNIMON_FULLSCREEN=1
+if "%1"=="--fullscreen" set OMNIPET_FULLSCREEN=1
+if "%1"=="-f" set OMNIPET_FULLSCREEN=1
 
 REM Check for Python
 python --version >nul 2>&1

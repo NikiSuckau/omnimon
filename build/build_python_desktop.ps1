@@ -1,4 +1,4 @@
-# PowerShell Python Desktop build script for Omnimon Virtual Pet Game
+# PowerShell Python Desktop build script for Omnipet Virtual Pet Game
 # Creates a Python desktop version for Windows and Linux
 
 param(
@@ -6,7 +6,7 @@ param(
 )
 
 $RELEASE_DIR = "..\Release"
-$BUILD_NAME = "Omnimon_Python_Desktop_Ver_$Version"
+$BUILD_NAME = "Omnipet_Python_Desktop_Ver_$Version"
 $TEMP_DIR = "..\temp_python_desktop_build"
 
 function Write-Status {
@@ -53,15 +53,39 @@ Copy-Item "..\config\input_config_python_desktop.json" "$TEMP_DIR\$BUILD_NAME\co
 Write-Status "Copying documentation..."
 Copy-Item -Recurse "..\Documentation" "$TEMP_DIR\$BUILD_NAME\"
 
-# Copy game directory (excluding __pycache__ folders)
-Write-Status "Copying game directory..."
-$gameSource = (Resolve-Path "..\game").Path
-$gameDestination = "$TEMP_DIR\$BUILD_NAME\game"
-robocopy $gameSource $gameDestination /E /XD "__pycache__" /NFL /NDL /NJH /NJS /nc /ns /np | Out-Null
+# Copy core directory (excluding __pycache__ folders)
+Write-Status "Copying core directory..."
+$coreSource = (Resolve-Path "..\core").Path
+$coreDestination = "$TEMP_DIR\$BUILD_NAME\core"
+robocopy $coreSource $coreDestination /E /XD "__pycache__" /NFL /NDL /NJH /NJS /nc /ns /np | Out-Null
 if ($LASTEXITCODE -ge 8) {
-    Write-Error-Message "Failed to copy game directory using robocopy. Check if robocopy is in your system's PATH."
+    Write-Error-Message "Failed to copy core directory"
     exit 1
 }
+
+# Copy components directory
+Write-Status "Copying components directory..."
+$compSource = (Resolve-Path "..\components").Path
+$compDestination = "$TEMP_DIR\$BUILD_NAME\components"
+robocopy $compSource $compDestination /E /XD "__pycache__" /NFL /NDL /NJH /NJS /nc /ns /np | Out-Null
+if ($LASTEXITCODE -ge 8) {
+    Write-Error-Message "Failed to copy components directory"
+    exit 1
+}
+
+# Copy scenes directory
+Write-Status "Copying scenes directory..."
+$scenesSource = (Resolve-Path "..\scenes").Path
+$scenesDestination = "$TEMP_DIR\$BUILD_NAME\scenes"
+robocopy $scenesSource $scenesDestination /E /XD "__pycache__" /NFL /NDL /NJH /NJS /nc /ns /np | Out-Null
+if ($LASTEXITCODE -ge 8) {
+    Write-Error-Message "Failed to copy scenes directory"
+    exit 1
+}
+
+# Copy vpet.py
+Write-Status "Copying vpet.py..."
+Copy-Item "..\vpet.py" "$TEMP_DIR\$BUILD_NAME\"
 
 # Copy Module Editor (excluding Source folder)
 Write-Status "Copying Module Editor..."
@@ -73,6 +97,10 @@ Get-ChildItem "..\Module Editor" | Where-Object { $_.Name -ne "Source" } | ForEa
 # Copy modules
 Write-Status "Copying modules..."
 Copy-Item -Recurse "..\modules" "$TEMP_DIR\$BUILD_NAME\"
+
+# Copy network
+Write-Status "Copying network..."
+Copy-Item -Recurse "..\network" "$TEMP_DIR\$BUILD_NAME\"
 
 # Create empty save folder
 Write-Status "Creating save directory..."

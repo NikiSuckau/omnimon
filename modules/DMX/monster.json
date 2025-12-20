@@ -1848,7 +1848,7 @@
       "critical_turn": 0,
       "evolve": [
         {
-          "to": "Omnimon X",
+          "to": "Omnipet X",
           "mistakes": [
             0,
             0
@@ -2014,7 +2014,7 @@
       "critical_turn": 0,
       "evolve": [
         {
-          "to": "Omnimon X",
+          "to": "Omnipet X",
           "mistakes": [
             0,
             2
@@ -2141,11 +2141,11 @@
       "evolve": []
     },
     {
-      "name": "Omnimon X",
+      "name": "Omnipet X",
       "stage": 7,
       "version": 1,
       "special": true,
-      "special_key": "Omnimon X",
+      "special_key": "Omnipet X",
       "sleeps": "00:00",
       "wakes": "08:00",
       "atk_main": 107,
@@ -4057,7 +4057,7 @@
       "critical_turn": 0,
       "evolve": [
         {
-          "to": "Omnimon X",
+          "to": "Omnipet X",
           "mistakes": [
             0,
             2
@@ -4097,7 +4097,7 @@
       "critical_turn": 0,
       "evolve": [
         {
-          "to": "Omnimon X",
+          "to": "Omnipet X",
           "mistakes": [
             0,
             0
@@ -4309,11 +4309,11 @@
       "evolve": []
     },
     {
-      "name": "Omnimon X",
+      "name": "Omnipet X",
       "stage": 7,
       "version": 2,
       "special": true,
-      "special_key": "Omnimon X",
+      "special_key": "Omnipet X",
       "sleeps": "00:00",
       "wakes": "08:00",
       "atk_main": 107,
@@ -17197,7 +17197,7 @@
       "critical_turn": 0,
       "evolve": [
         {
-          "to": "Omnimon X",
+          "to": "Omnipet X",
           "mistakes": [
             0,
             2
@@ -17386,7 +17386,7 @@
       "critical_turn": 0,
       "evolve": [
         {
-          "to": "Omnimon X",
+          "to": "Omnipet X",
           "mistakes": [
             0,
             2
@@ -17563,11 +17563,11 @@
       "evolve": []
     },
     {
-      "name": "Omnimon X",
+      "name": "Omnipet X",
       "stage": 7,
       "version": 6,
       "special": true,
-      "special_key": "Omnimon X",
+      "special_key": "Omnipet X",
       "sleeps": "00:00",
       "wakes": "08:00",
       "atk_main": 107,
