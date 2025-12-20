@@ -2,7 +2,7 @@
 <html>
 
 <head>
-    <title>Manual - Omnimon Documentation</title>
+    <title>Manual - Omnipet Documentation</title>
     <link rel="stylesheet" href="../assets/main.css">
 </head>
 
@@ -81,7 +81,7 @@
                     <li style="margin-bottom: 15px; padding-left: 20px; position: relative;">
                         <strong>START:</strong> In the main game screen, it will open the Settings menu, in some areas
                         of the Battle Menu, it is used to confirm an operation<br>
-                        <img src="../assets/StartVersus.PNG" width="200" height="200" alt="" />
+                        <img src="../assets/SettingsMenu.PNG" width="200" height="200" alt="" />
                     </li>
                     <li style="margin-bottom: 15px; padding-left: 20px; position: relative;">
                         <strong>SELECT:</strong> In the main game, it switches between menu and pet mode, while in other
@@ -96,8 +96,8 @@
                                 is used inside other menus for various functions (for example to feed only a few pets).
                                 A blue outline means the pet is currently selected.</p>
                             <hr>
-                            <img src="../assets/SelectedPets.PNG" width="240" height="94" alt="" /><img
-                                src="../assets/PetsInNeed.PNG" width="240" height="94" alt="" />
+                            <img src="../assets/SelectedPets.PNG" width="240" height="240" alt="" /><img
+                                src="../assets/PetsInNeed.PNG" width="240" height="240" alt="" />
                             <h3 class="feature-title">Selecion Modes - Menus</h3>
                             <p class="feature-description">Inside the menus it's possible to change the "Selection Type"
                                 between all pets capable to use the function or only the pets who need that function.
@@ -530,8 +530,7 @@
                     <tr>
                         <td><img src="../assets/AdventureMode.png" width="240" height="240" alt="" /></td>
                         <td>
-                            <p class="feature-description item"><strong><img src="../assets/BattleIcon.png" width="48"
-                                        height="48" alt="" /> Adventure:</strong> Enter the adventure mode
+                            <p class="feature-description item"><strong>Adventure:</strong> Enter the adventure mode
                                 of the selected module. Here you can fight enemies, gain experience, and collect items.
                                 The adventure mode is defined by the module, so each module may have different
                                 charge mechanics, enemies and item drops. Use buttons LEFT and RIGHT to navigate between
@@ -577,8 +576,7 @@
                     <tr>
                         <td><img src="../assets/Versus.png" width="240" height="240" alt="" /></td>
                         <td>
-                            <p class="feature-description item"><strong><img src="../assets/VersusBattle.png" width="48"
-                                        height="48" alt="" /> Versus:</strong> Engange your pets in a battles against
+                            <p class="feature-description item"><strong>Versus:</strong> Engange your pets in a battles against
                                 one another. Battles in this mode follow protocols from actual vpet devices. You can
                                 find more information of each protocol by following guides on <a
                                     href="https://humulos.com/digimon/">Humulos</a>. To start a battle, press A on 2
@@ -589,8 +587,7 @@
                     <tr>
                         <td><img src="../assets/JogressScreen.png" width="240" height="240" alt="" /></td>
                         <td>
-                            <p class="feature-description item"><strong><img src="../assets/Jogress.png" width="48"
-                                        height="48" alt="" /> Jogress:</strong> Jogress is a special evolution
+                            <p class="feature-description item"><strong>Jogress:</strong> Jogress is a special evolution
                                 that requires two pets to merge into a new one. To perform a Jogress, select two pets
                                 of the same module using the A button and if they are compatible, the screen will show
                                 as the picture. Press START to execute the Jogress. The resulting pet will inherit
@@ -612,8 +609,7 @@
                     <tr>
                         <td><img src="../assets/ArmorEvo.png" width="240" height="240" alt="" /></td>
                         <td>
-                            <p class="feature-description item"><strong><img src="../assets/ArmorEvolution.png"
-                                        width="48" height="48" alt="" /> Armor:</strong> Some modules allow
+                            <p class="feature-description item"><strong>Armor:</strong> Some modules allow
                                 Armor Evolutions. To perform an Armor Evolution, select a pet using the A button and use
                                 keys UP and DOWN to move between evolution items. If the screen shows as the picture,
                                 the pet is compatible and can evolve. Press START to execute the evolution. Armor
@@ -727,56 +723,309 @@
         </div>
 
         <div class="content-section">
-            <h2 class="section-title" onclick="toggleSection(this)"><span class="status-title"> Settings
-                    Menu</span><span class="arrow">▼</span></h2>
+            <h2 class="section-title" onclick="toggleSection(this)"><span class="status-title"><img
+                        src="../assets/LibraryIcon.png" width="48" height="48" alt="" /> <span style="color: #FFEB3B;">Library</span></span><span
+                    class="arrow">▼</span></h2>
+            <div class="section-content" style="display:none;">
+                <p>The <span style="color: #FFEB3B; font-weight: bold;">Library</span> is your quest hub and navigation center. Here you can view and complete daily quests, and access important features like the Digidex, Freezer Box, and Settings.</p>
+                
+                <table class="feature-table">
+                    <tr>
+                        <td><img src="../assets/Library1.png" width="240" height="240" alt="" /></td>
+                        <td>
+                            <p class="feature-description item"><strong style="color: #FFEB3B;">Daily Quests: </strong>Each day, three random quests are generated for you to complete. Quests provide rewards such as items, experience, trophies, or vital values. The quest system ensures variety by attempting to assign different quest types each day.</p>
+                            <p class="feature-description item"><strong style="color: #FFEB3B;">Quest Types:</strong></p>
+                            <ul>
+                                <li><strong style="color: #FFEB3B;">Boss Battles:</strong> Defeat a specified number of boss enemies</li>
+                                <li><strong style="color: #FFEB3B;">Training:</strong> Complete training sessions a set number of times</li>
+                                <li><strong style="color: #FFEB3B;">Battles:</strong> Win battles against regular enemies</li>
+                                <li><strong style="color: #FFEB3B;">Feeding:</strong> Feed special items to your pets</li>
+                                <li><strong style="color: #FFEB3B;">Evolution:</strong> Evolve your pets (normal, armor, or jogress)</li>
+                            </ul>
+                            <p class="feature-description item"><strong style="color: #FFEB3B;">Quest Progress:</strong> Each quest panel shows the quest name, progress bar, and current completion status (e.g., "0/3"). As you complete quest objectives, the progress automatically updates. When a quest reaches its target, it becomes claimable.</p>
+                            <p class="feature-description item"><strong style="color: #FFEB3B;">Quest Reset:</strong> All quests reset daily at midnight. Any unclaimed rewards from the previous day are lost, so be sure to claim them before the day ends.</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><img src="../assets/Library2.png" width="240" height="240" alt="" /></td>
+                        <td>
+                            <p class="feature-description item"><strong style="color: #FFEB3B;">Claiming Rewards: </strong>Press <strong style="color: #FFEB3B;">A</strong> while hovering over a completed quest's <strong style="color: #FFEB3B;">CLAIM</strong> button to receive rewards. Alternatively, press <strong style="color: #FFEB3B;">START</strong> to claim all completed quests at once. A reward popup will display what you've earned.</p>
+                            <p class="feature-description item"><strong style="color: #FFEB3B;">Reward Types:</strong></p>
+                            <ul>
+                                <li><strong style="color: #FFEB3B;">Items:</strong> Receive special items added to your inventory</li>
+                                <li><strong style="color: #FFEB3B;">Experience:</strong> Grants experience points to ALL pets in your party</li>
+                                <li><strong style="color: #FFEB3B;">Trophies:</strong> Adds trophies to ALL pets in your party</li>
+                                <li><strong style="color: #FFEB3B;">Vital Values:</strong> Increases vital values for ALL pets in your party</li>
+                            </ul>
+                            <p class="feature-description item"><strong style="color: #FFEB3B;">Quest Completion:</strong> Quest completion counts are tracked across all your pets, not individually. The completion counter increments for all pets when you claim quest rewards.</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td colspan="2">
+                            <p class="feature-description item"><strong style="color: #FFEB3B;">Navigation:</strong> The Library provides quick access to three major features:</p>
+                            <ul>
+                                <li><strong style="color: #FFEB3B;">Freezer:</strong> Manage your pet storage boxes</li>
+                                <li><strong style="color: #FFEB3B;">Digidex:</strong> Browse discovered pets and evolution trees</li>
+                                <li><strong style="color: #FFEB3B;">Settings:</strong> Configure game options and view unlockables</li>
+                            </ul>
+                            <p class="feature-description item"><strong style="color: #FFEB3B;">Controls:</strong></p>
+                            <ul>
+                                <li><strong style="color: #FFEB3B;">UP/DOWN/LEFT/RIGHT:</strong> Move between quest panels and buttons. The focused element is highlighted.</li>
+                                <li><strong style="color: #FFEB3B;">A Button:</strong> Claim a quest reward or activate a navigation button (Freezer, Digidex, Settings, EXIT)</li>
+                                <li><strong style="color: #FFEB3B;">START Button:</strong> Instantly claim all completed quests at once</li>
+                                <li><strong style="color: #FFEB3B;">B Button:</strong> Exit back to the main game screen</li>
+                                <li><strong style="color: #FFEB3B;">Mouse:</strong> Click on quest CLAIM buttons or navigation buttons. Hover over elements to see focus highlights.</li>
+                            </ul>
+                            <p class="feature-description item"><strong style="color: #FFEB3B;">Tips:</strong></p>
+                            <ul>
+                                <li>Check the Library regularly to maximize your daily quest rewards</li>
+                                <li>The quest system favors diverse quest types, so you'll rarely see three identical quests in one day</li>
+                                <li>Remember to claim your rewards before midnight to avoid losing them!</li>
+                            </ul>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+        <div class="content-section">
+            <h2 class="section-title" onclick="toggleSection(this)"><span class="status-title"><img
+                        src="../assets/FreezerIcon.png" width="48" height="48" alt="" /> Freezer Menu</span><span
+                    class="arrow">▼</span></h2>
+            <div class="section-content" style="display:none;">
+                <p>The Freezer is a storage system that allows you to manage your pet collection beyond the active party limit. You can store pets in 10 separate boxes, with each box holding up to 20 pets.</p>
+                
+                <table class="feature-table">
+                    <tr>
+                        <td><img src="../assets/FreezerPartyBox.png" width="240" height="240" alt="" /></td>
+                        <td>
+                            <p class="feature-description item"><strong>Party View: </strong>The Freezer opens to Party View by default, displaying your active party. Navigate with directional keys or click on pets to select them. Press A (or click) on a pet to open the action menu.</p>
+                            <p class="feature-description item"><strong>Navigation:</strong></p>
+                            <ul>
+                                <li><strong>Directional Keys:</strong> Navigate between pets in the grids</li>
+                                <li><strong>SELECT:</strong> Switch between Party View and Box View</li>
+                                <li><strong>A Button:</strong> Select a pet and open the action menu</li>
+                                <li><strong>B Button:</strong> Exit back to the main game screen</li>
+                                <li><strong>Party Button:</strong> Switch to Party View (shows your active party)</li>
+                                <li><strong>Box Button:</strong> Switch to Box View (shows freezer storage)</li>
+                                <li><strong>EXIT Button:</strong> Return to main game screen</li>
+                            </ul>
+                            <p class="feature-description item">If you have an empty slot in your party, selecting it will take you directly to the egg selection screen to hatch a new pet.</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><img src="../assets/FreezerBox.png" width="240" height="240" alt="" /></td>
+                        <td>
+                            <p class="feature-description item"><strong>Box View: </strong>Switch to Box View to see the contents of your freezer storage. The current box number (1-10) is displayed in the top right corner. Navigate between boxes using L/R shoulder buttons or the arrow buttons on the sides (when mouse is enabled).</p>
+                            <p class="feature-description item"><strong>Box Navigation:</strong></p>
+                            <ul>
+                                <li><strong>L/R Buttons:</strong> Switch between boxes 1-10</li>
+                                <li><strong>LEFT/RIGHT at edges:</strong> When at the leftmost or rightmost pet, pressing LEFT/RIGHT will also change boxes</li>
+                                <li><strong>Mouse Mode:</strong> Click the < and > arrow buttons to change boxes</li>
+                            </ul>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><img src="../assets/FreezerPartyBoxMenu.png" width="240" height="240" alt="" /></td>
+                        <td>
+                            <p class="feature-description item"><strong>Action Menu: </strong>When you select a pet with A (or click), a menu appears with available actions:</p>
+                            <p class="feature-description item"><strong>In Party View:</strong></p>
+                            <ul>
+                                <li><strong>Store:</strong> Move the pet from your active party to the current freezer box. Use this to free up space in your party while keeping the pet safe.</li>
+                                <li><strong>Clear:</strong> Permanently delete a DEAD pet from your party. This action cannot be undone!</li>
+                                <li><strong>Stats:</strong> View detailed statistics for the selected pet</li>
+                            </ul>
+                            <p class="feature-description item"><strong>In Box View:</strong></p>
+                            <ul>
+                                <li><strong>Add:</strong> Move the pet from the freezer box to your active party (if you have space)</li>
+                                <li><strong>Stats:</strong> View detailed statistics for the selected pet</li>
+                            </ul>
+                            <p class="feature-description item">Use UP/DOWN to navigate the menu, A to confirm, or B to cancel and close the menu. With mouse support, simply click your desired option or click outside the menu to cancel.</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><img src="../assets/FreezerPartyBoxStats.png" width="240" height="240" alt="" /></td>
+                        <td>
+                            <p class="feature-description item"><strong>Stats Panel: </strong>View comprehensive information about any pet in your party or freezer boxes. The stats panel displays:</p>
+                            <ul>
+                                <li><strong>Name and Species:</strong> The pet's name</li>
+                                <li><strong>Age:</strong> How long the pet has been alive (in days)</li>
+                                <li><strong>Weight:</strong> Current weight in grams</li>
+                                <li><strong>Level:</strong> The pet's current level</li>
+                                <li><strong>Hearts:</strong> Visual indicators for Hunger and Strength stats</li>
+                                <li><strong>Power:</strong> Attack power value</li>
+                                <li><strong>Battles:</strong> Total number of battles participated in</li>
+                                <li><strong>Win Rate:</strong> Percentage of battles won</li>
+                            </ul>
+                            <p class="feature-description item">Press B (or click outside the panel) to close the stats view and return to the freezer menu.</p>
+                        </td>
+                    </tr>
+                </table>
+                
+                <p class="feature-description item"><strong>Important Notes:</strong></p>
+                <ul>
+                    <li>The Freezer can hold up to 200 pets total (20 pets per box × 10 boxes)</li>
+                    <li>Pets in the freezer do not age, get hungry, or require care</li>
+                    <li>You cannot move a pet to a full party or full freezer box</li>
+                    <li>Clearing (deleting) a pet is permanent and cannot be undone</li>
+                    <li>All changes are saved automatically when you make them</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="content-section">
+            <h2 class="section-title" onclick="toggleSection(this)"><span class="status-title"><img
+                        src="../assets/DigidexIcon.png" width="48" height="48" alt="" /> <span style="color: #8BC34A;">Digidex</span></span><span
+                    class="arrow">▼</span></h2>
+            <div class="section-content" style="display:none;">
+                <p>The <span style="color: #8BC34A; font-weight: bold;">Digidex</span> is your comprehensive encyclopedia for tracking discovered pets and exploring their evolution lines. It provides two distinct viewing modes to help you understand how different species evolve and progress through their life stages.</p>
+                
+                <table class="feature-table">
+                    <tr>
+                        <td><img src="../assets/Digidex1.png" width="240" height="240" alt="" /></td>
+                        <td>
+                            <p class="feature-description item"><strong style="color: #8BC34A;">List View: </strong>The Digidex opens to List View by default, displaying all pets sorted by stage, module, and version. Each entry shows the pet's sprite (or "????" for undiscovered pets), name, attribute, and stage.</p>
+                            <p class="feature-description item"><strong>Navigation:</strong></p>
+                            <ul>
+                                <li><strong>UP/DOWN Keys:</strong> Navigate through the list of pets</li>
+                                <li><strong>SCROLL_UP/SCROLL_DOWN:</strong> Scroll through the list with mouse wheel</li>
+                                <li><strong>Mouse Click:</strong> Click on a known pet to view its evolution tree</li>
+                                <li><strong>A Button:</strong> Open the evolution tree for the selected known pet</li>
+                                <li><strong>B Button:</strong> Exit back to the Library</li>
+                                <li><strong>FILTER Button:</strong> Open the filter menu to narrow down the list</li>
+                                <li><strong>EXIT Button:</strong> Return to Library</li>
+                            </ul>
+                            <p class="feature-description item"><strong>Pet Display:</strong></p>
+                            <ul>
+                                <li><strong>Known Pets:</strong> Show full details including name, sprite, attribute, and stage</li>
+                                <li><strong>Unknown Pets:</strong> Display as "????" with a mystery sprite until discovered</li>
+                                <li><strong>Stage Information:</strong> Ranges from 0-Egg through VII-Super Ultimate</li>
+                            </ul>
+                            <p class="feature-description item">The list can display hundreds of pets, with sprites loading dynamically as you scroll to ensure smooth performance.</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><img src="../assets/Digidex2.png" width="240" height="240" alt="" /></td>
+                        <td>
+                            <p class="feature-description item"><strong style="color: #8BC34A;">Tree View: </strong>Select any known pet to view its complete evolution tree. The tree displays all possible evolution paths within that module and version, with colored lines connecting related species.</p>
+                            <p class="feature-description item"><strong>Tree Navigation:</strong></p>
+                            <ul>
+                                <li><strong>Arrow Keys:</strong> Pan around the evolution tree</li>
+                                <li><strong>Mouse Drag:</strong> Click and drag to pan smoothly across the tree</li>
+                                <li><strong>B Button:</strong> Return to List View</li>
+                                <li><strong>BACK Button:</strong> Return to List View</li>
+                            </ul>
+                            <p class="feature-description item"><strong>Tree Features:</strong></p>
+                            <ul>
+                                <li><strong>Auto-Centering:</strong> The tree automatically centers on the selected pet when opened</li>
+                                <li><strong>Evolution Lines:</strong> Colored lines show evolution paths between species
+                                    <ul>
+                                        <li>Blue lines indicate early stages (Egg through In-Training)</li>
+                                        <li>Random colors distinguish different evolution branches at higher stages</li>
+                                    </ul>
+                                </li>
+                                <li><strong>Attribute Colors:</strong> Each pet's border reflects its attribute (Data, Vaccine, Virus, or Free)</li>
+                                <li><strong>Unknown Pets:</strong> Show mystery sprites in the tree until discovered</li>
+                            </ul>
+                            <p class="feature-description item">The tree view is ideal for planning evolution strategies and understanding the full scope of each module's evolution possibilities.</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><img src="../assets/Digidex3.png" width="240" height="240" alt="" /></td>
+                        <td>
+                            <p class="feature-description item"><strong style="color: #8BC34A;">Filter Menu: </strong>The Filter button in List View opens a menu with multiple filter options to help you find specific pets quickly. Filters can be combined to narrow down results.</p>
+                            <p class="feature-description item"><strong>Filter Options:</strong></p>
+                            <ul>
+                                <li><strong>Module:</strong> Filter by specific module (shows only pets from selected module)
+                                    <ul>
+                                        <li>Lists all installed modules</li>
+                                        <li>Useful for viewing pets from a specific game series</li>
+                                    </ul>
+                                </li>
+                                <li><strong>Stage:</strong> Filter by evolution stage (0-Egg through VII-Super Ultimate)
+                                    <ul>
+                                        <li>View all pets at a specific stage</li>
+                                        <li>Helpful for finding evolution candidates</li>
+                                    </ul>
+                                </li>
+                                <li><strong>Known:</strong> Filter by discovery status
+                                    <ul>
+                                        <li><strong>Yes:</strong> Show only discovered pets</li>
+                                        <li><strong>No:</strong> Show only undiscovered pets (useful for tracking progress)</li>
+                                    </ul>
+                                </li>
+                                <li><strong>Reset:</strong> Clear all active filters and show the complete list</li>
+                            </ul>
+                            <p class="feature-description item"><strong>Using Filters:</strong></p>
+                            <ul>
+                                <li>Navigate the filter menu with UP/DOWN keys or mouse</li>
+                                <li>Press A or click to select a filter option</li>
+                                <li>Choose your desired filter value from the submenu</li>
+                                <li>Multiple filters can be active simultaneously</li>
+                                <li>Active filters display at the top of the list (feature may vary)</li>
+                                <li>Use Reset to quickly clear all filters</li>
+                            </ul>
+                        </td>
+                    </tr>
+                </table>
+                
+                <p class="feature-description item"><strong>Tips for Using the Digidex:</strong></p>
+                <ul>
+                    <li><strong>Discovery:</strong> Pets are automatically registered in the Digidex when you first encounter them (through hatching, evolution, or battle)</li>
+                    <li><strong>Completion Tracking:</strong> Use the "Known: No" filter to see which pets you haven't discovered yet</li>
+                    <li><strong>Evolution Planning:</strong> Check the tree view before evolving to see all possible evolution options</li>
+                    <li><strong>Module Exploration:</strong> Filter by module to see the complete roster for each installed module</li>
+                    <li><strong>Performance:</strong> The Digidex uses smart sprite loading to handle large collections efficiently</li>
+                    <li><strong>UI Hiding:</strong> The FILTER button automatically hides when viewing the evolution tree</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="content-section">
+            <h2 class="section-title" onclick="toggleSection(this)"><span class="status-title"><img
+                        src="../assets/SettingsMenuIcon.png" width="48" height="48" alt="" /> Settings Menu</span><span
+                    class="arrow">▼</span></h2>
             <div class="section-content" style="display:none;">
                 <table class="feature-table">
                     <tr>
                         <td><img src="../assets/SettingsMenu.png" width="240" height="240" alt="" /></td>
                         <td>
                             <p class="feature-description item">This menu is accessible from the Main Game screen by
-                                pressing START. It contains options to customize your game experience and it's the
-                                access point to the Digidex and the Freezer Box.</p>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td><img src="../assets/Digidex1.png" width="240" height="240" alt="" /></td>
-                        <td>
-                            <p class="feature-description item"><strong>Digidex: </strong>The Digidex is a database of
-                                all your pets, and their evolution paths. Pets will be unlocked as you progress through
-                                the game. Use buttons UP and DOWN to navigate the menu and A to open it's evolution
-                                tree. Some unlocks are obtained by opening the Digidex. Make sure you check it
-                                regularly!</p>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td><img src="../assets/FreezerPartyBox.png" width="240" height="240" alt="" /></td>
-                        <td>
-                            <p class="feature-description item"><strong>Freezer Box: </strong>The Freezer Box is where
-                                you can store and manage your pets. You can switch the Party/Box view with SELECT. Press
-                                A over a pet to open a sub-menu that allows you to check a pet status and transfer pets
-                                between the Party and the Box. The freezer is saved on a separated file an has 10 pages,
-                                each with 25 slots. When in the Box View, you can also use "L" and "R" to change pages.
-                            </p>
+                                pressing START or through the Settings icon in the Library. It contains options to customize your game experience and provides access
+                                to background selection and unlockables.</p>
+                            <p class="feature-description item"><strong>Settings Options:</strong></p>
+                            <ul>
+                                <li><strong>Show Clock:</strong> Toggles the clock and battery indicator on the main game screen.</li>
+                                <li><strong>Sound:</strong> Sets the sound level from Off to 100%.</li>
+                                <li><strong>Global Wake:</strong> Sets a global wake time override for all pets.</li>
+                                <li><strong>Global Sleep:</strong> Sets a global sleep time override for all pets. When both Wake and Sleep are set, all pets will ignore their natural sleep cycles and follow the defined schedule.</li>
+                                <li><strong>Screen Timeout:</strong> Sets the timeout duration for the screen protector to activate.</li>
+                            </ul>
+                            <p class="feature-description item"><strong>Navigation:</strong> Use UP/DOWN to navigate options, LEFT/RIGHT/A to change values. Press B to return to the main screen. When mouse support is enabled, you can click buttons directly.</p>
                         </td>
                     </tr>
                     <tr>
                         <td><img src="../assets/Unlockables.png" width="240" height="240" alt="" /></td>
                         <td>
-                            <p class="feature-description item"><strong>Unlockables: </strong>In this menu you can view
-                                which secrets you unlocked from every module. Use LEFT and RIGHT to navigate between
-                                modules, UP and DOWN to scroll through the unlockable items. The Global Wake and Sleep
-                                timers, when set, override all pets' natural cycles. To work properly, both values must
-                                be set.</p>
+                            <p class="feature-description item"><strong>Secrets: </strong>View all secrets and unlockables you've discovered from every module. Use LEFT and RIGHT (or navigation buttons when mouse is enabled) to switch between modules, and UP and DOWN to scroll through the unlockable items in each module.</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><img src="../assets/UnlockablesWithMouse.png" width="240" height="240" alt="" /></td>
+                        <td>
+                            <p class="feature-description item"><strong>Secrets (Mouse Mode): </strong>When mouse support is enabled, navigation buttons appear at the bottom of the screen. Click the left/right arrows to change modules, and use the BACK button to return to the main settings menu.</p>
                         </td>
                     </tr>
                     <tr>
                         <td><img src="../assets/SelectBackground.png" width="240" height="240" alt="" /></td>
                         <td>
-                            <p class="feature-description item"><strong>Background: </strong>Here you can select the
-                                game's background image. Use keys LEFT and RIGHT to navigate through the available
-                                backgrounds, and SELECT to switch between normal and high-resolution versions. Theres no
-                                need to confirm, just leave the menu to apply your changes.</p>
+                            <p class="feature-description item"><strong>Background: </strong>Select the game's background image from unlocked backgrounds. Use LEFT and RIGHT keys (or navigation buttons when mouse is enabled) to browse available backgrounds, and SELECT (or the SEL button) to toggle between normal and high-resolution versions. Changes are applied immediately - simply exit the menu when done.</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><img src="../assets/SelectBackgroundWithMouse.png" width="240" height="240" alt="" /></td>
+                        <td>
+                            <p class="feature-description item"><strong>Background (Mouse Mode): </strong>When mouse support is enabled, clickable navigation buttons appear at the bottom. Use the left/right arrows to change backgrounds, SEL to toggle high-resolution mode, and BACK to return to the main settings menu.</p>
                         </td>
                     </tr>
                 </table>
@@ -787,13 +1036,77 @@
             <h2 class="section-title" onclick="toggleSection(this)">Module Overview<span class="arrow">▼</span>
             </h2>
             <div class="section-content" style="display:none;">
-                <p>Modules are a key aspect of Omnimon. They define evolution lines and stats of your pets. You can add
+                <p>Modules are a key aspect of Omnipet. They define evolution lines and stats of your pets. You can add
                     and remove modules directly in the modules folder. To enable the training and battle mini-games you
                     need to have at least one active module of a specific ruleset. Dummy and HeadOn require a DMC
                     module. Excite requires a DMX module. Count requires PenC module. It is not necessary to have an
                     active pet of a module type tho. It is not recomended to remove a module while having a pet in the
                     party or box. Updated modules won't reflect the status in an active pet, but will update it's
                     evolution tree.</p>
+            </div>
+        </div>
+
+        <div class="content-section">
+            <h2 class="section-title" onclick="toggleSection(this)">Configuration Files<span class="arrow">▼</span>
+            </h2>
+            <div class="section-content" style="display:none;">
+                <p>Omnipet uses two main configuration files located in the <code>config</code> folder. These files allow you to customize the game's behavior, display settings, and input controls.</p>
+                
+                <h3>config.json - Game Settings</h3>
+                <p>This file contains general game settings that control display, performance, and game limits:</p>
+                <table class="feature-table">
+                    <tr>
+                        <td style="width: 200px;"><strong>SCREEN_WIDTH</strong></td>
+                        <td>Game window width in pixels. Default: 240</td>
+                    </tr>
+                    <tr>
+                        <td><strong>SCREEN_HEIGHT</strong></td>
+                        <td>Game window height in pixels. Default: 240</td>
+                    </tr>
+                    <tr>
+                        <td><strong>FRAME_RATE</strong></td>
+                        <td>Target frames per second for the game. Default: 30</td>
+                    </tr>
+                    <tr>
+                        <td><strong>MAX_PETS</strong></td>
+                        <td>Maximum number of pets that can be in your active party. Default: 6</td>
+                    </tr>
+                    <tr>
+                        <td><strong>FULLSCREEN</strong></td>
+                        <td>Launch the game in fullscreen mode. Set to <code>true</code> or <code>false</code>. Default: false</td>
+                    </tr>
+                    <tr>
+                        <td><strong>AUTO_RESOLUTION</strong></td>
+                        <td>Automatically set resolution based on your screen resolution. When enabled, ignores SCREEN_WIDTH and SCREEN_HEIGHT. Note: This may reduce performance on some devices. Default: false</td>
+                    </tr>
+                    <tr>
+                        <td><strong>SHOW_FPS</strong></td>
+                        <td>Display the current FPS counter on screen. Default: false</td>
+                    </tr>
+                </table>
+
+                <h3>input_config.json - Input Controls</h3>
+                <p>This file configures all input methods for the game. You can customize keyboard keys, mouse behavior, GPIO pins for Raspberry Pi, and joystick button mappings.</p>
+                
+                <h4>Keyboard Section</h4>
+                <p>Map keyboard keys to game actions. Keys are specified using Pygame key constants (e.g., <code>K_LEFT</code>, <code>K_RETURN</code>).</p>
+                <ul>
+                    <li><strong>LEFT, RIGHT, UP, DOWN:</strong> Directional navigation</li>
+                    <li><strong>A:</strong> Confirm/Select action</li>
+                    <li><strong>B:</strong> Back/Cancel action</li>
+                    <li><strong>X, Y:</strong> Alternative action buttons</li>
+                    <li><strong>START:</strong> Open main menu</li>
+                    <li><strong>SELECT:</strong> Secondary select action</li>
+                    <li><strong>R:</strong> Right shoulder button</li>
+                </ul>
+
+                <h4>GPIO Section</h4>
+                <p>Pin mappings for running the game on GamePi (Raspberry Pi Zero 2W). Each entry maps a GPIO pin number to a game action (e.g., <code>"16": "LEFT"</code>).</p>
+
+                <h4>Joystick Section</h4>
+                <p>Map joystick/gamepad buttons to game actions. Each entry maps a button index to a game action (e.g., <code>"0": "A"</code>). Button indices may vary depending on your controller model.</p>
+
+                <p><strong>Note:</strong> After modifying configuration files, restart the game for changes to take effect.</p>
             </div>
         </div>
     </div>

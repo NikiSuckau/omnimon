@@ -1,9 +1,9 @@
-Omnimon & Omnimon Module Editor
+monOmnipet & Omnipet Module Editor
 Copyright (c) 2025 Anderson Porto
 
 This project consists of two applications:
-- Omnimon (Virtual Pet Game, written in Python)
-- Omnimon Module Editor (Editor Tool, written in C#)
+- Omnipet (Virtual Pet Game, written in Python)
+- Omnipet Module Editor (Editor Tool, written in C#)
 
 Both applications are licensed under the Creative Commons Attribution-NonCommercial 4.0 International License (CC BY-NC 4.0).
 

@@ -7,7 +7,7 @@
       "sprite_name": "Filling Meat",
       "effect": "status_change",
       "status": "hunger",
-      "amount": 9999,
+      "amount": 4,
       "boost_time": 0,
       "component_item": "",
       "weight_gain": 4
@@ -19,7 +19,7 @@
       "sprite_name": "Big Protein",
       "effect": "status_change",
       "status": "strength",
-      "amount": 9999,
+      "amount": 4,
       "boost_time": 0,
       "component_item": "",
       "weight_gain": 4

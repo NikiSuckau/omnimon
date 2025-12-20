@@ -22,6 +22,9 @@
       "condition_hearts": 0,
       "jogress_avaliable": false,
       "hp": 0,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Chibomon"
@@ -50,6 +53,9 @@
       "condition_hearts": 1,
       "jogress_avaliable": false,
       "hp": 0,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "DemiVeemon"
@@ -80,6 +86,9 @@
       "condition_hearts": 2,
       "jogress_avaliable": false,
       "hp": 0,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Veemon"
@@ -110,6 +119,9 @@
       "condition_hearts": 3,
       "jogress_avaliable": false,
       "hp": 10,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Depthmon",
@@ -191,6 +203,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 12,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Mermaimon",
@@ -229,6 +244,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 12,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "AeroVeedramon",
@@ -267,6 +285,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 12,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Devidramon",
@@ -305,6 +326,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 12,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Magnamon",
@@ -352,6 +376,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": false,
       "hp": 12,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "SkullBaluchimon",
@@ -390,6 +417,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": false,
       "hp": 12,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Vespamon",
@@ -428,6 +458,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 12,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Vajramon",
@@ -485,6 +518,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": false,
       "hp": 12,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "AeroVeedramon",
@@ -528,6 +564,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 12,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Magnamon",
@@ -589,6 +628,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 12,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "GoldVeedramon",
@@ -635,6 +677,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 12,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Asuramon",
@@ -692,6 +737,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 15,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "UlforceVeedramon",
@@ -749,6 +797,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 15,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "MarineAngemon",
@@ -787,6 +838,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 15,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "SkullSatamon",
@@ -825,6 +879,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 15,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "UlforceVeedramon: Future Mode",
@@ -882,6 +939,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 15,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "BanchoLeomon",
@@ -920,6 +980,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 15,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "AncientGreymon",
@@ -951,6 +1014,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 15,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "MarineAngemon",
@@ -989,6 +1055,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 15,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Imperialdramon: Fighter Mode",
@@ -1031,6 +1100,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 12,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "UlforceVeedramon",
@@ -1069,6 +1141,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 15,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "UlforceVeedramon: Future Mode",
@@ -1107,6 +1182,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 15,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Imperialdramon: Fighter Mode",
@@ -1145,6 +1223,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 15,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Queenbeemon",
@@ -1187,9 +1268,12 @@
       "condition_hearts": 4,
       "jogress_avaliable": false,
       "hp": 18,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
-          "to": "Omnimon Alter-B",
+          "to": "Omnipet Alter-B",
           "version": 3,
           "jogress": "AncientGarurumon"
         },
@@ -1224,6 +1308,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": false,
       "hp": 18,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Chaosmon",
@@ -1256,6 +1343,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": false,
       "hp": 18,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Imperialdramon: Paladin Mode",
@@ -1288,6 +1378,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": false,
       "hp": 18,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Alphamon",
@@ -1320,6 +1413,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": false,
       "hp": 18,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": []
     },
     {
@@ -1346,6 +1442,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": false,
       "hp": 18,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": []
     },
     {
@@ -1372,6 +1471,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": false,
       "hp": 18,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": []
     },
     {
@@ -1398,6 +1500,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": false,
       "hp": 18,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": []
     },
     {
@@ -1424,6 +1529,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": false,
       "hp": 18,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": []
     },
     {
@@ -1450,6 +1558,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": false,
       "hp": 20,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": []
     },
     {
@@ -1476,6 +1587,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": false,
       "hp": 20,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": []
     },
     {
@@ -1502,10 +1616,13 @@
       "condition_hearts": 4,
       "jogress_avaliable": false,
       "hp": 20,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": []
     },
     {
-      "name": "Omnimon Alter-B",
+      "name": "Omnipet Alter-B",
       "stage": 7,
       "version": 1,
       "special": false,
@@ -1528,6 +1645,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": false,
       "hp": 20,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": []
     },
     {
@@ -1554,6 +1674,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": false,
       "hp": 20,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": []
     },
     {
@@ -1578,6 +1701,9 @@
       "condition_hearts": 0,
       "jogress_avaliable": false,
       "hp": 0,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Leafmon"
@@ -1606,6 +1732,9 @@
       "condition_hearts": 1,
       "jogress_avaliable": false,
       "hp": 0,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Minomon"
@@ -1636,6 +1765,9 @@
       "condition_hearts": 2,
       "jogress_avaliable": false,
       "hp": 0,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Wormmon"
@@ -1666,6 +1798,9 @@
       "condition_hearts": 3,
       "jogress_avaliable": false,
       "hp": 10,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Stingmon",
@@ -1744,6 +1879,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 12,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Huankunmon",
@@ -1782,6 +1920,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 12,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Crowmon",
@@ -1839,6 +1980,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 12,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Vajramon",
@@ -1877,6 +2021,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 12,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Okuwamon",
@@ -1915,6 +2062,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 12,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Crowmon",
@@ -1972,6 +2122,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 12,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Sinduramon",
@@ -2014,6 +2167,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 12,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Arukenimon",
@@ -2052,6 +2208,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 12,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "MegaKabuterimon (Blue)",
@@ -2090,6 +2249,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 12,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Bucchiemon",
@@ -2137,6 +2299,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 12,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Jewelbeemon",
@@ -2188,6 +2353,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 12,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Gogmamon",
@@ -2226,6 +2394,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 15,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "AncientBeetlemon",
@@ -2264,6 +2435,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 15,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Grankuwagamon",
@@ -2302,6 +2476,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 15,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Imperialdramon: Dragon Mode",
@@ -2359,6 +2536,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 15,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "BanchoStingmon",
@@ -2397,6 +2577,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 15,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Grankuwagamon",
@@ -2454,6 +2637,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 15,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Blastmon",
@@ -2492,6 +2678,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 15,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Xiangpengmon",
@@ -2530,6 +2719,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 15,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "BanchoStingmon",
@@ -2568,6 +2760,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 15,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "HerculesKabuterimon",
@@ -2606,6 +2801,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 15,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "AncientBeetlemon",
@@ -2644,6 +2842,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 15,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "HerculesKabuterimon",
@@ -2682,6 +2883,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 15,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "AncientBeetlemon",
@@ -2720,6 +2924,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 15,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Azulongmon",
@@ -2758,6 +2965,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 15,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Imperialdramon: Dragon Mode",
@@ -2796,6 +3006,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": false,
       "hp": 18,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "TyrantKabuterimon",
@@ -2833,6 +3046,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": false,
       "hp": 18,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": []
     },
     {
@@ -2859,6 +3075,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": false,
       "hp": 18,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": []
     },
     {
@@ -2885,6 +3104,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": false,
       "hp": 18,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": []
     },
     {
@@ -2911,6 +3133,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": false,
       "hp": 18,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "TyrantKabuterimon",
@@ -2943,6 +3168,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": false,
       "hp": 18,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "TyrantKabuterimon",
@@ -2980,6 +3208,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": false,
       "hp": 18,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Imperialdramon: Paladin Mode",
@@ -3012,6 +3243,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": false,
       "hp": 18,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Shakamon",
@@ -3044,6 +3278,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": false,
       "hp": 20,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": []
     },
     {
@@ -3070,6 +3307,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": false,
       "hp": 20,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": []
     },
     {
@@ -3096,6 +3336,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": false,
       "hp": 20,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": []
     },
     {
@@ -3122,6 +3365,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": false,
       "hp": 20,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": []
     },
     {
@@ -3146,6 +3392,9 @@
       "condition_hearts": 0,
       "jogress_avaliable": false,
       "hp": 0,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Pururumon"
@@ -3174,6 +3423,9 @@
       "condition_hearts": 1,
       "jogress_avaliable": false,
       "hp": 0,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Poromon"
@@ -3204,6 +3456,9 @@
       "condition_hearts": 2,
       "jogress_avaliable": false,
       "hp": 0,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Hawkmon"
@@ -3234,6 +3489,9 @@
       "condition_hearts": 3,
       "jogress_avaliable": false,
       "hp": 10,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Halsemon",
@@ -3308,6 +3566,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 12,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Garudamon",
@@ -3346,6 +3607,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 12,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Silphymon",
@@ -3384,6 +3648,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 12,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Arukenimon"
@@ -3414,6 +3681,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 12,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Mihiramon",
@@ -3471,6 +3741,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 12,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Antylamon (Deva)",
@@ -3528,6 +3801,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 12,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "CrysPaledramon",
@@ -3566,6 +3842,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 12,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Mermaimon",
@@ -3604,6 +3883,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 12,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Grademon",
@@ -3642,6 +3924,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 12,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Mercurymon",
@@ -3699,6 +3984,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 12,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Parrotmon",
@@ -3737,6 +4025,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 15,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Zhuqiaomon",
@@ -3775,6 +4066,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 15,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Nidhoggmon",
@@ -3813,6 +4107,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 15,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Hexeblaumon",
@@ -3855,6 +4152,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 15,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Zhuqiaomon",
@@ -3893,6 +4193,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 15,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "SlashAngemon",
@@ -3954,6 +4257,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 15,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "AncientWisemon",
@@ -3992,6 +4298,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 15,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Neptunemon",
@@ -4030,6 +4339,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 15,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Zhuqiaomon",
@@ -4068,6 +4380,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 15,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Eaglemon",
@@ -4106,6 +4421,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 15,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "AncientKazemon",
@@ -4144,6 +4462,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 15,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Ravemon",
@@ -4182,6 +4503,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 15,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Valkyrimon",
@@ -4220,9 +4544,12 @@
       "condition_hearts": 4,
       "jogress_avaliable": false,
       "hp": 18,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
-          "to": "Omnimon Alter-B",
+          "to": "Omnipet Alter-B",
           "version": 1,
           "jogress": "AncientGreymon"
         },
@@ -4257,6 +4584,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": false,
       "hp": 18,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Varodurumon",
@@ -4293,6 +4623,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": false,
       "hp": 18,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Susanomon",
@@ -4325,6 +4658,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": false,
       "hp": 18,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": []
     },
     {
@@ -4351,6 +4687,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": false,
       "hp": 18,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": []
     },
     {
@@ -4377,6 +4716,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": false,
       "hp": 18,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": []
     },
     {
@@ -4403,6 +4745,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": false,
       "hp": 18,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": []
     },
     {
@@ -4429,6 +4774,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": false,
       "hp": 18,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Ravemon: Burst Mode",
@@ -4460,6 +4808,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": false,
       "hp": 18,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": []
     },
     {
@@ -4486,6 +4837,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": false,
       "hp": 18,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Varodurumon",
@@ -4517,6 +4871,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": false,
       "hp": 18,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Phoenixmon",
@@ -4526,7 +4883,7 @@
       ]
     },
     {
-      "name": "Omnimon Alter-B",
+      "name": "Omnipet Alter-B",
       "stage": 7,
       "version": 3,
       "special": false,
@@ -4549,6 +4906,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": false,
       "hp": 20,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": []
     },
     {
@@ -4575,6 +4935,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": false,
       "hp": 20,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": []
     },
     {
@@ -4601,6 +4964,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": false,
       "hp": 20,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": []
     },
     {
@@ -4627,6 +4993,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": false,
       "hp": 20,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": []
     },
     {
@@ -4653,6 +5022,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": false,
       "hp": 20,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": []
     },
     {
@@ -4677,6 +5049,9 @@
       "condition_hearts": 0,
       "jogress_avaliable": false,
       "hp": 0,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "YukimiBotamon"
@@ -4705,6 +5080,9 @@
       "condition_hearts": 1,
       "jogress_avaliable": false,
       "hp": 0,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Nyaromon"
@@ -4735,6 +5113,9 @@
       "condition_hearts": 2,
       "jogress_avaliable": false,
       "hp": 0,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Salamon"
@@ -4765,6 +5146,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 12,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Lynxmon",
@@ -4839,6 +5223,9 @@
       "condition_hearts": 3,
       "jogress_avaliable": false,
       "hp": 10,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Gatomon"
@@ -4869,6 +5256,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 12,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Piximon",
@@ -4907,6 +5297,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 12,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Mephistomon",
@@ -4949,6 +5342,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 12,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Blossomon",
@@ -5006,6 +5402,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 12,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Flaremon",
@@ -5044,6 +5443,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 12,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Angewomon",
@@ -5101,6 +5503,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 12,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Caturamon",
@@ -5158,6 +5563,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 12,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": []
     },
     {
@@ -5184,6 +5592,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 12,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Piximon",
@@ -5241,6 +5652,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 12,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "HippoGryphonmon",
@@ -5279,6 +5693,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 12,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Whamon",
@@ -5336,6 +5753,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 15,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Magnadramon",
@@ -5401,6 +5821,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 15,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Lotosmon",
@@ -5439,6 +5862,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 15,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Baihumon",
@@ -5477,6 +5903,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 15,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Gulfmon",
@@ -5515,6 +5944,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 15,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Magnadramon",
@@ -5553,6 +5985,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 15,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Gryphonmon",
@@ -5610,6 +6045,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 15,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Baihumon",
@@ -5648,6 +6086,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 15,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Gryphonmon",
@@ -5690,6 +6131,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 15,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Gulfmon",
@@ -5728,6 +6172,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 15,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Baihumon",
@@ -5785,6 +6232,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 15,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "MarineAngemon",
@@ -5846,6 +6296,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 15,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "MarineAngemon",
@@ -5884,6 +6337,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": false,
       "hp": 18,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Susanomon",
@@ -5916,6 +6372,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": false,
       "hp": 18,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": []
     },
     {
@@ -5942,6 +6401,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": false,
       "hp": 18,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Chaosmon",
@@ -5974,6 +6436,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": false,
       "hp": 18,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Cernumon",
@@ -6005,6 +6470,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": false,
       "hp": 18,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": []
     },
     {
@@ -6031,6 +6499,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": false,
       "hp": 18,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": []
     },
     {
@@ -6057,6 +6528,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": false,
       "hp": 18,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": []
     },
     {
@@ -6083,6 +6557,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": false,
       "hp": 18,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Shakamon",
@@ -6115,6 +6592,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": false,
       "hp": 18,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": []
     },
     {
@@ -6141,6 +6621,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": false,
       "hp": 18,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Ophanimon: Falldown Mode",
@@ -6172,6 +6655,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": false,
       "hp": 20,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": []
     },
     {
@@ -6198,6 +6684,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": false,
       "hp": 20,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": []
     },
     {
@@ -6224,6 +6713,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": false,
       "hp": 20,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": []
     },
     {
@@ -6250,6 +6742,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": false,
       "hp": 20,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": []
     },
     {
@@ -6276,6 +6771,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": false,
       "hp": 20,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": []
     },
     {
@@ -6300,6 +6798,9 @@
       "condition_hearts": 0,
       "jogress_avaliable": false,
       "hp": 0,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Tsubumon"
@@ -6328,6 +6829,9 @@
       "condition_hearts": 1,
       "jogress_avaliable": false,
       "hp": 0,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Upamon"
@@ -6358,6 +6862,9 @@
       "condition_hearts": 2,
       "jogress_avaliable": false,
       "hp": 0,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Armadillomon"
@@ -6388,6 +6895,9 @@
       "condition_hearts": 3,
       "jogress_avaliable": false,
       "hp": 10,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Boarmon",
@@ -6462,6 +6972,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 12,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Shakkoumon",
@@ -6500,6 +7013,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 12,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Vikaralamon",
@@ -6538,6 +7054,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 12,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Brachiomon",
@@ -6576,6 +7095,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 12,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Golemon",
@@ -6618,6 +7140,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 12,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "MasterTyrannomon",
@@ -6656,6 +7181,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 12,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Jagamon",
@@ -6694,6 +7222,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 12,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Jazarichmon",
@@ -6732,6 +7263,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 12,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "MegaSeadramon",
@@ -6770,6 +7304,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 12,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Triceramon",
@@ -6812,6 +7349,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 12,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Pajiramon",
@@ -6850,6 +7390,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 12,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Gusokumon",
@@ -6888,6 +7431,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 15,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "AncientMegatheriummon",
@@ -6926,6 +7472,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 15,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "AncientVolcanomon",
@@ -6964,6 +7513,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 15,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "MetalPiranimon",
@@ -7002,6 +7554,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 15,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Ebonwumon",
@@ -7044,6 +7599,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 15,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Metallicdramon",
@@ -7082,6 +7640,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 15,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Ebonwumon",
@@ -7124,6 +7685,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 15,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "RustTyrannomon",
@@ -7162,6 +7726,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 15,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "MetalSeadramon",
@@ -7204,6 +7771,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 15,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "RustTyrannomon",
@@ -7253,6 +7823,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 15,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Cannondramon",
@@ -7291,6 +7864,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 15,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Vikemon",
@@ -7329,6 +7905,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 15,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "AncientSphinxmon",
@@ -7371,6 +7950,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 15,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Anubismon",
@@ -7409,6 +7991,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": false,
       "hp": 18,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Susanomon",
@@ -7441,6 +8026,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": false,
       "hp": 18,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Susanomon",
@@ -7473,6 +8061,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": false,
       "hp": 18,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Susanomon",
@@ -7505,6 +8096,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": false,
       "hp": 18,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": []
     },
     {
@@ -7531,6 +8125,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": false,
       "hp": 18,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": []
     },
     {
@@ -7557,6 +8154,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": false,
       "hp": 18,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": []
     },
     {
@@ -7583,6 +8183,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": false,
       "hp": 18,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": []
     },
     {
@@ -7609,6 +8212,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": false,
       "hp": 18,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": []
     },
     {
@@ -7635,6 +8241,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": false,
       "hp": 18,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": []
     },
     {
@@ -7661,6 +8270,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": false,
       "hp": 18,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Aegisdramon",
@@ -7693,6 +8305,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": false,
       "hp": 18,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Aegisdramon",
@@ -7725,6 +8340,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": false,
       "hp": 18,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": []
     },
     {
@@ -7751,6 +8369,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": false,
       "hp": 18,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": []
     },
     {
@@ -7777,6 +8398,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": false,
       "hp": 20,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": []
     },
     {
@@ -7803,6 +8427,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": false,
       "hp": 20,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": []
     },
     {
@@ -7827,6 +8454,9 @@
       "condition_hearts": 0,
       "jogress_avaliable": false,
       "hp": 0,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Poyomon"
@@ -7855,6 +8485,9 @@
       "condition_hearts": 1,
       "jogress_avaliable": false,
       "hp": 0,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Tokomon"
@@ -7885,6 +8518,9 @@
       "condition_hearts": 2,
       "jogress_avaliable": false,
       "hp": 0,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Patamon"
@@ -7915,6 +8551,9 @@
       "condition_hearts": 3,
       "jogress_avaliable": false,
       "hp": 10,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Angemon",
@@ -7989,6 +8628,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 12,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "MagnaAngemon",
@@ -8027,6 +8669,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 12,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Asuramon",
@@ -8065,6 +8710,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 12,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Myotismon",
@@ -8103,6 +8751,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 12,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Divermon",
@@ -8141,6 +8792,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 12,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Sirenmon",
@@ -8179,6 +8833,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 12,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Cannonbeemon",
@@ -8217,6 +8874,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 12,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "MagnaAngemon",
@@ -8274,6 +8934,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 12,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Phantomon",
@@ -8312,6 +8975,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 12,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Antylamon (Deva)",
@@ -8343,6 +9009,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 12,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Vermilimon",
@@ -8381,6 +9050,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 15,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Cherubimon (Good)",
@@ -8419,6 +9091,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 15,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Zanbamon",
@@ -8457,6 +9132,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 15,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "TigerVespamon",
@@ -8495,6 +9173,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 15,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Pukumon",
@@ -8537,6 +9218,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 15,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Seraphimon",
@@ -8580,6 +9264,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 15,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "SlashAngemon",
@@ -8618,6 +9305,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 15,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "VenomMyotismon",
@@ -8656,6 +9346,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 15,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "MetalPhantomon",
@@ -8694,6 +9387,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 15,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Fanglongmon",
@@ -8736,6 +9432,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 15,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "AncientMermaimon",
@@ -8774,6 +9473,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 15,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Goldramon",
@@ -8812,6 +9514,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": false,
       "hp": 18,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Susanomon",
@@ -8844,6 +9549,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": false,
       "hp": 18,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": []
     },
     {
@@ -8870,6 +9578,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": false,
       "hp": 18,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Fanglongmon: Ruin Mode",
@@ -8901,6 +9612,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": false,
       "hp": 18,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Phoenixmon",
@@ -8933,6 +9647,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": false,
       "hp": 18,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": []
     },
     {
@@ -8959,6 +9676,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": false,
       "hp": 18,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": []
     },
     {
@@ -8985,6 +9705,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": false,
       "hp": 18,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": []
     },
     {
@@ -9011,6 +9734,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": false,
       "hp": 18,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "BlackSeraphimon",
@@ -9042,6 +9768,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": false,
       "hp": 18,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": []
     },
     {
@@ -9068,6 +9797,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": false,
       "hp": 18,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": []
     },
     {
@@ -9094,6 +9826,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": false,
       "hp": 19,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": []
     },
     {
@@ -9120,6 +9855,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": false,
       "hp": 18,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": []
     },
     {
@@ -9146,6 +9884,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": false,
       "hp": 20,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": []
     },
     {
@@ -9172,6 +9913,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": false,
       "hp": 20,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": []
     },
     {
@@ -9198,6 +9942,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": false,
       "hp": 20,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": []
     },
     {
@@ -9224,6 +9971,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": false,
       "hp": 20,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": []
     },
     {
@@ -9250,6 +10000,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": false,
       "hp": 20,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": []
     },
     {
@@ -9274,6 +10027,9 @@
       "condition_hearts": 0,
       "jogress_avaliable": false,
       "hp": 0,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Ukkomon"
@@ -9304,6 +10060,9 @@
       "condition_hearts": 3,
       "jogress_avaliable": false,
       "hp": 10,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "BigUkkomon",
@@ -9375,6 +10134,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": false,
       "hp": 18,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Susanomon",
@@ -9407,6 +10169,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": false,
       "hp": 18,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Susanomon",
@@ -9439,6 +10204,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": false,
       "hp": 18,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Susanomon",
@@ -9471,6 +10239,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": false,
       "hp": 18,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Susanomon",
@@ -9503,6 +10274,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": false,
       "hp": 18,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Susanomon",
@@ -9535,6 +10309,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": false,
       "hp": 18,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Susanomon",
@@ -9567,6 +10344,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": false,
       "hp": 18,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Susanomon",
@@ -9599,6 +10379,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": false,
       "hp": 18,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Susanomon",
@@ -9631,6 +10414,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": false,
       "hp": 18,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Susanomon",
@@ -9663,6 +10449,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": false,
       "hp": 18,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Susanomon",
@@ -9695,6 +10484,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": false,
       "hp": 18,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": []
     },
     {
@@ -9721,6 +10513,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": false,
       "hp": 20,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": []
     },
     {
@@ -9745,6 +10540,9 @@
       "condition_hearts": 0,
       "jogress_avaliable": false,
       "hp": 0,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Zerimon"
@@ -9773,6 +10571,9 @@
       "condition_hearts": 1,
       "jogress_avaliable": false,
       "hp": 0,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Gummymon"
@@ -9801,6 +10602,9 @@
       "condition_hearts": 1,
       "jogress_avaliable": false,
       "hp": 0,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Lopmon",
@@ -9842,6 +10646,9 @@
       "condition_hearts": 3,
       "jogress_avaliable": false,
       "hp": 10,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "BlackGalgomon",
@@ -9898,6 +10705,9 @@
       "condition_hearts": 3,
       "jogress_avaliable": false,
       "hp": 10,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Galgomon",
@@ -9954,6 +10764,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 12,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "BlackRapidmon",
@@ -10011,6 +10824,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 12,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Rapidmon",
@@ -10068,6 +10884,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 12,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Sinduramon",
@@ -10140,6 +10959,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 12,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Makuramon",
@@ -10197,6 +11019,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 12,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Antylamon (Deva)",
@@ -10254,6 +11079,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 15,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Cherubimon (Black)",
@@ -10289,6 +11117,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 15,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Cherubimon (Black)",
@@ -10324,6 +11155,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 15,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "BlackMegaGargomon",
@@ -10366,6 +11200,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 15,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": []
     },
     {
@@ -10392,6 +11229,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 15,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Cherubimon (Black)",
@@ -10423,6 +11263,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 15,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "MegaGalgomon",
@@ -10465,6 +11308,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 15,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": [
         {
           "to": "Cherubimon (Black)",
@@ -10496,6 +11342,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": true,
       "hp": 15,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": []
     },
     {
@@ -10522,6 +11371,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": false,
       "hp": 18,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": []
     },
     {
@@ -10548,6 +11400,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": false,
       "hp": 18,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": []
     },
     {
@@ -10574,6 +11429,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": false,
       "hp": 18,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": []
     },
     {
@@ -10600,6 +11458,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": false,
       "hp": 18,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": []
     },
     {
@@ -10626,6 +11487,9 @@
       "condition_hearts": 4,
       "jogress_avaliable": false,
       "hp": 18,
+      "star": 0,
+      "attack": 0,
+      "critical_turn": 0,
       "evolve": []
     }
   ]

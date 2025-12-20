@@ -7,9 +7,9 @@
 body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
-  background: linear-gradient(135deg, #426fbd 0%, #3d32b6 100%);
+  background: linear-gradient(135deg, #2e3e4d 0%, #1f2023 100%);
   min-height: 100vh;
-  color: #2d3748;
+  color: #a2adc1;
   line-height: 1.6;
 }
 
@@ -134,7 +134,7 @@ body {
   max-width: 1200px;
   margin: 0 auto;
   padding: 60px 40px;
-  background: #f5f8ff;
+  background: rgb(31, 32, 38);
   min-height: calc(100vh - 140px);
 }
 
@@ -146,17 +146,14 @@ body {
 .page-title {
   font-size: 2.5rem;
   font-weight: 700;
-  background: linear-gradient(135deg, #667eea, #764ba2);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: rgb(162, 173, 193);
   margin-bottom: 20px;
   line-height: 1.2;
 }
 
 .page-subtitle {
   font-size: 1.2rem;
-  color: #718096;
+  color: rgb(162, 173, 193);
   max-width: 600px;
   margin: 0 auto;
 }
@@ -165,20 +162,191 @@ body {
   margin-bottom: 50px;
 }
 
+/* Default section title - Blue theme (BLUE_DARK, BLUE, BLUE_LIGHT) */
 .section-title {
+  --section-border-color: rgb(1, 170, 222);
+  --section-bg-color: rgb(33, 87, 127);
+  --section-hover-color: rgb(217, 255, 248);
+  --section-notch-size: 20px;
+
+  position: relative;
   display: flex;
   justify-content: space-between;
   align-items: center;
+
   font-size: 1.5rem;
   font-weight: 600;
-  color: #2d3748;
-  margin-bottom: 20px;
-  position: relative;
-  padding-left: 20px;
-  background: #9EBEF0;
-  border-radius: 8px;
-  padding-right: 16px;
+  color: var(--section-border-color);
+
+  padding: 24px 28px;
   margin-top: 20px;
+  margin-bottom: 20px;
+
+  border: 4px solid var(--section-border-color);
+  background: transparent;
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.35);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  isolation: isolate;
+  overflow: hidden;
+}
+
+.section-title::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--section-bg-color);
+  clip-path: polygon(
+    var(--section-notch-size) 0,
+    100% 0,
+    100% calc(100% - var(--section-notch-size)),
+    calc(100% - var(--section-notch-size)) 100%,
+    0 100%,
+    0 var(--section-notch-size)
+  );
+  z-index: -2;
+}
+
+.section-title::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(135deg, var(--section-border-color) 0 50%, transparent 50%) top left / var(--section-notch-size) var(--section-notch-size) no-repeat,
+    linear-gradient(315deg, var(--section-border-color) 0 50%, transparent 50%) bottom right / var(--section-notch-size) var(--section-notch-size) no-repeat;
+  z-index: -1;
+}
+
+.section-title:hover {
+  --section-border-color: var(--section-hover-color);
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.45);
+}
+
+/* Status Menu - Purple theme (PURPLE_DARK, PURPLE, PURPLE_LIGHT) */
+.content-section:has(img[src*="Status.png"]) .section-title {
+  --section-bg-color: rgb(76, 46, 77);
+  --section-border-color: rgb(204, 82, 133);
+  --section-hover-color: rgb(255, 238, 217);
+}
+
+/* Feeding Menu - Blue theme */
+.content-section:has(img[src*="Food.png"]) .section-title {
+  --section-bg-color: rgb(46, 62, 77);
+  --section-border-color: rgb(82, 163, 204);
+  --section-hover-color: rgb(217, 255, 248);
+}
+
+/* Training Menu - Green theme (GREEN_DARK, GREEN, GREEN_LIGHT) */
+.content-section:has(img[src*="Training.png"]) .section-title {
+  --section-bg-color: rgb(46, 77, 59);
+  --section-border-color: rgb(102, 204, 82);
+  --section-hover-color: rgb(217, 255, 238);
+}
+
+/* Battle Menu - Red theme (RED_DARK, RED, RED_LIGHT) */
+.content-section:has(img[src*="Battle.png"]) .section-title {
+  --section-bg-color: rgb(77, 46, 46);
+  --section-border-color: rgb(204, 82, 82);
+  --section-hover-color: rgb(255, 217, 217);
+}
+
+/* Sleep Menu - Yellow theme (YELLOW_DARK, YELLOW, YELLOW_LIGHT) */
+.content-section:has(img[src*="Sleep.png"]) .section-title {
+  --section-bg-color: rgb(77, 71, 46);
+  --section-border-color: rgb(179, 145, 45);
+  --section-hover-color: rgb(255, 242, 204);
+}
+
+/* Library - Yellow Bright theme (YELLOW_BRIGHT_DARK, YELLOW_BRIGHT, YELLOW_BRIGHT_LIGHT) */
+ .content-section:has(img[src*="Library.png"]) .section-title,
+ .content-section:has(img[src*="BagIcon.png"]) .section-title,
+ .content-section:has(img[src*="LibraryMenu.png"]) .section-title,
+ .content-section:has(img[src*="LibraryIcon.png"]) .section-title {
+  --section-bg-color: rgb(77, 74, 46);
+  --section-border-color: rgb(255, 235, 59);
+  --section-hover-color: rgb(255, 252, 217);
+}
+
+/* Freezer Menu - Cyan theme (CYAN_DARK, CYAN, CYAN_LIGHT) */
+.content-section:has(img[src*="FreezerIcon.png"]) .section-title {
+  --section-bg-color: rgb(46, 77, 77);
+  --section-border-color: rgb(82, 204, 204);
+  --section-hover-color: rgb(217, 255, 255);
+}
+
+.content-section:has(img[src*="FreezerIcon.png"]) .section-content h3,
+.content-section:has(img[src*="FreezerIcon.png"]) .section-content h4,
+.content-section:has(img[src*="FreezerIcon.png"]) .section-content strong {
+  color: rgb(82, 204, 204);
+}
+
+.content-section:has(img[src*="FreezerIcon.png"]) .sub-table th,
+.content-section:has(img[src*="FreezerIcon.png"]) .sub-table td {
+  border: 2px solid rgb(82, 204, 204);
+  color: rgb(162, 173, 193);
+}
+
+.content-section:has(img[src*="FreezerIcon.png"]) .sub-table th {
+  background: rgb(46, 77, 77);
+  font-weight: 600;
+  color: rgb(82, 204, 204);
+}
+
+.content-section:has(img[src*="FreezerIcon.png"]) .feature-card {
+  box-shadow: 0 0 0 4px rgb(82, 204, 204), 0 10px 25px rgba(0, 0, 0, 0.3);
+}
+
+.content-section:has(img[src*="FreezerIcon.png"]) .feature-card:hover {
+  box-shadow: 0 0 0 4px rgb(217, 255, 255), 0 10px 25px rgba(0, 0, 0, 0.3);
+}
+
+.content-section:has(img[src*="FreezerIcon.png"]) .feature-card .feature-title {
+  color: rgb(82, 204, 204);
+}
+
+/* Digidex - Lime theme (LIME_DARK, LIME, LIME_LIGHT) */
+.content-section:has(img[src*="DigidexIcon.png"]) .section-title {
+  --section-bg-color: rgb(56, 77, 31);
+  --section-border-color: rgb(139, 195, 74);
+  --section-hover-color: rgb(241, 248, 233);
+}
+
+.content-section:has(img[src*="DigidexIcon.png"]) .section-content h3,
+.content-section:has(img[src*="DigidexIcon.png"]) .section-content h4,
+.content-section:has(img[src*="DigidexIcon.png"]) .section-content strong {
+  color: rgb(139, 195, 74);
+}
+
+.content-section:has(img[src*="DigidexIcon.png"]) .sub-table th,
+.content-section:has(img[src*="DigidexIcon.png"]) .sub-table td {
+  border: 2px solid rgb(139, 195, 74);
+  color: rgb(162, 173, 193);
+}
+
+.content-section:has(img[src*="DigidexIcon.png"]) .sub-table th {
+  background: rgb(56, 77, 31);
+  font-weight: 600;
+  color: rgb(139, 195, 74);
+}
+
+.content-section:has(img[src*="DigidexIcon.png"]) .feature-card {
+  box-shadow: 0 0 0 4px rgb(139, 195, 74), 0 10px 25px rgba(0, 0, 0, 0.3);
+}
+
+.content-section:has(img[src*="DigidexIcon.png"]) .feature-card:hover {
+  box-shadow: 0 0 0 4px rgb(241, 248, 233), 0 10px 25px rgba(0, 0, 0, 0.3);
+}
+
+.content-section:has(img[src*="DigidexIcon.png"]) .feature-card .feature-title {
+  color: rgb(139, 195, 74);
+}
+
+/* Settings Menu - Gray theme (GRAY_DARK, GRAY, GRAY_LIGHT) */
+.content-section:has(img[src*="SettingsMenuIcon.png"]) .section-title {
+  --section-bg-color: rgb(64, 64, 64);
+  --section-border-color: rgb(162, 173, 193);
+  --section-hover-color: rgb(247, 250, 254);
 }
 
 .toggle-btn {
@@ -186,7 +354,7 @@ body {
   border: none;
   cursor: pointer;
   font-size: 1.3em;
-  color: #2d3748;
+  color: inherit;
   display: flex;
   align-items: center;
   margin-left: 12px;
@@ -217,7 +385,7 @@ body {
 
 .section-content {
   font-size: 1.1rem;
-  color: #4a5568;
+  color: rgb(162, 173, 193);
   line-height: 1.8;
 }
 
@@ -229,18 +397,29 @@ body {
 }
 
 .feature-card {
-  background: #f7fafc;
   padding: 30px;
-  border-radius: 12px;
-  border: 1px solid #e2e8f0;
+  background: rgb(46, 62, 77);
+  clip-path: polygon(
+    20px 0,
+    100% 0,
+    100% calc(100% - 20px),
+    calc(100% - 20px) 100%,
+    0 100%,
+    0 20px
+  );
   transition: all 0.3s ease;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 0 0 4px rgb(82, 163, 204), 0 10px 25px rgba(0, 0, 0, 0.3);
+}
+
+.feature-card:hover {
+  box-shadow: 0 0 0 4px rgb(217, 255, 248), 0 10px 25px rgba(0, 0, 0, 0.3);
 }
 
 .feature-table {
   width: 100%;
   margin: 5px;
-  border: none
+  border: none;
+  color: rgb(162, 173, 193);
 }
 
 .item {
@@ -250,6 +429,22 @@ body {
 .feature-table td {
   padding: 12px 16px;
   border: none;
+  vertical-align: top;
+}
+
+.feature-table strong {
+  color: rgb(217, 255, 248);
+}
+
+.feature-table ul {
+  color: rgb(162, 173, 193);
+}
+
+.feature-table code {
+  background: rgb(31, 32, 38);
+  color: rgb(255, 235, 59);
+  padding: 2px 6px;
+  border: 2px solid rgb(162, 173, 193);
 }
 
 .status-title {
@@ -264,20 +459,22 @@ body {
   border-collapse: collapse;
   margin-top: 10px;
   margin-bottom: 10px;
-  background: #f8fafc;
+  background: rgb(31, 32, 38);
   font-size: 1em;
 }
 
 .sub-table th,
 .sub-table td {
-  border: 1px solid #b0b6c3;
+  border: 2px solid rgb(82, 163, 204);
   padding: 4px 8px;
   text-align: center;
+  color: rgb(162, 173, 193);
 }
 
 .sub-table th {
-  background: #e2e8f0;
+  background: rgb(46, 62, 77);
   font-weight: 600;
+  color: rgb(82, 163, 204);
 }
 
 .feature-icon {
@@ -296,13 +493,264 @@ body {
 .feature-title {
   font-size: 1.3rem;
   font-weight: 600;
-  color: #2d3748;
+  color: rgb(82, 163, 204);
   margin-bottom: 15px;
 }
 
 .feature-description {
-  color: #4a5568;
+  color: rgb(162, 173, 193);
   line-height: 1.6;
+}
+
+/* Section-specific content styling */
+.section-content h3,
+.section-content h4 {
+  color: rgb(82, 163, 204);
+  margin-top: 20px;
+  margin-bottom: 10px;
+}
+
+.section-content p {
+  color: rgb(162, 173, 193);
+}
+
+.section-content ul,
+.section-content ol {
+  color: rgb(162, 173, 193);
+  margin-left: 20px;
+}
+
+.section-content li {
+  margin-bottom: 8px;
+}
+
+/* Status Menu - Purple themed content */
+.content-section:has(img[src*="Status.png"]) .section-content h3,
+.content-section:has(img[src*="Status.png"]) .section-content h4,
+.content-section:has(img[src*="Status.png"]) .section-content strong {
+  color: rgb(204, 82, 133);
+}
+
+.content-section:has(img[src*="Status.png"]) .sub-table th,
+.content-section:has(img[src*="Status.png"]) .sub-table td {
+  border-color: rgb(204, 82, 133);
+}
+
+.content-section:has(img[src*="Status.png"]) .sub-table th {
+  background: rgb(76, 46, 77);
+  color: rgb(204, 82, 133);
+}
+
+/* Feeding Menu - Blue themed content */
+.content-section:has(img[src*="Food.png"]) .section-content h3,
+.content-section:has(img[src*="Food.png"]) .section-content h4,
+.content-section:has(img[src*="Food.png"]) .section-content strong {
+  color: rgb(82, 163, 204);
+}
+
+.content-section:has(img[src*="Food.png"]) .sub-table th {
+  background: rgb(46, 62, 77);
+  color: rgb(82, 163, 204);
+}
+
+/* Training Menu - Green themed content */
+.content-section:has(img[src*="Training.png"]) .section-content h3,
+.content-section:has(img[src*="Training.png"]) .section-content h4,
+.content-section:has(img[src*="Training.png"]) .section-content strong {
+  color: rgb(102, 204, 82);
+}
+
+.content-section:has(img[src*="Training.png"]) .sub-table th,
+.content-section:has(img[src*="Training.png"]) .sub-table td {
+  border-color: rgb(102, 204, 82);
+}
+
+.content-section:has(img[src*="Training.png"]) .sub-table th {
+  background: rgb(46, 77, 69);
+  color: rgb(102, 204, 82);
+}
+
+/* Battle Menu - Red themed content */
+.content-section:has(img[src*="Battle.png"]) .section-content h3,
+.content-section:has(img[src*="Battle.png"]) .section-content h4,
+.content-section:has(img[src*="Battle.png"]) .section-content strong {
+  color: rgb(204, 82, 82);
+}
+
+.content-section:has(img[src*="Battle.png"]) .sub-table th,
+.content-section:has(img[src*="Battle.png"]) .sub-table td {
+  border-color: rgb(204, 82, 82);
+}
+
+.content-section:has(img[src*="Battle.png"]) .sub-table th {
+  background: rgb(77, 39, 46);
+  color: rgb(204, 82, 82);
+}
+
+/* Sleep Menu - Yellow themed content */
+.content-section:has(img[src*="LightSleep.png"]) .section-content h3,
+.content-section:has(img[src*="LightSleep.png"]) .section-content h4,
+.content-section:has(img[src*="LightSleep.png"]) .section-content strong {
+  color: rgb(179, 145, 45);
+}
+
+.content-section:has(img[src*="LightSleep.png"]) .sub-table th,
+.content-section:has(img[src*="LightSleep.png"]) .sub-table td {
+  border-color: rgb(179, 145, 45);
+}
+
+.content-section:has(img[src*="LightSleep.png"]) .sub-table th {
+  background: rgb(153, 89, 46);
+  color: rgb(179, 145, 45);
+}
+
+/* Library - Yellow Bright themed content */
+ .content-section:has(img[src*="BagIcon.png"]) .section-content h3,
+ .content-section:has(img[src*="BagIcon.png"]) .section-content h4,
+ .content-section:has(img[src*="BagIcon.png"]) .section-content strong,
+ .content-section:has(img[src*="LibraryMenu.png"]) .section-content h3,
+ .content-section:has(img[src*="LibraryMenu.png"]) .section-content h4,
+ .content-section:has(img[src*="LibraryMenu.png"]) .section-content strong,
+ .content-section:has(img[src*="LibraryIcon.png"]) .section-content h3,
+ .content-section:has(img[src*="LibraryIcon.png"]) .section-content h4,
+ .content-section:has(img[src*="LibraryIcon.png"]) .section-content strong {
+  color: rgb(255, 235, 59);
+}
+
+ .content-section:has(img[src*="BagIcon.png"]) .sub-table th,
+ .content-section:has(img[src*="BagIcon.png"]) .sub-table td,
+ .content-section:has(img[src*="LibraryMenu.png"]) .sub-table th,
+ .content-section:has(img[src*="LibraryMenu.png"]) .sub-table td,
+ .content-section:has(img[src*="LibraryIcon.png"]) .sub-table th,
+ .content-section:has(img[src*="LibraryIcon.png"]) .sub-table td {
+  border-color: rgb(255, 235, 59);
+}
+
+ .content-section:has(img[src*="BagIcon.png"]) .sub-table th,
+ .content-section:has(img[src*="LibraryMenu.png"]) .sub-table th,
+ .content-section:has(img[src*="LibraryIcon.png"]) .sub-table th {
+  background: rgb(153, 138, 46);
+  color: rgb(255, 235, 59);
+}
+
+/* Settings Menu - Gray themed content */
+.content-section:has(img[src*="SettingsMenuIcon.png"]) .section-content h3,
+.content-section:has(img[src*="SettingsMenuIcon.png"]) .section-content h4,
+.content-section:has(img[src*="SettingsMenuIcon.png"]) .section-content strong {
+  color: rgb(162, 173, 193);
+}
+
+.content-section:has(img[src*="SettingsMenuIcon.png"]) .sub-table th,
+.content-section:has(img[src*="SettingsMenuIcon.png"]) .sub-table td {
+  border-color: rgb(162, 173, 193);
+}
+
+.content-section:has(img[src*="SettingsMenuIcon.png"]) .sub-table th {
+  background: rgb(64, 64, 64);
+  color: rgb(162, 173, 193);
+}
+
+/* Apply theme colors to feature cards within each section */
+.content-section:has(img[src*="Status.png"]) .feature-card {
+  background: rgb(76, 46, 77);
+  box-shadow: 0 0 0 4px rgb(204, 82, 133), 0 10px 25px rgba(0, 0, 0, 0.3);
+}
+
+.content-section:has(img[src*="Status.png"]) .feature-card:hover {
+  box-shadow: 0 0 0 4px rgb(255, 238, 217), 0 10px 25px rgba(0, 0, 0, 0.3);
+}
+
+.content-section:has(img[src*="Status.png"]) .feature-card .feature-title {
+  color: rgb(204, 82, 133);
+}
+
+.content-section:has(img[src*="Food.png"]) .feature-card {
+  background: rgb(46, 62, 77);
+  box-shadow: 0 0 0 4px rgb(82, 163, 204), 0 10px 25px rgba(0, 0, 0, 0.3);
+}
+
+.content-section:has(img[src*="Food.png"]) .feature-card:hover {
+  box-shadow: 0 0 0 4px rgb(217, 255, 248), 0 10px 25px rgba(0, 0, 0, 0.3);
+}
+
+.content-section:has(img[src*="Food.png"]) .feature-card .feature-title {
+  color: rgb(82, 163, 204);
+}
+
+.content-section:has(img[src*="Training.png"]) .feature-card {
+  background: rgb(46, 77, 69);
+  box-shadow: 0 0 0 4px rgb(102, 204, 82), 0 10px 25px rgba(0, 0, 0, 0.3);
+}
+
+.content-section:has(img[src*="Training.png"]) .feature-card:hover {
+  box-shadow: 0 0 0 4px rgb(217, 255, 218), 0 10px 25px rgba(0, 0, 0, 0.3);
+}
+
+.content-section:has(img[src*="Training.png"]) .feature-card .feature-title {
+  color: rgb(102, 204, 82);
+}
+
+.content-section:has(img[src*="Battle.png"]) .feature-card {
+  background: rgb(77, 39, 46);
+  box-shadow: 0 0 0 4px rgb(204, 82, 82), 0 10px 25px rgba(0, 0, 0, 0.3);
+}
+
+.content-section:has(img[src*="Battle.png"]) .feature-card:hover {
+  box-shadow: 0 0 0 4px rgb(255, 217, 217), 0 10px 25px rgba(0, 0, 0, 0.3);
+}
+
+.content-section:has(img[src*="Battle.png"]) .feature-card .feature-title {
+  color: rgb(204, 82, 82);
+}
+
+.content-section:has(img[src*="LightSleep.png"]) .feature-card {
+  background: rgb(153, 89, 46);
+  box-shadow: 0 0 0 4px rgb(179, 145, 45), 0 10px 25px rgba(0, 0, 0, 0.3);
+}
+
+.content-section:has(img[src*="LightSleep.png"]) .feature-card:hover {
+  box-shadow: 0 0 0 4px rgb(255, 255, 217), 0 10px 25px rgba(0, 0, 0, 0.3);
+}
+
+.content-section:has(img[src*="LightSleep.png"]) .feature-card .feature-title {
+  color: rgb(179, 145, 45);
+}
+
+ .content-section:has(img[src*="BagIcon.png"]) .feature-card,
+ .content-section:has(img[src*="Library1.png"]) .feature-card,
+ .content-section:has(img[src*="Library2.png"]) .feature-card,
+ .content-section:has(img[src*="LibraryIcon.png"]) .feature-card {
+  background: rgb(153, 138, 46);
+  box-shadow: 0 0 0 4px rgb(255, 235, 59), 0 10px 25px rgba(0, 0, 0, 0.3);
+}
+
+ .content-section:has(img[src*="BagIcon.png"]) .feature-card:hover,
+ .content-section:has(img[src*="Library1.png"]) .feature-card:hover,
+ .content-section:has(img[src*="Library2.png"]) .feature-card:hover,
+ .content-section:has(img[src*="LibraryMenu.png"]) .feature-card:hover,
+ .content-section:has(img[src*="LibraryIcon.png"]) .feature-card:hover {
+  box-shadow: 0 0 0 4px rgb(255, 253, 217), 0 10px 25px rgba(0, 0, 0, 0.3);
+}
+
+ .content-section:has(img[src*="BagIcon.png"]) .feature-card .feature-title,
+ .content-section:has(img[src*="Library1.png"]) .feature-card .feature-title,
+ .content-section:has(img[src*="Library2.png"]) .feature-card .feature-title,
+ .content-section:has(img[src*="LibraryMenu.png"]) .feature-card .feature-title,
+ .content-section:has(img[src*="LibraryIcon.png"]) .feature-card .feature-title {
+  color: rgb(255, 235, 59);
+}
+
+.content-section:has(img[src*="SettingsMenuIcon.png"]) .feature-card {
+  background: rgb(64, 64, 64);
+  box-shadow: 0 0 0 4px rgb(162, 173, 193), 0 10px 25px rgba(0, 0, 0, 0.3);
+}
+
+.content-section:has(img[src*="SettingsMenuIcon.png"]) .feature-card:hover {
+  box-shadow: 0 0 0 4px rgb(247, 250, 254), 0 10px 25px rgba(0, 0, 0, 0.3);
+}
+
+.content-section:has(img[src*="SettingsMenuIcon.png"]) .feature-card .feature-title {
+  color: rgb(162, 173, 193);
 }
 
 /* Footer Styles */

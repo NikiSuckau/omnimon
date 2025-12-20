@@ -1,0 +1,1917 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Omnipet Virtual Pet - Changelog</title>
+    <link rel="stylesheet" href="../assets/main.css">
+    <style>
+        .page-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            background: white;
+            min-height: 100vh;
+        }
+        
+        .page-header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #667eea;
+        }
+        
+        .page-title {
+            font-size: 2.5rem;
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+        
+        .page-subtitle {
+            font-size: 1.1rem;
+            color: #666;
+        }
+        
+        .version {
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background-color: #f9f9f9;
+        }
+        .version-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1rem;
+            margin: -1.5rem -1.5rem 1.5rem -1.5rem;
+            border-radius: 7px 7px 0 0;
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+        .release-date {
+            font-size: 0.9rem;
+            opacity: 0.9;
+            margin-top: 0.5rem;
+        }
+        .feature-category {
+            margin: 1.5rem 0;
+        }
+        .feature-category h3 {
+            color: #667eea;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        .feature-list {
+            list-style: none;
+            padding: 0;
+        }
+        .feature-list li {
+            margin: 0.8rem 0;
+            padding: 0.5rem;
+            background: white;
+            border-left: 4px solid #667eea;
+            border-radius: 0 4px 4px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .new-feature {
+            border-left-color: #28a745;
+        }
+        .improvement {
+            border-left-color: #007bff;
+        }
+        .bugfix {
+            border-left-color: #ffc107;
+        }
+        .technical {
+            border-left-color: #6c757d;
+        }
+        .feature-tag {
+            display: inline-block;
+            padding: 0.15rem 0.4rem;
+            border-radius: 8px;
+            font-size: 0.65rem;
+            font-weight: 500;
+            margin-right: 0.4rem;
+            color: white;
+            opacity: 0.8;
+        }
+        .tag-new { background-color: #28a745; }
+        .tag-improved { background-color: #007bff; }
+        .tag-fixed { background-color: #ffc107; color: #000; }
+        .tag-technical { background-color: #6c757d; }
+        .tag-community { background-color: #e83e8c; }
+        .coming-soon {
+            background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);
+            border: none;
+            color: #333;
+        }
+        .note {
+            background: #e3f2fd;
+            border: 1px solid #2196f3;
+            border-radius: 4px;
+            padding: 1rem;
+            margin: 1rem 0;
+            font-style: italic;
+        }
+        
+        .download-button {
+            display: inline-block;
+            background: #333;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: bold;
+            margin: 8px 8px 8px 0;
+            transition: background 0.3s;
+        }
+        
+        .download-button:hover {
+            background: #555;
+            color: white;
+        }
+        
+        .version-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1rem;
+            margin: -1.5rem -1.5rem 1.5rem -1.5rem;
+            border-radius: 7px 7px 0 0;
+            font-size: 1.5rem;
+            font-weight: bold;
+            cursor: pointer;
+            user-select: none;
+            position: relative;
+        }
+        
+        .version-header::after {
+            content: '▼';
+            position: absolute;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            transition: transform 0.3s ease;
+            font-size: 1.2rem;
+        }
+        
+        .version-header.collapsed::after {
+            transform: translateY(-50%) rotate(-90deg);
+        }
+    </style>
+    <script>
+        function toggleVersion(header) {
+            var content = header.nextElementSibling;
+            var isCollapsed = content.style.display === 'none';
+            
+            if (isCollapsed) {
+                content.style.display = '';
+                header.classList.remove('collapsed');
+            } else {
+                content.style.display = 'none';
+                header.classList.add('collapsed');
+            }
+        }
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            // Get all version sections
+            var versions = document.querySelectorAll('.version');
+            
+            versions.forEach(function(version, index) {
+                var header = version.querySelector('.version-header');
+                var content = version.querySelector('.version-content');
+                
+                if (!content || !header) return;
+                
+                // Add toggle functionality to header
+                header.onclick = function() { toggleVersion(header); };
+                
+                // Set initial state: latest version (index 0) expanded, others collapsed
+                if (index === 0) {
+                    content.style.display = '';
+                } else {
+                    content.style.display = 'none';
+                    header.classList.add('collapsed');
+                }
+            });
+        });
+    </script>
+</head>
+<body>
+    <div class="page-content">
+        <div class="page-header">
+            <h1 class="page-title">Changelog</h1>
+            <p class="page-subtitle">Track all the exciting updates, new features, and improvements to your virtual pet experience!</p>
+            <div style="text-align: center; margin-top: 20px;">
+                <a href="https://github.com/sundeth/omnipet/" target="_blank" class="download-button" style="background: #333; color: white; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: bold; display: inline-block;">
+                    📦 View Source Code on GitHub
+                </a>
+            </div>
+        </div>
+
+        <!-- Version 0.9.9 -->
+        <div class="version">
+            <div class="version-header">
+                Version 0.9.9 - "Omnipet Christmas Renassaince"
+                <div class="release-date">Release Date: December 20, 2025</div>
+            </div>
+            
+            <div class="version-content">
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <a href="https://github.com/sundeth/omnipet/releases" target="_blank" class="download-button" style="background: #28a745;">🔗 Download Latest Release</a>
+                </div>
+
+                <div class="note">
+                    <strong>🎉 Major Milestone Release!</strong><br>
+                    This version represents months of intensive development, completely reimagining the user interface, adding massive content expansions with over 1,583 new characters, and bringing Omnipet to mobile platforms. The project has been rebranded from "Omnimon" to "Omnipet" to better reflect its universal virtual pet focus beyond just Digimon.
+                </div>
+
+            <div class="feature-category">
+                <h3>🎨 Complete UI Revolution</h3>
+                <ul class="feature-list">
+                    <li class="new-feature">
+                        <span class="feature-tag tag-new">NEW</span>
+                        <strong>Master UI Cache System:</strong> Complete overhaul of the rendering pipeline with intelligent component caching, reducing draw calls by 80% (from 600+ blits/sec to under 100) for dramatically improved performance on all platforms.
+                    </li>
+                    <li class="new-feature">
+                        <span class="feature-tag tag-new">NEW</span>
+                        <strong>Multi-Input Interface:</strong> Full support for mouse/touch screen alongside traditional keyboard/joystick controls. Every scene now supports both control schemes seamlessly.
+                    </li>
+                    <li class="new-feature">
+                        <span class="feature-tag tag-new">NEW</span>
+                        <strong>Scene-Specific Color Themes:</strong> Each scene now has distinctive color-coded UI (Library=Yellow, Digidex=Green, Freezer=Cyan, Battle=Red) for instant visual recognition of where you are in the game.
+                    </li>
+                    <li class="new-feature">
+                        <span class="feature-tag tag-new">NEW</span>
+                        <strong>Resolution-Aware Layouts:</strong> Higher resolutions now show more information (more pets visible, longer item lists, expanded quest panels) instead of just scaling everything larger.
+                    </li>
+                    <li class="new-feature">
+                        <span class="feature-tag tag-new">NEW</span>
+                        <strong>Component System Architecture:</strong> All UI rebuilt using reusable, themeable components including buttons, grids, panels, lists, selectors, and displays with consistent behavior across all scenes.
+                    </li>
+                    <li class="improvement">
+                        <span class="feature-tag tag-improved">IMPROVED</span>
+                        <strong>Modern Font System:</strong> Beautiful new typography with multiple font sizes and weights, improving readability and visual hierarchy throughout the entire interface.
+                    </li>
+                    <li class="improvement">
+                        <span class="feature-tag tag-improved">IMPROVED</span>
+                        <strong>Interactive Visual Feedback:</strong> Hover states, focus indicators, selection highlighting, and smooth transitions make every interaction feel responsive and polished.
+                    </li>
+                </ul>
+            </div>
+
+            <div class="feature-category">
+                <h3>📦 Massive Module Expansion</h3>
+                <ul class="feature-list">
+                    <li class="new-feature">
+                        <span class="feature-tag tag-new">NEW</span>
+                        <strong>Vital Bracelet (VB) Complete Collection:</strong> All 37 official DIM Cards fully implemented with authentic evolution lines, stats, and backgrounds. Includes both Digimon and non-Digimon partners.
+                    </li>
+                    <li class="new-feature">
+                        <span class="feature-tag tag-new">NEW</span>
+                        <strong>Vital Hero (VH) Series:</strong> Complete collection of Vital Hero DIMs with unique evolution mechanics and character rosters from various franchises.
+                    </li>
+                    <li class="new-feature">
+                        <span class="feature-tag tag-new">NEW</span>
+                        <strong>Vital Bracelet BE (VBE):</strong> Latest generation Vital Bracelet content with enhanced sprites and evolution systems.
+                    </li>
+                    <li class="new-feature">
+                        <span class="feature-tag tag-new">NEW</span>
+                        <strong>Godzilla DMC Crossover:</strong> Full implementation of the Digimon x Godzilla crossover device with authentic sprites and attack animations.
+                    </li>
+                    <li class="new-feature">
+                        <span class="feature-tag tag-new">NEW</span>
+                        <strong>Original Digital Monster (DM):</strong> Classic 1997 Digital Monster V-Pet faithfully recreated with full color sprites and authentic gameplay mechanics.
+                    </li>
+                    <li class="new-feature">
+                        <span class="feature-tag tag-new">NEW</span>
+                        <strong>Digital Monster Ver. 20th (DM20):</strong> Anniversary edition device with expanded rosters and updated mechanics.
+                    </li>
+                    <li class="new-feature">
+                        <span class="feature-tag tag-new">NEW</span>
+                        <strong>Pendulum Series:</strong> Classic Pendulum V-Pets including Version .0 and Version .5 with shake mechanics fully functional.
+                    </li>
+                    <li class="technical">
+                        <span class="feature-tag tag-technical">STATS</span>
+                        <strong>Content Numbers:</strong> 1,583 total characters added, 1,047 enemy types, 225 hand-crafted unlocks, hundreds of custom backgrounds, and extensive item catalogs across all new modules.
+                    </li>
+                    <li class="improvement">
+                        <span class="feature-tag tag-improved">IMPROVED</span>
+                        <strong>VB Ruleset System:</strong> New "vb" ruleset specifically designed for Vital Bracelet mechanics including step-based evolution, vital values, and battle protocols unique to VB devices.
+                    </li>
+                </ul>
+            </div>
+
+            <div class="feature-category">
+                <h3>🎮 Enhanced Library & Quest System</h3>
+                <ul class="feature-list">
+                    <li class="new-feature">
+                        <span class="feature-tag tag-new">NEW</span>
+                        <strong>Library Scene:</strong> New centralized hub (Yellow theme) for quest management, featuring an elegant vertical quest panel layout showing up to 3 active quests simultaneously with real-time progress tracking.
+                    </li>
+                    <li class="new-feature">
+                        <span class="feature-tag tag-new">NEW</span>
+                        <strong>Visual Quest Indicators:</strong> Color-coded quest panels (Green=claimable, Yellow=in progress, Red=not started, Gray=completed) with reward icons and completion checkmarks.
+                    </li>
+                    <li class="new-feature">
+                        <span class="feature-tag tag-new">NEW</span>
+                        <strong>Quick Access Navigation:</strong> Direct access to Freezer Box, Digidex, and Settings from the Library hub, streamlining navigation between key game systems.
+                    </li>
+                    <li class="improvement">
+                        <span class="feature-tag tag-improved">IMPROVED</span>
+                        <strong>Reward Popup System:</strong> Beautiful animated reward displays when claiming quest rewards, showing earned items with quantity indicators.
+                    </li>
+                </ul>
+            </div>
+
+            <div class="feature-category">
+                <h3>🗂️ Freezer Box Overhaul</h3>
+                <ul class="feature-list">
+                    <li class="new-feature">
+                        <span class="feature-tag tag-new">NEW</span>
+                        <strong>Dual View System:</strong> Seamlessly switch between Party View (manage active pets) and Box View (10 storage boxes with 20 slots each = 200 pet capacity) with dedicated mode buttons.
+                    </li>
+                    <li class="new-feature">
+                        <span class="feature-tag tag-new">NEW</span>
+                        <strong>Grid Navigation:</strong> Intuitive 4×5 grid layout for freezer boxes with visual pet sprites, names, and states. Empty slots clearly marked for easy identification.
+                    </li>
+                    <li class="new-feature">
+                        <span class="feature-tag tag-new">NEW</span>
+                        <strong>Page Navigation:</strong> Arrow buttons (mouse mode) and L/R shoulder buttons (controller mode) for quick box switching. Edge-of-grid navigation automatically changes pages.
+                    </li>
+                    <li class="new-feature">
+                        <span class="feature-tag tag-new">NEW</span>
+                        <strong>Context Menus:</strong> Pet-specific options (Store/Add, Stats, Clear) based on pet state and current view, with keyboard shortcuts for power users.
+                    </li>
+                    <li class="improvement">
+                        <span class="feature-tag tag-improved">IMPROVED</span>
+                        <strong>Stats Panel Integration:</strong> View detailed pet statistics directly from the Freezer without switching scenes, supporting both party and stored pets.
+                    </li>
+                </ul>
+            </div>
+
+            <div class="feature-category">
+                <h3>📚 Digidex Enhancement</h3>
+                <ul class="feature-list">
+                    <li class="new-feature">
+                        <span class="feature-tag tag-new">NEW</span>
+                        <strong>Dual View Modes:</strong> Switch between Grid View (compact browsing) and Tree View (evolution line visualization) for different exploration needs.
+                    </li>
+                    <li class="new-feature">
+                        <span class="feature-tag tag-new">NEW</span>
+                        <strong>Advanced Filtering:</strong> Multi-criteria filters including Module, Stage, Discovery Status (Known/Unknown), and Attribute, with persistent filter states across sessions.
+                    </li>
+                    <li class="new-feature">
+                        <span class="feature-tag tag-new">NEW</span>
+                        <strong>Evolution Tree Visualization:</strong> Beautiful hierarchical tree display showing complete evolution paths from Baby I through Ultra stages with connecting lines and stage labels.
+                    </li>
+                    <li class="new-feature">
+                        <span class="feature-tag tag-new">NEW</span>
+                        <strong>Smart UI Adaptation:</strong> Filter button automatically hides in Tree View for unobstructed evolution path viewing, reappears in Grid View.
+                    </li>
+                    <li class="improvement">
+                        <span class="feature-tag tag-improved">IMPROVED</span>
+                        <strong>Performance Optimization:</strong> Smart sprite caching system handles 1,500+ character collections efficiently, loading only visible entries on-demand.
+                    </li>
+                    <li class="improvement">
+                        <span class="feature-tag tag-improved">IMPROVED</span>
+                        <strong>Entry Details:</strong> Enhanced information display showing sprite, name, module, stage, and discovery status with color-coded indicators.
+                    </li>
+                </ul>
+            </div>
+
+            <div class="feature-category">
+                <h3>🖼️ Hi-Def Sprite Support</h3>
+                <ul class="feature-list">
+                    <li class="new-feature">
+                        <span class="feature-tag tag-new">NEW</span>
+                        <strong>Dual Sprite System:</strong> Modules can now provide both classic dot-matrix sprites (monsters/) and high-definition sprites (monsters_hidef/) with automatic fallback loading.
+                    </li>
+                    <li class="new-feature">
+                        <span class="feature-tag tag-new">NEW</span>
+                        <strong>Module-Level Configuration:</strong> Each module can specify preferred sprite type (dot/hidef) via sprite_type setting, allowing mixed collections with optimal visuals.
+                    </li>
+                    <li class="new-feature">
+                        <span class="feature-tag tag-new">NEW</span>
+                        <strong>Vital Bracelet Original Sprites:</strong> All VB, VH, and VBE modules use authentic high-resolution sprites extracted directly from official DIM Cards.
+                    </li>
+                    <li class="improvement">
+                        <span class="feature-tag tag-improved">IMPROVED</span>
+                        <strong>Smart Scaling:</strong> Automatic sprite scaling maintains visual quality across different screen resolutions while preserving aspect ratios.
+                    </li>
+                </ul>
+            </div>
+
+            <div class="feature-category">
+                <h3>📱 Platform Support</h3>
+                <ul class="feature-list">
+                    <li class="new-feature">
+                        <span class="feature-tag tag-new">NEW</span>
+                        <strong>Android Release:</strong> Full Android port with touch-optimized controls, proper save file handling, and performance optimizations for mobile hardware.
+                    </li>
+                    <li class="improvement">
+                        <span class="feature-tag tag-improved">IMPROVED</span>
+                        <strong>GamePi Optimization:</strong> Continued refinement for Raspberry Pi Zero 2W with frame rate optimizations and power efficiency improvements.
+                    </li>
+                    <li class="technical">
+                        <span class="feature-tag tag-technical">COMPATIBILITY</span>
+                        <strong>Batocera Notes:</strong> Full Batocera support maintained. Note: Some devices with limited pygame implementations may have compatibility issues.
+                    </li>
+                </ul>
+            </div>
+
+            <div class="feature-category">
+                <h3>⚡ Performance Revolution</h3>
+                <ul class="feature-list">
+                    <li class="improvement">
+                        <span class="feature-tag tag-improved">IMPROVED</span>
+                        <strong>Rendering Pipeline:</strong> Complete rewrite of rendering system with component caching reduces screen draws by 80-90% across all scenes.
+                    </li>
+                    <li class="improvement">
+                        <span class="feature-tag tag-improved">IMPROVED</span>
+                        <strong>Hash Function Optimization:</strong> Replaced cryptographic MD5 hashing with Python id() for surface caching, eliminating 17+ seconds of CPU time per profile.
+                    </li>
+                    <li class="improvement">
+                        <span class="feature-tag tag-improved">IMPROVED</span>
+                        <strong>Shadow Compositing:</strong> Pre-rendered shadow+sprite composites reduce 4 blits per shadow to single blit operation.
+                    </li>
+                    <li class="improvement">
+                        <span class="feature-tag tag-improved">IMPROVED</span>
+                        <strong>Smart Redraw Detection:</strong> Components only redraw when data actually changes (colors, items, pets), preventing unnecessary frame redraws.
+                    </li>
+                    <li class="technical">
+                        <span class="feature-tag tag-technical">METRICS</span>
+                        <strong>Performance Gains:</strong> Status scene: 634→140 blits/sec, Inventory: 473→60 blits/sec, Training: 510→30 blits/sec, Library: 812→minimal blits/sec.
+                    </li>
+                </ul>
+            </div>
+
+            <div class="feature-category">
+                <h3>🎯 Battle System Improvements</h3>
+                <ul class="feature-list">
+                    <li class="new-feature">
+                        <span class="feature-tag tag-new">NEW</span>
+                        <strong>View-Based Architecture:</strong> Battle scene completely restructured using view pattern for modular battle modes (Adventure, Jogress, Armor, Versus, Protocol).
+                    </li>
+                    <li class="new-feature">
+                        <span class="feature-tag tag-new">NEW</span>
+                        <strong>Battle-Specific Displays:</strong> Specialized UI components for Jogress (3-hexagon DNA visualization), Armor (single hexagon with pet preview), and Versus (dual hexagon matchup).
+                    </li>
+                    <li class="improvement">
+                        <span class="feature-tag tag-improved">IMPROVED</span>
+                        <strong>UI Context Awareness:</strong> Scene UI automatically hides during battle encounters, showing only HP bar for focused battle experience.
+                    </li>
+                    <li class="bugfix">
+                        <span class="feature-tag tag-fixed">FIXED</span>
+                        <strong>PvP HP Bar:</strong> Corrected visual bug in Versus mode where right side of HP bar displayed incorrectly.
+                    </li>
+                    <li class="improvement">
+                        <span class="feature-tag tag-improved">IMPROVED</span>
+                        <strong>Component Scaling:</strong> All battle display components (ArmorDisplay, JogressDisplay, VersusDisplay) now properly scale hexagons, borders, and sprites across different resolutions.
+                    </li>
+                </ul>
+            </div>
+
+            <div class="feature-category">
+                <h3>🎨 Training System Enhancements</h3>
+                <ul class="feature-list">
+                    <li class="new-feature">
+                        <span class="feature-tag tag-new">NEW</span>
+                        <strong>Training Mode Selection UI:</strong> Clean mode selection interface for Power, Speed, Vital Values, and Excite training with visual indicators for available modes per module.
+                    </li>
+                    <li class="improvement">
+                        <span class="feature-tag tag-improved">IMPROVED</span>
+                        <strong>Pet Display Optimization:</strong> Smart pet sprite caching in training scenes with tuple comparison instead of expensive set operations for instant updates.
+                    </li>
+                    <li class="bugfix">
+                        <span class="feature-tag tag-fixed">FIXED</span>
+                        <strong>Frame Rate Stability:</strong> Eliminated frame drops during training animations by optimizing draw_pets() method.
+                    </li>
+                </ul>
+            </div>
+
+            <div class="feature-category">
+                <h3>🗃️ Inventory System Redesign</h3>
+                <ul class="feature-list">
+                    <li class="new-feature">
+                        <span class="feature-tag tag-new">NEW</span>
+                        <strong>Tabbed Interface:</strong> Organized item management with separate tabs for Items, Evolution Items, and Unlockables for easier navigation.
+                    </li>
+                    <li class="new-feature">
+                        <span class="feature-tag tag-new">NEW</span>
+                        <strong>Visual Item List:</strong> Beautiful scrollable list showing item sprites, names, quantities, and descriptions with hover tooltips.
+                    </li>
+                    <li class="new-feature">
+                        <span class="feature-tag tag-new">NEW</span>
+                        <strong>Pet Selector Integration:</strong> Inline pet selector at bottom of inventory screen for quick target selection when using items.
+                    </li>
+                    <li class="improvement">
+                        <span class="feature-tag tag-improved">IMPROVED</span>
+                        <strong>Feeding Modes:</strong> Enhanced mode indicators showing All/In-Need/Selection with visual feedback for current selection mode.
+                    </li>
+                </ul>
+            </div>
+
+            <div class="feature-category">
+                <h3>🐛 Bug Fixes & Stability</h3>
+                <ul class="feature-list">
+                    <li class="bugfix">
+                        <span class="feature-tag tag-fixed">FIXED</span>
+                        <strong>Invisible Component Caching:</strong> Components with visible=False now properly create cached_surface to prevent infinite redraw loops.
+                    </li>
+                    <li class="bugfix">
+                        <span class="feature-tag tag-fixed">FIXED</span>
+                        <strong>PetSelector Color Updates:</strong> Eliminated constant redraws by checking if theme colors actually changed before marking needs_redraw.
+                    </li>
+                    <li class="bugfix">
+                        <span class="feature-tag tag-fixed">FIXED</span>
+                        <strong>QuestPanel Redraw:</strong> Quest panels no longer redraw every frame when quest data hasn't changed.
+                    </li>
+                    <li class="bugfix">
+                        <span class="feature-tag tag-fixed">FIXED</span>
+                        <strong>Grid Component Optimization:</strong> PartyGrid, FreezerGrid only mark redraw when items actually change, not on every refresh call.
+                    </li>
+                    <li class="bugfix">
+                        <span class="feature-tag tag-fixed">FIXED</span>
+                        <strong>Display Component Scaling:</strong> JogressDisplay, VersusDisplay, ArmorDisplay now properly compare colors before marking redraw.
+                    </li>
+                    <li class="bugfix">
+                        <span class="feature-tag tag-fixed">FIXED</span>
+                        <strong>TextPanel Compatibility:</strong> Added ui_local parameter support for coordinate system consistency across all UI components.
+                    </li>
+                </ul>
+            </div>
+
+            <div class="feature-category">
+                <h3>🔧 Developer Tools</h3>
+                <ul class="feature-list">
+                    <li class="new-feature">
+                        <span class="feature-tag tag-new">NEW</span>
+                        <strong>Performance Profiling:</strong> Added main_profile.py with cProfile integration for detailed performance analysis and bottleneck identification.
+                    </li>
+                    <li class="improvement">
+                        <span class="feature-tag tag-improved">IMPROVED</span>
+                        <strong>Debug Console Logging:</strong> Enhanced logging system with component-level redraw tracking for UI optimization debugging.
+                    </li>
+                    <li class="improvement">
+                        <span class="feature-tag tag-improved">IMPROVED</span>
+                        <strong>Blit Counter:</strong> Real-time blit/second counter for monitoring rendering performance during development.
+                    </li>
+                </ul>
+            </div>
+
+            <div class="note">
+                <strong>🎨 Design Philosophy:</strong><br>
+                Version 0.9.9 represents a complete visual and architectural reimagining of Omnipet. Every pixel was reconsidered, every interaction refined, and every performance bottleneck eliminated. The new UI system is built on a foundation of reusable components with consistent theming, making future feature additions faster and more maintainable. The resolution-aware layouts ensure Omnipet looks great on everything from tiny 240×240 GamePi screens to modern 1080p displays.
+            </div>
+
+            <div class="note">
+                <strong>📊 Content Scale:</strong><br>
+                The module expansion in 0.9.9 represents the largest content addition in Omnipet's history. Extracting data from DIM Cards, creating evolution lines for 1,583 characters, hand-crafting 225 unique unlocks, and designing hundreds of backgrounds required months of dedicated work. Every sprite was carefully processed, every evolution requirement verified, and every background optimized for performance.
+            </div>
+
+            <div class="note">
+                <strong>⚡ Performance Notes:</strong><br>
+                The master UI cache system is the result of extensive profiling and optimization. By intelligently tracking component changes and only redrawing what's necessary, we achieved 80-90% reduction in rendering overhead. Scenes that previously struggled at 30fps now maintain smooth performance even on low-end hardware. The optimization work included replacing expensive hash functions, implementing shadow compositing, and eliminating redundant draw operations throughout the entire codebase.
+            </div>
+
+            <div class="note">
+                <strong>🔄 Migration from Omnimon:</strong><br>
+                The project name change from "Omnimon" to "Omnipet" better reflects the game's evolution into a universal virtual pet platform supporting Digimon and non-Digimon partners. Save files and module data remain fully compatible - simply extract the new version and continue your adventure with all progress intact.
+            </div>
+            </div>
+        </div>
+
+        <!-- Version 0.9.8 -->
+        <div class="version">
+            <div class="version-header">
+                Version 0.9.8 - "PvP & Quest Revolution"
+                <div class="release-date">Release Date: August 30, 2025</div>
+            </div>
+            
+            <div class="version-content">
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <a href="https://github.com/sundeth/omnipet/releases" target="_blank" class="download-button" style="background: #28a745;">🔗 Download Latest Release</a>
+                </div>
+
+                <div class="feature-category">
+                    <h3>📋 Available Downloads</h3>
+                    <ul class="feature-list">
+                        <li class="technical">
+                            <span class="feature-tag tag-technical">WINDOWS</span>
+                            <strong>Omnipet_Windows_Ver_0.9.8.zip</strong><br>
+                            Standard Windows distribution with all modules and Module Editor included.
+                        </li>
+                        <li class="technical">
+                            <span class="feature-tag tag-new">EXPERIMENTAL</span>
+                            <strong>Omnipet_Nuitka_Windows_Ver_0.9.8.zip</strong><br>
+                            Nuitka-compiled Windows version - faster performance but experimental. Use if the standard version has performance issues.
+                        </li>
+                        <li class="technical">
+                            <span class="feature-tag tag-technical">PYTHON</span>
+                            <strong>Omnipet_Python_Desktop_Ver_0.9.8.zip</strong><br>
+                            Cross-platform Python version for Linux/macOS. Requires Python dependencies: <code>pip install pygame psutil</code>
+                        </li>
+                        <li class="technical">
+                            <span class="feature-tag tag-technical">BATOCERA</span>
+                            <strong>Omnipet_Batocera_Ver_0.9.8.zip</strong><br>
+                            Optimized for Batocera systems. Place in <code>/userdata/roms/pygame/</code>. Input configurations may need adjustment.
+                        </li>
+                        <li class="technical">
+                            <span class="feature-tag tag-technical">GAMEPI</span>
+                            <strong>Omnipet_GamePi_Ver_0.9.8.zip</strong><br>
+                            For Raspberry Pi Zero 2W. Can install over existing installation in <code>home/Games/Omnipet</code> or use pre-made image for clean installs.
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="note">
+                    <strong>📝 Important Installation Notes:</strong><br>
+                    • <strong>Module Editor:</strong> Source code only available on GitHub - not included in Batocera/GamePi releases (incompatible with Linux systems)<br>
+                    • <strong>GamePi Setup:</strong> For clean installs, use pre-made image and configure WiFi via Raspberry Pi Imager advanced options<br>
+                    • <strong>Python Dependencies:</strong> Desktop version requires: <code>pip install pygame psutil</code><br>
+                    • <strong>No Auto-Update:</strong> Manual installation required for updates (auto-update system coming in future release)
+                </div>
+
+            <div class="feature-category">
+                <h3>🚀 Major New Features</h3>
+                <ul class="feature-list">
+                    <li class="new-feature">
+                        <span class="feature-tag tag-new">NEW</span>
+                        <strong>PvP Battles Between Omnipet Devices!</strong><br>
+                        Battle your friends wirelessly! Connect two Omnipet devices over WiFi for real-time PvP battles. Both devices need compatible modules for battles to work.
+                    </li>
+                    <li class="new-feature">
+                        <span class="feature-tag tag-new">NEW</span>
+                        <strong>Daily Quest System</strong><br>
+                        Every day the game picks 3 random quests for you to complete. Quests are module-specific and created through the Module Editor.
+                    </li>
+                    <li class="new-feature">
+                        <span class="feature-tag tag-new">NEW</span>
+                        <strong>Random Events System</strong><br>
+                        Dynamic events can now occur based on XAI rolls! Events can drop items or trigger special encounters. Fully customizable through Module Editor.
+                    </li>
+                    <li class="new-feature">
+                        <span class="feature-tag tag-new">NEW</span>
+                        <strong>Library Menu</strong><br>
+                        New menu option to track and claim quest rewards, plus easy access to Digidex and Freezer Box (moved from Settings Menu).
+                    </li>
+                </ul>
+            </div>
+
+            <div class="feature-category">
+                <h3>🛠️ Development & Debugging Tools</h3>
+                <ul class="feature-list">
+                    <li class="improvement">
+                        <span class="feature-tag tag-improved">IMPROVED</span>
+                        <strong>Enhanced Debug Menu</strong><br>
+                        Press F12 on main screen to access the new comprehensive debug menu. Features multiple pages with all pet attributes for real-time testing and module development.
+                    </li>
+                    <li class="new-feature">
+                        <span class="feature-tag tag-new">NEW</span>
+                        <strong>Evolution Path Testing</strong><br>
+                        Module developers can now easily test evolution paths and add attributes on the fly through the debug interface.
+                    </li>
+                </ul>
+            </div>
+
+            <div class="feature-category">
+                <h3>📝 Module Editor Enhancements</h3>
+                <ul class="feature-list">
+                    <li class="new-feature">
+                        <span class="feature-tag tag-new">NEW</span>
+                        <strong>Random Events Tab</strong><br>
+                        Create custom random events for your modules with item drops and special encounters.
+                    </li>
+                    <li class="new-feature">
+                        <span class="feature-tag tag-new">NEW</span>
+                        <strong>Daily Quests Tab</strong><br>
+                        Design daily quests specific to your module with custom objectives and rewards.
+                    </li>
+                    <li class="improvement">
+                        <span class="feature-tag tag-improved">IMPROVED</span>
+                        <strong>Multiple Eggs Support</strong><br>
+                        No limits on eggs/modules. Use single version for interconnected evolution lines, separate versions for independent lines.
+                    </li>
+                </ul>
+            </div>
+
+            <div class="feature-category">
+                <h3>🎮 Hardware & Platform Support</h3>
+                <ul class="feature-list">
+                    <li class="improvement">
+                        <span class="feature-tag tag-improved">IMPROVED</span>
+                        <strong>GamePi Zero 2W Image</strong><br>
+                        Complete plug-and-play image available. Just burn to SD card and you're ready! Game loads directly as a service on startup.
+                    </li>
+                    <li class="improvement">
+                        <span class="feature-tag tag-improved">IMPROVED</span>
+                        <strong>Custom Input Mapping</strong><br>
+                        Configure custom controls via input_config.json. Use the input test application to map keyboard or joystick controls. Default joystick mapping provided.
+                    </li>
+                    <li class="technical">
+                        <span class="feature-tag tag-technical">TECHNICAL</span>
+                        <strong>WiFi Setup via Raspberry Pi Imager</strong><br>
+                        Configure WiFi settings directly when burning the GamePi image using Raspberry Pi Imager's advanced options.
+                    </li>
+                </ul>
+            </div>
+
+            <div class="feature-category">
+                <h3>⚖️ Game Balance & Mechanics</h3>
+                <ul class="feature-list">
+                    <li class="improvement">
+                        <span class="feature-tag tag-improved">IMPROVED</span>
+                        <strong>Battle Damage Calculation</strong><br>
+                        Attack damage now properly considers pet level and mini-game score based on DMX attack patterns.
+                    </li>
+                    <li class="improvement">
+                        <span class="feature-tag tag-improved">IMPROVED</span>
+                        <strong>Sickness Probability System</strong><br>
+                        Refined sickness chances: flat rate for wins, scaled rates for losses with protein overdose and disturbance penalties (capped at 50%).
+                    </li>
+                    <li class="technical">
+                        <span class="feature-tag tag-technical">TECHNICAL</span>
+                        <strong>Stage 1 Pet Behavior</strong><br>
+                        Stage 1 pets are designed to be short-lived (10 minutes) and don't sleep - this is intentional behavior.
+                    </li>
+                </ul>
+            </div>
+
+            <div class="feature-category">
+                <h3>🐛 Bug Fixes & Stability</h3>
+                <ul class="feature-list">
+                    <li class="bugfix">
+                        <span class="feature-tag tag-fixed">FIXED</span>
+                        <strong>Egg Selection Scene Issues</strong><br>
+                        Resolved various bugs in egg selection scene affecting different resolutions and digidex type/egg unlock functionality.
+                    </li>
+                    <li class="bugfix">
+                        <span class="feature-tag tag-fixed">FIXED</span>
+                        <strong>Battle Failure Scenarios</strong><br>
+                        Corrected issues with battle failure handling and result processing.
+                    </li>
+                    <li class="improvement">
+                        <span class="feature-tag tag-improved">IMPROVED</span>
+                        <strong>Empty Module Handling</strong><br>
+                        Added proper error handling for empty module folders to prevent crashes during module loading.
+                    </li>
+                </ul>
+            </div>
+
+            <div class="note">
+                <strong>Platform Compatibility Notes:</strong><br>
+                • GarlicOS: Limited pygame support detected<br>
+                • Knulli: Testing in progress for pygame compatibility<br>
+                • Batocera: Full support maintained<br>
+                • Windows/Linux/GamePi: Full compatibility confirmed
+            </div>
+
+            <div class="note">
+                <strong>Development Note:</strong> This release represents months of intensive development focusing on multiplayer capabilities and module creation tools. The PvP system lays the groundwork for future cross-device battles and online connectivity features.
+            </div>
+            </div>
+        </div>
+
+        <!-- Version 0.9.7 -->
+        <div class="version">
+            <div class="version-header">
+                Version 0.9.7 - "Project Structure & Batocera Support"
+                <div class="release-date">Release Date: August 2, 2025</div>
+            </div>
+            
+            <div class="version-content">
+
+            <div class="feature-category">
+                <h3>🏗️ Major Project Changes</h3>
+                <ul class="feature-list">
+                    <li class="technical">
+                        <span class="feature-tag tag-technical">BREAKING</span>
+                        <strong>Complete Project Structure Overhaul</strong><br>
+                        Major reorganization of project files and directories. <strong>Do not extract into old installation folder!</strong> Use a new folder and manually move your save folder.
+                    </li>
+                    <li class="improvement">
+                        <span class="feature-tag tag-improved">IMPROVED</span>
+                        <strong>Configurable Game Settings</strong><br>
+                        Game configurations can now be adjusted by editing files in the config folder.
+                    </li>
+                    <li class="improvement">
+                        <span class="feature-tag tag-improved">IMPROVED</span>
+                        <strong>Save System Enhancements</strong><br>
+                        Automatic save folder creation and 5-save file rotation backup system implemented.
+                    </li>
+                </ul>
+            </div>
+
+            <div class="feature-category">
+                <h3>🎮 Platform Support Expansion</h3>
+                <ul class="feature-list">
+                    <li class="new-feature">
+                        <span class="feature-tag tag-new">NEW</span>
+                        <strong>Batocera Linux Support</strong><br>
+                        Game now supports Batocera-based devices! Place files in roms/pygame folder and refresh game list. May vary by hardware.
+                    </li>
+                    <li class="new-feature">
+                        <span class="feature-tag tag-new">NEW</span>
+                        <strong>GamePi Device Image</strong><br>
+                        Dedicated image available for GamePi devices with optimized performance.
+                    </li>
+                    <li class="technical">
+                        <span class="feature-tag tag-technical">MAINTAINED</span>
+                        <strong>Multi-Platform Compatibility</strong><br>
+                        Continues to support Windows (with/without Python) and Linux systems (with Python + Pygame).
+                    </li>
+                </ul>
+            </div>
+
+            <div class="feature-category">
+                <h3>📦 New Modules & Content</h3>
+                <ul class="feature-list">
+                    <li class="new-feature">
+                        <span class="feature-tag tag-new">NEW</span>
+                        <strong>DMH (Monster Hunter) Module</strong><br>
+                        Complete new module featuring Adventure Mode, custom backgrounds, and Monster Hunter-themed content. Thanks to Pepperoni Secret!
+                    </li>
+                    <li class="improvement">
+                        <span class="feature-tag tag-improved">IMPROVED</span>
+                        <strong>Module Review & Fixes</strong><br>
+                        All "vanilla" modules reviewed and fixed by justintechnerd and Pepperoni Secret collaboration.
+                    </li>
+                </ul>
+            </div>
+
+            <div class="feature-category">
+                <h3>📚 Documentation Revolution</h3>
+                <ul class="feature-list">
+                    <li class="new-feature">
+                        <span class="feature-tag tag-new">NEW</span>
+                        <strong>Comprehensive Documentation Package</strong><br>
+                        First iteration of complete game documentation covering most in-game features (work in progress).
+                    </li>
+                    <li class="new-feature">
+                        <span class="feature-tag tag-new">NEW</span>
+                        <strong>Auto-Generated Module Documentation</strong><br>
+                        Module Editor can now generate full documentation for each module including parameters, evolution paths, and secrets.
+                    </li>
+                    <li class="improvement">
+                        <span class="feature-tag tag-improved">IMPROVED</span>
+                        <strong>Module Documentation Hub</strong><br>
+                        Access individual module docs from modules folder or through the game's main documentation hub.
+                    </li>
+                </ul>
+            </div>
+
+            <div class="feature-category">
+                <h3>🛠️ Module Editor Enhancements</h3>
+                <ul class="feature-list">
+                    <li class="bugfix">
+                        <span class="feature-tag tag-fixed">FIXED</span>
+                        <strong>Module Creation Error</strong><br>
+                        Resolved error that prevented creation of new modules in the Module Editor.
+                    </li>
+                    <li class="improvement">
+                        <span class="feature-tag tag-improved">IMPROVED</span>
+                        <strong>Enhanced Module Tab</strong><br>
+                        Added many new fields to the Module Tab and Criteria Editor for more detailed module configuration.
+                    </li>
+                    <li class="new-feature">
+                        <span class="feature-tag tag-new">NEW</span>
+                        <strong>Sprite Import System</strong><br>
+                        Streamlined process for adding new pets and importing their sprites into modules.
+                    </li>
+                </ul>
+            </div>
+
+            <div class="feature-category">
+                <h3>🎯 Game System Improvements</h3>
+                <ul class="feature-list">
+                    <li class="new-feature">
+                        <span class="feature-tag tag-new">NEW</span>
+                        <strong>Vital Values System</strong><br>
+                        New pet attribute system to support upcoming modules and enhanced gameplay mechanics.
+                    </li>
+                    <li class="new-feature">
+                        <span class="feature-tag tag-new">NEW</span>
+                        <strong>Trophy System</strong><br>
+                        Achievement tracking system for pet accomplishments and milestones.
+                    </li>
+                    <li class="new-feature">
+                        <span class="feature-tag tag-new">NEW</span>
+                        <strong>Punch Training Type</strong><br>
+                        New training type with accelerometer support for compatible devices (like GamePi).
+                    </li>
+                    <li class="improvement">
+                        <span class="feature-tag tag-improved">IMPROVED</span>
+                        <strong>Evolution Conditions</strong><br>
+                        Enhanced evolution system with new unlock conditions and criteria options.
+                    </li>
+                </ul>
+            </div>
+
+            <div class="feature-category">
+                <h3>🐛 Bug Fixes & Stability</h3>
+                <ul class="feature-list">
+                    <li class="bugfix">
+                        <span class="feature-tag tag-fixed">FIXED</span>
+                        <strong>Digidex Sprite Loading</strong><br>
+                        Resolved issues with sprites not loading properly in the Digidex.
+                    </li>
+                    <li class="bugfix">
+                        <span class="feature-tag tag-fixed">FIXED</span>
+                        <strong>Battle System Crashes</strong><br>
+                        Fixed various crashes occurring in the battle system.
+                    </li>
+                    <li class="bugfix">
+                        <span class="feature-tag tag-fixed">FIXED</span>
+                        <strong>Bonus Experience Issues</strong><br>
+                        Corrected problems with bonus experience not applying correctly.
+                    </li>
+                    <li class="bugfix">
+                        <span class="feature-tag tag-fixed">FIXED</span>
+                        <strong>Food Sprite Positioning</strong><br>
+                        Moved food sprites to center to prevent overlapping when multiple pets are on screen.
+                    </li>
+                    <li class="improvement">
+                        <span class="feature-tag tag-improved">IMPROVED</span>
+                        <strong>Death Condition Handling</strong><br>
+                        Fixed issue where pets died immediately after hatching due to 0-value death conditions in modules.
+                    </li>
+                </ul>
+            </div>
+
+            <div class="feature-category">
+                <h3>🔧 Developer Tools & Features</h3>
+                <ul class="feature-list">
+                    <li class="improvement">
+                        <span class="feature-tag tag-improved">IMPROVED</span>
+                        <strong>Debug System</strong><br>
+                        Debug mode now configurable via config files. Multiple debug hotkeys added (F1-F12) for testing various game states.
+                    </li>
+                    <li class="technical">
+                        <span class="feature-tag tag-technical">ENHANCED</span>
+                        <strong>Evolution Ordering</strong><br>
+                        Evolution selection now based on JSON order, allowing precise control over evolution priority.
+                    </li>
+                    <li class="improvement">
+                        <span class="feature-tag tag-improved">IMPROVED</span>
+                        <strong>Battle System Versioning</strong><br>
+                        Adventure mode now pairs party version with enemy version for consistent battles.
+                    </li>
+                </ul>
+            </div>
+
+            <div class="note">
+                <strong>Migration Note:</strong> Due to the major project structure changes, existing installations must be migrated carefully. Extract to a new folder and manually move your save data to avoid conflicts.
+            </div>
+
+            <div class="note">
+                <strong>Community Appreciation:</strong> Huge thanks to Pepperoni Secret, justintechnerd, and all community members who contributed feedback, bug reports, and suggestions that made this release possible!
+            </div>
+            </div>
+        </div>
+
+        <!-- Version 0.9.6 -->
+        <div class="version">
+            <div class="version-header">
+                Version 0.9.6 - "Documentation & Editor Revolution"
+                <div class="release-date">Release Date: July 27, 2025</div>
+            </div>
+            
+            <div class="version-content">
+
+            <div class="feature-category">
+                <h3>🛠️ Module Editor Major Improvements</h3>
+                <ul class="feature-list">
+                    <li class="bugfix">
+                        <span class="feature-tag tag-fixed">FIXED</span>
+                        <strong>Module Creation Error</strong><br>
+                        Resolved critical error preventing creation of new modules in Module Editor.
+                    </li>
+                    <li class="improvement">
+                        <span class="feature-tag tag-improved">IMPROVED</span>
+                        <strong>Enhanced Volume Controls</strong><br>
+                        Added multiple volume options for better audio customization.
+                    </li>
+                    <li class="new-feature">
+                        <span class="feature-tag tag-new">NEW</span>
+                        <strong>Day/Night Evolution Criteria</strong><br>
+                        Added time-based evolution requirements for more realistic pet behavior.
+                    </li>
+                    <li class="new-feature">
+                        <span class="feature-tag tag-new">NEW</span>
+                        <strong>Global Wake & Sleep Times</strong><br>
+                        Configurable global sleep and wake schedules for consistent pet behavior.
+                    </li>
+                </ul>
+            </div>
+
+            <div class="feature-category">
+                <h3>� Documentation System Revolution</h3>
+                <ul class="feature-list">
+                    <li class="new-feature">
+                        <span class="feature-tag tag-new">NEW</span>
+                        <strong>HTML Evolution Chart Generator</strong><br>
+                        Module Editor now generates professional HTML evolution charts 100% automatically. Features Humulos-style layouts with graphical evolution trees.
+                    </li>
+                    <li class="new-feature">
+                        <span class="feature-tag tag-new">NEW</span>
+                        <strong>Automated Module Documentation</strong><br>
+                        One-click generation of complete module documentation including evolution charts, enemies, and module information.
+                    </li>
+                    <li class="improvement">
+                        <span class="feature-tag tag-improved">IMPROVED</span>
+                        <strong>DMC Module Editor Compatibility</strong><br>
+                        Fixed DMC module to be fully compatible with Module Editor for enhanced customization.
+                    </li>
+                </ul>
+            </div>
+
+            <div class="feature-category">
+                <h3>🎮 Platform & Performance</h3>
+                <ul class="feature-list">
+                    <li class="improvement">
+                        <span class="feature-tag tag-improved">IMPROVED</span>
+                        <strong>Batocera Linux Compatibility</strong><br>
+                        Enhanced support for Batocera-based devices with improved control mapping and PadToKey integration.
+                    </li>
+                    <li class="technical">
+                        <span class="feature-tag tag-technical">TECHNICAL</span>
+                        <strong>Auto Resolution System Clarified</strong><br>
+                        Detailed explanation: AUTO_RESOLUTION=true uses device resolution, false uses config resolution with upscaling for better performance on low-end devices.
+                    </li>
+                    <li class="improvement">
+                        <span class="feature-tag tag-improved">IMPROVED</span>
+                        <strong>Performance Optimization Guidelines</strong><br>
+                        Pygame blit optimization strategies documented. Smaller/fewer blits improve performance significantly on resource-constrained devices.
+                    </li>
+                    <li class="bugfix">
+                        <span class="feature-tag tag-fixed">FIXED</span>
+                        <strong>Egg Selection Scene Issues</strong><br>
+                        Resolved dynamic resolution problems causing left-justified display and cropping issues on various screen sizes.
+                    </li>
+                </ul>
+            </div>
+
+            <div class="feature-category">
+                <h3>🌐 Community Hardware Testing</h3>
+                <ul class="feature-list">
+                    <li class="technical">
+                        <span class="feature-tag tag-technical">TESTED</span>
+                        <strong>Anbernic Device Support</strong><br>
+                        Comprehensive testing on Powkiddy RGB10 and preparation for wider Anbernic device compatibility.
+                    </li>
+                    <li class="improvement">
+                        <span class="feature-tag tag-improved">IMPROVED</span>
+                        <strong>Custom Input Configuration</strong><br>
+                        Enhanced controller mapping with community-tested PadToKey profiles for various handheld devices.
+                    </li>
+                    <li class="technical">
+                        <span class="feature-tag tag-technical">COMMUNITY</span>
+                        <strong>MacOS Compatibility Investigation</strong><br>
+                        Community feedback identified MacOS compatibility issues for future resolution.
+                    </li>
+                </ul>
+            </div>
+
+            <div class="feature-category">
+                <h3>📦 Module Development Progress</h3>
+                <ul class="feature-list">
+                    <li class="new-feature">
+                        <span class="feature-tag tag-new">NEW</span>
+                        <strong>Monster Hunter Module Near Completion</strong><br>
+                        Community-developed Monster Hunter module by Pepperoni Secret featuring complete stats, adventure mode, and evolution trees. Zino Garurumon and Rathalos Greymon unlock systems in development.
+                    </li>
+                    <li class="improvement">
+                        <span class="feature-tag tag-improved">IMPROVED</span>
+                        <strong>Multi-Pet Performance Testing</strong><br>
+                        Performance analysis shows minimal impact: 1% CPU and 7% RAM increase from 1 to 4 pets on test hardware.
+                    </li>
+                </ul>
+            </div>
+
+            <div class="feature-category">
+                <h3>🎯 User Experience Enhancements</h3>
+                <ul class="feature-list">
+                    <li class="improvement">
+                        <span class="feature-tag tag-improved">IMPROVED</span>
+                        <strong>Evolution Requirements Discussion</strong><br>
+                        Community feedback on in-game evolution requirement display. Plans for Vital Bracelet app-style hint system to maintain mystery while providing guidance.
+                    </li>
+                    <li class="technical">
+                        <span class="feature-tag tag-technical">OPTIMIZED</span>
+                        <strong>Setup Process Simplification</strong><br>
+                        Focus on improving documentation and simplifying setup procedures for new users across different platforms.
+                    </li>
+                </ul>
+            </div>
+
+            <div class="note">
+                <strong>Documentation Revolution:</strong> This version marks a major milestone in automated documentation generation. The Module Editor can now create professional HTML charts and complete module documentation with a single click.
+            </div>
+
+            <div class="note">
+                <strong>Community Collaboration:</strong> Extensive community testing on Batocera devices led to significant improvements in handheld device compatibility and control mapping solutions.
+            </div>
+            </div>
+        </div>
+
+        <!-- Version 0.9.5 (Skipped) -->
+        <div class="version" style="background-color: #f0f0f0; border-left: 4px solid #999;">
+            <div class="version-header" style="background: linear-gradient(135deg, #999 0%, #666 100%);">
+                Version 0.9.5 - Development Version (Not Released)
+                <div class="release-date">June-July 2025</div>
+            </div>
+            <div class="version-content">
+            <div class="note">
+                <strong>Development Note:</strong> Version 0.9.5 was an internal development version that was not publicly released. Development efforts during this period focused on battle system improvements and module framework enhancements that were later incorporated into version 0.9.6 and beyond.
+            </div>
+            </div>
+        </div>
+
+        <!-- Version 0.9.4 -->
+        <div class="version">
+            <div class="version-header">
+                Version 0.9.4 - "Modularity & Tools Revolution"
+                <div class="release-date">Release Date: June 18, 2025</div>
+            </div>
+            
+            <div class="version-content">
+
+            <div class="feature-category">
+                <h3>🔧 Major New Features</h3>
+                <ul class="feature-list">
+                    <li class="new-feature">
+                        <span class="feature-tag tag-new">NEW</span>
+                        <strong>DMX Module Completion</strong><br>
+                        All unlockables now available, all items functional with custom icons and effects. Only special encounters remain to be implemented.
+                    </li>
+                    <li class="new-feature">
+                        <span class="feature-tag tag-new">NEW</span>
+                        <strong>Custom Module Items System</strong><br>
+                        Modules can now have custom items with status_boost and status_change effects. Framework established for additional effect types.
+                    </li>
+                    <li class="new-feature">
+                        <span class="feature-tag tag-new">NEW</span>
+                        <strong>Standalone Windows Version</strong><br>
+                        Included vpet.exe file allows running the game without Python installation. Initial version with expected bug presence.
+                    </li>
+                    <li class="new-feature">
+                        <span class="feature-tag tag-new">NEW</span>
+                        <strong>Dynamic Resolution & Frame Rate</strong><br>
+                        Configurable resolution and frame rate via config.json. Supports 4K 144fps gameplay for high-end systems.
+                    </li>
+                    <li class="new-feature">
+                        <span class="feature-tag tag-new">NEW</span>
+                        <strong>Non-Pi Linux System Support</strong><br>
+                        Added compatibility checks for standard Linux distributions beyond Raspberry Pi systems.
+                    </li>
+                </ul>
+            </div>
+
+            <div class="feature-category">
+                <h3>⚙️ System Improvements</h3>
+                <ul class="feature-list">
+                    <li class="improvement">
+                        <span class="feature-tag tag-improved">IMPROVED</span>
+                        <strong>Scene Optimizations</strong><br>
+                        All game scenes optimized for low power and low CPU devices, improving performance across the board.
+                    </li>
+                    <li class="improvement">
+                        <span class="feature-tag tag-improved">IMPROVED</span>
+                        <strong>Pet Modularity System</strong><br>
+                        Pets now fully modular with all options and checks configured in module JSON files. DMC pets can now have condition hearts.
+                    </li>
+                    <li class="improvement">
+                        <span class="feature-tag tag-improved">IMPROVED</span>
+                        <strong>Modular Unlockables</strong><br>
+                        Custom modules can now use their own secret evolution lines, eggs, and backgrounds for complete customization.
+                    </li>
+                    <li class="improvement">
+                        <span class="feature-tag tag-improved">IMPROVED</span>
+                        <strong>Battle Menu Enhancements</strong><br>
+                        Displays proper icons for module adventure modes. Added UP/DOWN key navigation for area/round selection.
+                    </li>
+                    <li class="improvement">
+                        <span class="feature-tag tag-improved">IMPROVED</span>
+                        <strong>High Resolution Backgrounds</strong><br>
+                        Added enhanced backgrounds for resolutions above 1024x768, though some module backgrounds still pending.
+                    </li>
+                </ul>
+            </div>
+
+            <div class="feature-category">
+                <h3>🔧 Version 0.9.4b Hotfix</h3>
+                <ul class="feature-list">
+                    <li class="bug-fix">
+                        <span class="feature-tag tag-fixed">FIXED</span>
+                        <strong>Egg Hatch Crash</strong><br>
+                        Resolved critical game crash bug that occurred after egg hatching.
+                    </li>
+                    <li class="new-feature">
+                        <span class="feature-tag tag-new">NEW</span>
+                        <strong>Multi-Pet Support</strong><br>
+                        Configurable pet limit in config.json. Pet size automatically adjusts relative to resolution and pet count for optimal display.
+                    </li>
+                </ul>
+            </div>
+
+            <div class="feature-category">
+                <h3>🛠️ Development Tools</h3>
+                <ul class="feature-list">
+                    <li class="new-feature">
+                        <span class="feature-tag tag-new">NEW</span>
+                        <strong>Module Editor Progress</strong><br>
+                        Visual module creation tool approximately 70% complete. Features include module editing, backgrounds, items, pets, evolutions, sprites, and enemies.
+                    </li>
+                    <li class="new-feature">
+                        <span class="feature-tag tag-new">NEW</span>
+                        <strong>D-3 Module Development</strong><br>
+                        Custom D-3 module in development featuring Digimentals and Armor Digivolutions. Framework allows community creation of custom evolution lines.
+                    </li>
+                </ul>
+            </div>
+
+            <div class="feature-category">
+                <h3>🖥️ Platform & Technical</h3>
+                <ul class="feature-list">
+                    <li class="technical">
+                        <span class="feature-tag tag-technical">TECHNICAL</span>
+                        <strong>Python 3.10.7 + Pygame 2.6.1</strong><br>
+                        Updated to latest stable versions. Pygame 2+ strongly recommended due to input bug in version 1 causing 100% CPU usage.
+                    </li>
+                    <li class="technical">
+                        <span class="feature-tag tag-technical">TECHNICAL</span>
+                        <strong>GamePi13 Compatibility</strong><br>
+                        Full support for Waveshare GamePi13 with pre-installed Bookworm images. Installation script included for automated setup.
+                    </li>
+                    <li class="technical">
+                        <span class="feature-tag tag-technical">TECHNICAL</span>
+                        <strong>Batocera Pygame Support</strong><br>
+                        Experimental support for .pygame file format. Rename vpet.py to main.py, zip project, and change extension to .pygame.
+                    </li>
+                    <li class="technical">
+                        <span class="feature-tag tag-technical">TECHNICAL</span>
+                        <strong>LuckFox Pico Testing</strong><br>
+                        Confirmed successful launch on LuckFox Pico with X11 forwarding. Ultra-compact hardware compatibility demonstrated.
+                    </li>
+                </ul>
+            </div>
+
+            <div class="feature-category">
+                <h3>🌐 Community & Hardware</h3>
+                <ul class="feature-list">
+                    <li class="community">
+                        <span class="feature-tag tag-community">COMMUNITY</span>
+                        <strong>Hardware Building Discussions</strong><br>
+                        Extensive community collaboration on Pi Zero builds with battery and accelerometer integration. Alternative "shake" key support for devices without accelerometer.
+                    </li>
+                    <li class="community">
+                        <span class="feature-tag tag-community">COMMUNITY</span>
+                        <strong>Installation Troubleshooting</strong><br>
+                        Community-driven solutions for Bullseye vs Bookworm compatibility issues. Shared experiences with GamePi13 setup and permissions.
+                    </li>
+                    <li class="community">
+                        <span class="feature-tag tag-community">COMMUNITY</span>
+                        <strong>Future Platform Discussions</strong><br>
+                        Community interest in smartwatch ports, micro handheld compatibility, and Android APK development explored.
+                    </li>
+                    <li class="community">
+                        <span class="feature-tag tag-community">COMMUNITY</span>
+                        <strong>Battle System Feedback</strong><br>
+                        Community feedback on battle pacing and reward indication driving comprehensive battle system redesign for next version.
+                    </li>
+                </ul>
+            </div>
+            </div>
+        </div>
+
+        <!-- Version 0.9.3 -->
+        <div class="version">
+            <div class="version-header">
+                Version 0.9.3 - "Performance Revolution & DMX Introduction"
+                <div class="release-date">Release Date: June 7, 2025</div>
+            </div>
+            
+            <div class="version-content">
+
+            <div class="feature-category">
+                <h3>⚡ Major Performance Improvements</h3>
+                <ul class="feature-list">
+                    <li class="improvement">
+                        <span class="feature-tag tag-improved">IMPROVED</span>
+                        <strong>Pygame 2 Upgrade</strong><br>
+                        Upgraded to Pygame 2.5.2 to fix 100% CPU usage bug on Linux systems. Install with: `pip install --user pygame==2.5.2`
+                    </li>
+                    <li class="improvement">
+                        <span class="feature-tag tag-improved">IMPROVED</span>
+                        <strong>Main Scene Optimization</strong><br>
+                        Massive optimization round on main game scene. Pi Zero 2W now runs 7 hours on 2000mAh battery with screen fully lit!
+                    </li>
+                    <li class="improvement">
+                        <span class="feature-tag tag-improved">IMPROVED</span>
+                        <strong>Unified Pet Class Architecture</strong><br>
+                        Consolidated all pet classes into single configurable class with device-specific logic moved to module configuration.
+                    </li>
+                </ul>
+            </div>
+
+            <div class="feature-category">
+                <h3>🥚 Enhanced Egg System</h3>
+                <ul class="feature-list">
+                    <li class="new-feature">
+                        <span class="feature-tag tag-new">NEW</span>
+                        <strong>New Egg Selection Scene</strong><br>
+                        Redesigned to display more eggs with proper egg unlocking support and better navigation.
+                    </li>
+                    <li class="improvement">
+                        <span class="feature-tag tag-improved">IMPROVED</span>
+                        <strong>Egg Management Integration</strong><br>
+                        Egg addition functionality moved to Freezer Box for streamlined pet management workflow.
+                    </li>
+                </ul>
+            </div>
+
+            <div class="feature-category">
+                <h3>🧬 Complete Jogress Implementation</h3>
+                <ul class="feature-list">
+                    <li class="new-feature">
+                        <span class="feature-tag tag-new">NEW</span>
+                        <strong>DMC & PenC Jogress Support</strong><br>
+                        Full DNA Digivolution functionality for both DMC and PenC modules with authentic mechanics.
+                    </li>
+                    <li class="new-feature">
+                        <span class="feature-tag tag-new">NEW</span>
+                        <strong>Dual Jogress Types</strong><br>
+                        Standard Jogress (2 pets become 1) and PenC Jogress (evolution based on another pet's attributes).
+                    </li>
+                </ul>
+            </div>
+
+            <div class="feature-category">
+                <h3>📱 Accelerometer Integration</h3>
+                <ul class="feature-list">
+                    <li class="new-feature">
+                        <span class="feature-tag tag-new">NEW</span>
+                        <strong>BMI160 Accelerometer Support</strong><br>
+                        Full accelerometer functionality for egg shaking and PenC training/battling mechanics.
+                    </li>
+                    <li class="improvement">
+                        <span class="feature-tag tag-improved">IMPROVED</span>
+                        <strong>Shake Mechanic Implementation</strong><br>
+                        Authentic Pendulum-style shake mechanics for training and egg care. Use Space key on PC as alternative.
+                    </li>
+                    <li class="technical">
+                        <span class="feature-tag tag-technical">COMPATIBLE</span>
+                        <strong>Multi-Board Support</strong><br>
+                        I2C bus configuration for different hardware including LuckFox Pico compatibility improvements.
+                    </li>
+                </ul>
+            </div>
+
+            <div class="feature-category">
+                <h3>🎯 Training System Overhaul</h3>
+                <ul class="feature-list">
+                    <li class="improvement">
+                        <span class="feature-tag tag-improved">IMPROVED</span>
+                        <strong>Streamlined Training Modes</strong><br>
+                        All training modes redesigned for consistency and better user experience.
+                    </li>
+                    <li class="new-feature">
+                        <span class="feature-tag tag-new">NEW</span>
+                        <strong>Excite Training</strong><br>
+                        New training mode using daily XAI roll mechanics for varied gameplay.
+                    </li>
+                    <li class="improvement">
+                        <span class="feature-tag tag-improved">IMPROVED</span>
+                        <strong>Skip Button Integration</strong><br>
+                        Added skip functionality across all training modes for faster gameplay.
+                    </li>
+                </ul>
+            </div>
+
+            <div class="feature-category">
+                <h3>🎮 UI & Settings Improvements</h3>
+                <ul class="feature-list">
+                    <li class="new-feature">
+                        <span class="feature-tag tag-new">NEW</span>
+                        <strong>Full Pet Name Display Component</strong><br>
+                        New UI component capable of showing complete pet names and stage information.
+                    </li>
+                    <li class="improvement">
+                        <span class="feature-tag tag-improved">IMPROVED</span>
+                        <strong>Reorganized Settings Menu</strong><br>
+                        Better organized settings with dual volume options for enhanced sound control.
+                    </li>
+                    <li class="improvement">
+                        <span class="feature-tag tag-improved">IMPROVED</span>
+                        <strong>Enhanced Background Selection</strong><br>
+                        Redesigned background selection screen with better preview and organization.
+                    </li>
+                </ul>
+            </div>
+
+            <div class="feature-category">
+                <h3>📦 Freezer Box System</h3>
+                <ul class="feature-list">
+                    <li class="new-feature">
+                        <span class="feature-tag tag-new">NEW</span>
+                        <strong>Complete Pet Storage System</strong><br>
+                        Full Freezer Box implementation for easy pet storage and management. Use SELECT (Tab) to switch between party and box views.
+                    </li>
+                    <li class="new-feature">
+                        <span class="feature-tag tag-new">NEW</span>
+                        <strong>Frozen Pet Mechanics</strong><br>
+                        Pets in freezer don't count timers and are stored in separate save file for data organization.
+                    </li>
+                    <li class="new-feature">
+                        <span class="feature-tag tag-new">NEW</span>
+                        <strong>Stat Viewing & Management</strong><br>
+                        Check pet stats and move pets in/out of freezer with full data preservation.
+                    </li>
+                </ul>
+            </div>
+
+            <div class="feature-category">
+                <h3>🏆 Unlockables System</h3>
+                <ul class="feature-list">
+                    <li class="new-feature">
+                        <span class="feature-tag tag-new">NEW</span>
+                        <strong>Unlockables Menu</strong><br>
+                        New menu system to track progress on unlockable content (initial implementation).
+                    </li>
+                    <li class="new-feature">
+                        <span class="feature-tag tag-new">NEW</span>
+                        <strong>Complete DMC & PenC Unlocks</strong><br>
+                        All backgrounds, eggs, and special evolution lines now fully functional for DMC and PenC modules.
+                    </li>
+                </ul>
+            </div>
+
+            <div class="feature-category">
+                <h3>� DMX Module Introduction</h3>
+                <ul class="feature-list">
+                    <li class="new-feature">
+                        <span class="feature-tag tag-new">NEW</span>
+                        <strong>DMX Module Support</strong><br>
+                        Digital Monster X pets can now be added to the game with their own unique ruleset.
+                    </li>
+                    <li class="technical">
+                        <span class="feature-tag tag-technical">IN-PROGRESS</span>
+                        <strong>DMX Evolution Requirements</strong><br>
+                        Some evolution requirements not yet tracked - will be added in future updates.
+                    </li>
+                </ul>
+            </div>
+
+            <div class="feature-category">
+                <h3>🔧 Technical Improvements</h3>
+                <ul class="feature-list">
+                    <li class="improvement">
+                        <span class="feature-tag tag-improved">IMPROVED</span>
+                        <strong>Hardware Compatibility</strong><br>
+                        Enhanced support for different single-board computers including LuckFox Pico with I2C bus detection.
+                    </li>
+                    <li class="improvement">
+                        <span class="feature-tag tag-improved">IMPROVED</span>
+                        <strong>Modular Architecture Progress</strong><br>
+                        Moving towards fully configurable module system with rules stored in module.json files.
+                    </li>
+                    <li class="technical">
+                        <span class="feature-tag tag-technical">ENHANCED</span>
+                        <strong>File Structure Optimization</strong><br>
+                        Improved organization with separate save files for different game systems.
+                    </li>
+                </ul>
+            </div>
+
+            <div class="feature-category">
+                <h3>🎨 Display & Hardware Fixes</h3>
+                <ul class="feature-list">
+                    <li class="improvement">
+                        <span class="feature-tag tag-improved">IMPROVED</span>
+                        <strong>ST7789 Display Support</strong><br>
+                        Enhanced 1.3" screen support with community-contributed initialization parameters for better color accuracy.
+                    </li>
+                    <li class="technical">
+                        <span class="feature-tag tag-technical">ENHANCED</span>
+                        <strong>GPIO Library Compatibility</strong><br>
+                        Improved Raspberry Pi GPIO library handling for broader hardware support.
+                    </li>
+                </ul>
+            </div>
+
+            <div class="note">
+                <strong>Performance Achievement:</strong> Achieved nearly 7 hours of battery life on Pi Zero 2W with 2000mAh battery and full screen brightness - potential for longer with debug mode disabled.
+            </div>
+
+            <div class="note">
+                <strong>Community Hardware Testing:</strong> Successfully tested on LuckFox Pico with community contributions for I2C bus compatibility and BMI160 accelerometer integration.
+            </div>
+
+            <div class="note">
+                <strong>File Size Note:</strong> Release split into multiple files due to Discord limits - includes extensive asset additions for DMX module and enhanced graphics.
+            </div>
+
+            <div class="note">
+                <strong>Installation:</strong> Requires Python installation and pygame 2.5.2. Working towards standalone executable to simplify deployment.
+            </div>
+            </div>
+        </div>
+
+        <!-- Version 0.9.2 -->
+        <div class="version">
+            <div class="version-header">
+                Version 0.9.2 - "Modular Revolution & Raspberry Pi Support"
+                <div class="release-date">Release Date: May 14, 2025</div>
+            </div>
+            
+            <div class="version-content">
+
+            <div class="feature-category">
+                <h3>🏗️ Revolutionary Module System</h3>
+                <ul class="feature-list">
+                    <li class="new-feature">
+                        <span class="feature-tag tag-new">NEW</span>
+                        <strong>True Modular Architecture</strong><br>
+                        Modules now properly implemented! Add new modules by placing files in the modules folder. Each module can define its own rules and mechanics.
+                    </li>
+                    <li class="new-feature">
+                        <span class="feature-tag tag-new">NEW</span>
+                        <strong>Module-Specific Configuration</strong><br>
+                        Module.json files now control game behavior including death conditions, injury limits, and custom mechanics.
+                    </li>
+                    <li class="new-feature">
+                        <span class="feature-tag tag-new">NEW</span>
+                        <strong>Ruleset System</strong><br>
+                        Different modules can use different rulesets that affect core game logic and behavior.
+                    </li>
+                </ul>
+            </div>
+
+            <div class="feature-category">
+                <h3>📦 Complete Pendulum Color Module</h3>
+                <ul class="feature-list">
+                    <li class="new-feature">
+                        <span class="feature-tag tag-new">NEW</span>
+                        <strong>Full PenC Implementation</strong><br>
+                        Complete Pendulum Color module with all eggs, battles, backgrounds, and authentic mechanics.
+                    </li>
+                    <li class="new-feature">
+                        <span class="feature-tag tag-new">NEW</span>
+                        <strong>Shaken Eggs & Condition Hearts</strong><br>
+                        Authentic PenC mechanics including shaken egg system and condition heart management.
+                    </li>
+                    <li class="new-feature">
+                        <span class="feature-tag tag-new">NEW</span>
+                        <strong>PenC Training System</strong><br>
+                        Pendulum-specific training mechanics where PenC Digimon gain Strength hearts, while DMC Digimon follow different rules.
+                    </li>
+                </ul>
+            </div>
+
+            <div class="feature-category">
+                <h3>🥧 Raspberry Pi Zero 2W Support</h3>
+                <ul class="feature-list">
+                    <li class="new-feature">
+                        <span class="feature-tag tag-new">NEW</span>
+                        <strong>GamePi Hardware Compatibility</strong><br>
+                        Designed for Waveshare GamePi13 1.3" LCD (240x240 resolution) - available on AliExpress.
+                    </li>
+                    <li class="new-feature">
+                        <span class="feature-tag tag-new">NEW</span>
+                        <strong>Automated Pi Setup</strong><br>
+                        Added setup.bash file for easy Raspberry Pi installation and configuration.
+                    </li>
+                    <li class="improvement">
+                        <span class="feature-tag tag-improved">IMPROVED</span>
+                        <strong>Performance Optimization</strong><br>
+                        Game runs at solid 30fps on Pi Zero 2W with power usage optimizations.
+                    </li>
+                    <li class="new-feature">
+                        <span class="feature-tag tag-new">NEW</span>
+                        <strong>Screen Flip Support</strong><br>
+                        Added functionality to reverse screen orientation for use with prism displays.
+                    </li>
+                </ul>
+            </div>
+
+            <div class="feature-category">
+                <h3>🎯 Enhanced Pet Management</h3>
+                <ul class="feature-list">
+                    <li class="new-feature">
+                        <span class="feature-tag tag-new">NEW</span>
+                        <strong>Traited Eggs System</strong><br>
+                        Special traited eggs now implemented with unique unlock marks on status screen.
+                    </li>
+                    <li class="new-feature">
+                        <span class="feature-tag tag-new">NEW</span>
+                        <strong>Device Origin Markers</strong><br>
+                        Visual marks show which device/module each pet belongs to for easy identification.
+                    </li>
+                    <li class="improvement">
+                        <span class="feature-tag tag-improved">IMPROVED</span>
+                        <strong>Cross-Module Training</strong><br>
+                        Any pet can train in any module's training modes, with module-specific rules applied appropriately.
+                    </li>
+                </ul>
+            </div>
+
+            <div class="feature-category">
+                <h3>⚔️ Battle System Expansion</h3>
+                <ul class="feature-list">
+                    <li class="new-feature">
+                        <span class="feature-tag tag-new">NEW</span>
+                        <strong>Jogress Mode</strong><br>
+                        DNA Digivolution battles now implemented for fusion evolution paths.
+                    </li>
+                    <li class="new-feature">
+                        <span class="feature-tag tag-new">NEW</span>
+                        <strong>Versus Mode</strong><br>
+                        Direct pet-vs-pet battle mode for competitive play.
+                    </li>
+                    <li class="new-feature">
+                        <span class="feature-tag tag-new">NEW</span>
+                        <strong>Module-Specific Adventure Modes</strong><br>
+                        Separate Adventure Mode campaigns for each module with unique enemies and progression.
+                    </li>
+                </ul>
+            </div>
+
+            <div class="feature-category">
+                <h3>🏆 Unlock & Progression System</h3>
+                <ul class="feature-list">
+                    <li class="new-feature">
+                        <span class="feature-tag tag-new">NEW</span>
+                        <strong>Background Unlocking</strong><br>
+                        Unlock new backgrounds by progressing through Adventure Mode in different modules.
+                    </li>
+                    <li class="new-feature">
+                        <span class="feature-tag tag-new">NEW</span>
+                        <strong>Initial Unlock Framework</strong><br>
+                        Foundation unlock system implemented, ready for special evolution paths and content.
+                    </li>
+                </ul>
+            </div>
+
+            <div class="feature-category">
+                <h3>🎮 Hardware & Controls</h3>
+                <ul class="feature-list">
+                    <li class="new-feature">
+                        <span class="feature-tag tag-new">NEW</span>
+                        <strong>GamePi Control Mapping</strong><br>
+                        Complete button mapping for GamePi hardware: UP/DOWN/LEFT/RIGHT/SELECT/START/A/B (+ optional Y button).
+                    </li>
+                    <li class="technical">
+                        <span class="feature-tag tag-technical">COMPATIBLE</span>
+                        <strong>GPIO Integration</strong><br>
+                        10 free GPIO pins available for future expansions like accelerometer and real Digimon device communication.
+                    </li>
+                    <li class="improvement">
+                        <span class="feature-tag tag-improved">IMPROVED</span>
+                        <strong>Cross-Platform Compatibility</strong><br>
+                        Maintains full PC compatibility while adding Pi support. Works on any device with Python support.
+                    </li>
+                </ul>
+            </div>
+
+            <div class="feature-category">
+                <h3>🏗️ Technical Infrastructure</h3>
+                <ul class="feature-list">
+                    <li class="improvement">
+                        <span class="feature-tag tag-improved">IMPROVED</span>
+                        <strong>Major Project Structure Overhaul</strong><br>
+                        Completely reorganized codebase for better modularity and maintainability.
+                    </li>
+                    <li class="improvement">
+                        <span class="feature-tag tag-improved">IMPROVED</span>
+                        <strong>Code Optimizations</strong><br>
+                        Significant performance improvements and power usage optimizations for mobile hardware.
+                    </li>
+                </ul>
+            </div>
+
+            <div class="feature-category">
+                <h3>🐛 Bug Fixes</h3>
+                <ul class="feature-list">
+                    <li class="bugfix">
+                        <span class="feature-tag tag-fixed">FIXED</span>
+                        <strong>Training System Issues</strong><br>
+                        Resolved divide-by-zero errors in Dummy Training and Head-to-Head Training when only Stage 2 Digimon present.
+                    </li>
+                    <li class="bugfix">
+                        <span class="feature-tag tag-fixed">FIXED</span>
+                        <strong>Battle Target Selection</strong><br>
+                        Fixed training modes incorrectly importing battle targets instead of training targets.
+                    </li>
+                </ul>
+            </div>
+
+            <div class="feature-category">
+                <h3>🎬 Visual Enhancements</h3>
+                <ul class="feature-list">
+                    <li class="new-feature">
+                        <span class="feature-tag tag-new">NEW</span>
+                        <strong>Evolution Animation Preview</strong><br>
+                        Experimental Digimon Adventure-style evolution animation with pixel scattering effects and music.
+                    </li>
+                    <li class="improvement">
+                        <span class="feature-tag tag-improved">IMPROVED</span>
+                        <strong>Adventure Mode Backgrounds</strong><br>
+                        High-quality battle backgrounds that "go hard" according to community feedback.
+                    </li>
+                </ul>
+            </div>
+
+            <div class="note">
+                <strong>Hardware Recommendations:</strong> Designed for Waveshare GamePi13 with 240x240 LCD. Future plans include 18650 battery support and accelerometer integration for shake mechanics.
+            </div>
+
+            <div class="note">
+                <strong>Community Testing:</strong> Successfully tested by community members with bug reports and feedback leading to immediate fixes and improvements.
+            </div>
+
+            <div class="note">
+                <strong>Future Development:</strong> Plans include proper evolution/jogress animations, special evolution path unlocking, unlockable content viewer, and extensive testing across different hardware configurations.
+            </div>
+            </div>
+        </div>
+
+        <!-- Version 0.9.1 -->
+        <div class="version">
+            <div class="version-header">
+                Version 0.9.1 - "Initial DMC Clone Release"
+                <div class="release-date">Release Date: May 4, 2025</div>
+            </div>
+            
+            <div class="version-content">
+
+            <div class="feature-category">
+                <h3>🚀 Core Foundation</h3>
+                <ul class="feature-list">
+                    <li class="new-feature">
+                        <span class="feature-tag tag-new">NEW</span>
+                        <strong>Complete DMC Virtual Pet Simulation</strong><br>
+                        Full reverse-engineered Digital Monster Card (DMC) experience with authentic gameplay mechanics.
+                    </li>
+                    <li class="new-feature">
+                        <span class="feature-tag tag-new">NEW</span>
+                        <strong>Modular Architecture Foundation</strong><br>
+                        Built from the ground up to accept user-made modules, enabling future expansion to other V-Pet lines like Pendulum and X devices.
+                    </li>
+                    <li class="new-feature">
+                        <span class="feature-tag tag-new">NEW</span>
+                        <strong>Evolution System</strong><br>
+                        Dynamic evolution paths with customizable evolution lines that can be modified by users.
+                    </li>
+                </ul>
+            </div>
+
+            <div class="feature-category">
+                <h3>⚔️ Battle System</h3>
+                <ul class="feature-list">
+                    <li class="new-feature">
+                        <span class="feature-tag tag-new">NEW</span>
+                        <strong>Combat Mechanics</strong><br>
+                        Implemented battle system with authentic DMC-style combat and mini-games.
+                    </li>
+                    <li class="new-feature">
+                        <span class="feature-tag tag-new">NEW</span>
+                        <strong>Battle Interface</strong><br>
+                        Complete battle UI with proper animations and result handling.
+                    </li>
+                </ul>
+            </div>
+
+            <div class="feature-category">
+                <h3>📚 Information Systems</h3>
+                <ul class="feature-list">
+                    <li class="new-feature">
+                        <span class="feature-tag tag-new">NEW</span>
+                        <strong>Complete Digidex</strong><br>
+                        Full database of every available Digimon with complete evolution trees. Complex drawing system implemented with AI assistance.
+                    </li>
+                    <li class="new-feature">
+                        <span class="feature-tag tag-new">NEW</span>
+                        <strong>Evolution Tree Visualization</strong><br>
+                        Interactive evolution charts showing all possible evolution paths for each Digimon.
+                    </li>
+                </ul>
+            </div>
+
+            <div class="feature-category">
+                <h3>� Core Gameplay Features</h3>
+                <ul class="feature-list">
+                    <li class="new-feature">
+                        <span class="feature-tag tag-new">NEW</span>
+                        <strong>Pet Care System</strong><br>
+                        Comprehensive feeding, training, and care mechanics matching DMC behavior.
+                    </li>
+                    <li class="new-feature">
+                        <span class="feature-tag tag-new">NEW</span>
+                        <strong>Training Mini-Games</strong><br>
+                        Multiple training types to improve pet stats and prepare for evolution.
+                    </li>
+                    <li class="new-feature">
+                        <span class="feature-tag tag-new">NEW</span>
+                        <strong>Intelligent Pet Management</strong><br>
+                        Tab key functionality for selection strategies (e.g., feed only hungry pets in feeding menu).
+                    </li>
+                    <li class="technical">
+                        <span class="feature-tag tag-technical">FEATURE</span>
+                        <strong>Immortal Pets (Temporary)</strong><br>
+                        Death system not yet implemented - all pets are currently immortal during testing phase.
+                    </li>
+                </ul>
+            </div>
+
+            <div class="feature-category">
+                <h3>🎮 Platform & Hardware Support</h3>
+                <ul class="feature-list">
+                    <li class="new-feature">
+                        <span class="feature-tag tag-new">NEW</span>
+                        <strong>PC Python Support</strong><br>
+                        Runs on any PC with Python installed. Use arrow keys, Enter, and ESC for navigation.
+                    </li>
+                    <li class="new-feature">
+                        <span class="feature-tag tag-new">NEW</span>
+                        <strong>GamePi Hardware Target</strong><br>
+                        Designed specifically for GamePi Zero 2W hardware with optimized controls and display.
+                    </li>
+                    <li class="technical">
+                        <span class="feature-tag tag-technical">DEPENDENCY</span>
+                        <strong>Pygame Foundation</strong><br>
+                        Built on Pygame framework. Install with: `pip install pygame`
+                    </li>
+                </ul>
+            </div>
+
+            <div class="feature-category">
+                <h3>📦 Module System Preview</h3>
+                <ul class="feature-list">
+                    <li class="new-feature">
+                        <span class="feature-tag tag-new">NEW</span>
+                        <strong>DMC Module Complete</strong><br>
+                        Full Digital Monster Card module with authentic data and behavior.
+                    </li>
+                    <li class="technical">
+                        <span class="feature-tag tag-technical">IN-PROGRESS</span>
+                        <strong>PenC Module Development</strong><br>
+                        Early development begun on Pendulum Color module with first egg implemented.
+                    </li>
+                </ul>
+            </div>
+
+            <div class="feature-category">
+                <h3>⚠️ Known Limitations</h3>
+                <ul class="feature-list">
+                    <li class="technical">
+                        <span class="feature-tag tag-technical">MISSING</span>
+                        <strong>Death System</strong><br>
+                        Pet death mechanics not yet implemented - all pets are immortal.
+                    </li>
+                    <li class="technical">
+                        <span class="feature-tag tag-technical">MISSING</span>
+                        <strong>Traited Eggs</strong><br>
+                        Special traited egg system not yet implemented.
+                    </li>
+                    <li class="technical">
+                        <span class="feature-tag tag-technical">MISSING</span>
+                        <strong>Jogress Evolution</strong><br>
+                        DNA Digivolution (Jogress) system not yet implemented.
+                    </li>
+                    <li class="technical">
+                        <span class="feature-tag tag-technical">MISSING</span>
+                        <strong>Unlockables</strong><br>
+                        Unlock system for special content not yet implemented.
+                    </li>
+                </ul>
+            </div>
+
+            <div class="note">
+                <strong>Project Origin:</strong> Started as a Python learning project, evolved into a comprehensive virtual pet simulator. The initial goal was to create a V-Pet for GamePi Zero 2W hardware while reverse-engineering the Digital Monster Card mechanics.
+            </div>
+
+            <div class="note">
+                <strong>Community Feedback:</strong> Successfully tested by community members including performance testing on various hardware platforms. Praised for accurate DMC simulation and modular design potential.
+            </div>
+
+            <div class="note">
+                <strong>Development Note:</strong> This release represents the first public version with "mostly feature complete" DMC functionality. The foundation is set for expanding to other V-Pet lines and custom modules.
+            </div>
+            </div>
+        </div>
+
+        <!-- Earlier Versions Template -->
+        <div class="version coming-soon">
+            <div class="version-header">
+                Pre-Release Development
+                <div class="release-date">2024 - Early 2025</div>
+            </div>
+            <div class="version-content">
+            <p><em>Early development phases focused on core engine development, game design, and foundational architecture. The project evolved from concept to the first public release through extensive prototyping and testing.</em></p>
+            </div>
+        </div>
+
+    </div>
+</body>
+</html>
