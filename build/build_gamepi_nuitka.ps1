@@ -221,6 +221,10 @@ Copy-Item -Recurse (Join-Path $PROJECT_ROOT "Documentation") "$TEMP_DIR\$BUILD_N
 Write-Status "Copying modules..."
 Copy-Item -Recurse (Join-Path $PROJECT_ROOT "modules") "$TEMP_DIR\$BUILD_NAME\" -Force
 
+# Copy network
+Write-Status "Copying network..."
+Copy-Item -Recurse (Join-Path $PROJECT_ROOT "network") "$TEMP_DIR\$BUILD_NAME\" -Force
+
 # Create empty save folder
 Write-Status "Creating save directory..."
 New-Item -ItemType Directory -Path "$TEMP_DIR\$BUILD_NAME\save" -Force | Out-Null

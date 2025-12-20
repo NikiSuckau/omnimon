@@ -4,10 +4,16 @@ A scene for network battles against other Omnipet devices.
 """
 import pygame
 from components.window_background import WindowBackground
-from core import runtime_globals
+from core import runtime_globals, constants
 from core.combat.battle_encounter import BattleEncounter
 from core.combat.sim import models as sim_models
 from core.utils.scene_utils import change_scene
+from core.animation import PetFrame
+from components.ui.image import Image
+from components.ui.label import Label
+from components.ui import ui_constants
+from components.ui.component import UIComponent
+import pygame
 
 class SceneBattlePvP:
     """
@@ -33,6 +39,9 @@ class SceneBattlePvP:
                 self.enemy_team_data = pvp_data.get('enemy_team_data', [])
                 self.simulation_data = pvp_data.get('simulation_data', {})
                 self.module_name = pvp_data.get('module', 'DMC')
+                self.my_player_name = pvp_data.get('my_player_name', 'YOU')
+                self.enemy_player_name = pvp_data.get('enemy_player_name', 'ENEMY')
+                self.is_online_mode = pvp_data.get('is_online_mode', False)
                 
                 # Validate required data
                 if not self.my_pets:
@@ -56,10 +65,16 @@ class SceneBattlePvP:
                 runtime_globals.game_console.log(f"  - Enemy team data: {len(self.enemy_team_data)}")
                 runtime_globals.game_console.log(f"  - Module: {self.module_name}")
                 
+                # Play online battle sound
+                runtime_globals.game_sound.play("battle_online")
+                
                 # Create battle encounter for PvP
                 self.setup_pvp_battle()
                 
-                runtime_globals.game_console.log(f"[SceneBattlePvP] PvP battle scene initialized successfully")
+                # Setup alert screen components
+                self.setup_alert_components()
+                
+                runtime_globals.game_console.log(f"[SceneBattlePvP] PVP battle scene initialized successfully")
                 
             except Exception as e:
                 runtime_globals.game_console.log(f"[SceneBattlePvP] Error initializing PvP data: {e}")
@@ -146,7 +161,8 @@ class SceneBattlePvP:
                 team2_pet_data = team2_data
             
             runtime_globals.game_console.log(f"[SceneBattlePvP] Setting up teams: team1_pets={len(team1_pets)}, team2_pet_data={len(team2_pet_data)}")
-            self.battle_encounter.setup_pvp_teams(team1_pets, team2_pet_data)
+            # Host uses pvp_host HP bar, client uses pvp_client
+            self.battle_encounter.setup_pvp_teams(team1_pets, team2_pet_data, is_host=self.is_host)
             
             # Set flag for which team to show in result phase
             # Host should show team1 (their pets), client should show team2 (their pets)
@@ -224,9 +240,10 @@ class SceneBattlePvP:
             if hasattr(self.battle_encounter, 'process_battle_results'):
                 self.battle_encounter.process_battle_results()
             
-            # Skip to battle phase
-            self.battle_encounter.phase = "battle"
+            # Start at alert phase to show team preview
+            self.battle_encounter.phase = "alert"
             self.battle_encounter.frame_counter = 0
+            self.alert_timer = 0
             
             runtime_globals.game_console.log("[SceneBattlePvP] Battle setup completed successfully")
                 
@@ -235,6 +252,111 @@ class SceneBattlePvP:
             import traceback
             runtime_globals.game_console.log(f"[SceneBattlePvP] Traceback: {traceback.format_exc()}")
             change_scene("game")
+    
+    def setup_alert_components(self):
+        """Setup PVP alert screen with team previews and player labels."""
+        try:
+            # Load appropriate background based on host/client
+            if self.is_host:
+                self.alert_sprite = self.battle_encounter.ui_manager.load_sprite_integer_scaling("Battle", "VersusFrame_PVPHost", "")
+            else:
+                self.alert_sprite = self.battle_encounter.ui_manager.load_sprite_integer_scaling("Battle", "VersusFrame_PVPClient", "")
+            
+            # Create alert image component (base UI coords covering the UI area)
+            # Add background FIRST so it draws at the bottom
+            self.alert_image = Image(0, 0, 240, 240, image_surface=self.alert_sprite)
+            self.alert_image.visible = True
+            self.battle_encounter.ui_manager.add_component(self.alert_image)
+            runtime_globals.game_console.log(f"[SceneBattlePvP] Alert background loaded: {self.alert_sprite is not None}")
+            
+            # Determine player labels based on online/local mode and host/client role
+            # WiFi battles: Host shows ENEMY(left), YOU(right); Client shows YOU(left), ENEMY(right)
+            # Online battles: Host shows opponent(left), their username(right); Client shows opponent(left), their username(right)
+            if self.is_online_mode:
+                # Online: Use Discord usernames
+                if self.is_host:
+                    # Host: enemy left, me right
+                    top_label = self.enemy_player_name if self.enemy_player_name else "ENEMY"
+                    bottom_label = self.my_player_name if self.my_player_name else "YOU"
+                else:
+                    # Client: opponent left, me right (enemy is on top/left from perspective)
+                    top_label = self.enemy_player_name if self.enemy_player_name else "ENEMY"
+                    bottom_label = self.my_player_name if self.my_player_name else "YOU"
+            else:
+                # WiFi: Use ENEMY/YOU labels
+                if self.is_host:
+                    # Host: ENEMY left, YOU right
+                    top_label = "ENEMY"
+                    bottom_label = "YOU"
+                else:
+                    # Client: YOU left, ENEMY right
+                    top_label = "YOU"
+                    bottom_label = "ENEMY"
+            
+            runtime_globals.game_console.log(f"[SceneBattlePvP] Alert labels: top='{top_label}', bottom='{bottom_label}', host={self.is_host}, online={self.is_online_mode}")
+            
+            # Top label (enemy team) - positioned like versus left label, add AFTER background so it draws on top
+            self.top_label = Label(13, 99, text=top_label, is_title=True, align_right=False, fixed_width=85, color_override=ui_constants.ANIM_BLACK)
+            self.top_label.visible = True
+            self.battle_encounter.ui_manager.add_component(self.top_label)
+            runtime_globals.game_console.log(f"[SceneBattlePvP] Added top label: '{top_label}' at (13, 99)")
+            
+            # Bottom label (your team) - positioned like versus right label, add AFTER background so it draws on top
+            self.bottom_label = Label(140, 130, text=bottom_label, is_title=True, align_right=True, fixed_width=85, color_override=ui_constants.ANIM_BLACK)
+            self.bottom_label.visible = True
+            self.battle_encounter.ui_manager.add_component(self.bottom_label)
+            runtime_globals.game_console.log(f"[SceneBattlePvP] Added bottom label: '{bottom_label}' at (140, 130)")
+            
+            # Display team2 pets at top (left to right, starting from left edge)
+            team2_pets = self.battle_encounter.battle_player.team2
+            pet_size = 40
+            spacing = 50  # Spacing between pets
+            
+            runtime_globals.game_console.log(f"[SceneBattlePvP] Displaying {len(team2_pets)} team2 pets at top")
+            for i, pet in enumerate(team2_pets):
+                try:
+                    pet_sprite = pet.get_sprite(PetFrame.IDLE1.value) if hasattr(pet, 'get_sprite') else None
+                    if pet_sprite:
+                        # Left to right: start at x=10, space by 50px
+                        x = 10 + i * spacing
+                        y = 40  # Higher up
+                        pet_image = Image(x, y, pet_size, pet_size, image_surface=pet_sprite)
+                        pet_image.visible = True
+                        self.battle_encounter.ui_manager.add_component(pet_image)
+                        runtime_globals.game_console.log(f"[SceneBattlePvP] Added team2 pet {i} at ({x}, {y})")
+                    else:
+                        runtime_globals.game_console.log(f"[SceneBattlePvP] Team2 pet {i} has no sprite")
+                except Exception as e:
+                    runtime_globals.game_console.log(f"[SceneBattlePvP] Error loading team2 pet {i}: {e}")
+            
+            # Display team1 pets at bottom (right to left, starting from right edge)
+            team1_pets = self.battle_encounter.battle_player.team1
+            
+            runtime_globals.game_console.log(f"[SceneBattlePvP] Displaying {len(team1_pets)} team1 pets at bottom")
+            for i, pet in enumerate(team1_pets):
+                try:
+                    pet_sprite = pet.get_sprite(PetFrame.IDLE1.value) if hasattr(pet, 'get_sprite') else None
+                    if pet_sprite:
+                        # Flip sprite to face right
+                        pet_sprite = pygame.transform.flip(pet_sprite, True, False)
+                        # Right to left: start at x=190 (240-40-10), go left by 50px each
+                        x = 190 - i * spacing
+                        y = 160  # Lower down
+                        pet_image = Image(x, y, pet_size, pet_size, image_surface=pet_sprite)
+                        pet_image.visible = True
+                        self.battle_encounter.ui_manager.add_component(pet_image)
+                        runtime_globals.game_console.log(f"[SceneBattlePvP] Added team1 pet {i} at ({x}, {y})")
+                    else:
+                        runtime_globals.game_console.log(f"[SceneBattlePvP] Team1 pet {i} has no sprite")
+                except Exception as e:
+                    runtime_globals.game_console.log(f"[SceneBattlePvP] Error loading team1 pet {i}: {e}")
+            
+            runtime_globals.game_console.log("[SceneBattlePvP] Alert components setup complete")
+            
+        except Exception as e:
+            runtime_globals.game_console.log(f"[SceneBattlePvP] Error setting up alert components: {e}")
+            import traceback
+            runtime_globals.game_console.log(f"[SceneBattlePvP] Traceback: {traceback.format_exc()}")
 
     def swap_battle_log_devices(self, battle_log_dict):
         """Swaps device1/device2 in battle log for client perspective."""
@@ -340,6 +462,15 @@ class SceneBattlePvP:
         Updates the PvP battle scene.
         """
         if self.battle_encounter:
+            # Handle alert phase
+            if self.battle_encounter.phase == "alert":
+                self.alert_timer += 1
+                if self.alert_timer > constants.FRAME_RATE * 3:  # 3 seconds
+                    self.battle_encounter.phase = "battle"
+                    self.battle_encounter.frame_counter = 0
+                    runtime_globals.game_console.log("[SceneBattlePvP] Transitioning from alert to battle phase")
+                return
+            
             self.battle_encounter.update()
             
             # Check if battle is complete
@@ -353,7 +484,12 @@ class SceneBattlePvP:
         """
         self.background.draw(surface)
         if self.battle_encounter:
-            self.battle_encounter.draw(surface)
+            # Handle alert phase drawing
+            if self.battle_encounter.phase == "alert":
+                surface.fill(ui_constants.COMBAT_BLUE)
+                self.battle_encounter.ui_manager.draw(surface)
+            else:
+                self.battle_encounter.draw(surface)
 
     def handle_event(self, event) -> None:
         """

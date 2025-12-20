@@ -215,6 +215,10 @@ Copy-Item -Recurse (Join-Path $PROJECT_ROOT "Documentation") "$TEMP_DIR\$BUILD_N
 Write-Status "Copying modules..."
 Copy-Item -Recurse (Join-Path $PROJECT_ROOT "modules") "$TEMP_DIR\$BUILD_NAME\" -Force
 
+# Copy network
+Write-Status "Copying network..."
+Copy-Item -Recurse (Join-Path $PROJECT_ROOT "network") "$TEMP_DIR\$BUILD_NAME\" -Force
+
 # Copy Module Editor (without Source folder)
 Write-Status "Copying Module Editor..."
 $moduleEditorSrc = Join-Path $PROJECT_ROOT "Module Editor"

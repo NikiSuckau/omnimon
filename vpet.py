@@ -76,6 +76,15 @@ class VirtualPetGame:
             except Exception:
                 pass
         # Clock is now managed by main.py
+        if runtime_globals.IS_ANDROID:
+            try:
+                from plyer import accelerometer # type: ignore
+                accelerometer.enable()
+                self._accel_enabled = True
+                print("[Input] Android accelerometer enabled")
+            except Exception as e:
+                self._accel_enabled = False
+                print("[Input] Failed to enable accelerometer:", e)
 
     def update(self) -> None:
         """
@@ -157,13 +166,14 @@ class VirtualPetGame:
             if self.scene.handle_event(input_event):
                 return
         
-        # Handle analog joystick inputs (they come through get_just_pressed_joystick)
-        for action in runtime_globals.game_input.get_just_pressed_joystick():
-            # Convert analog actions to directional events
-            if action in ("ANALOG_UP", "ANALOG_DOWN", "ANALOG_LEFT", "ANALOG_RIGHT"):
-                from core.game_input.input_event import create_simple_event
-                directional = action.replace("ANALOG_", "")
-                self.scene.handle_event(create_simple_event(directional))
+        if not runtime_globals.IS_ANDROID:
+            # Handle analog joystick inputs (they come through get_just_pressed_joystick)
+            for action in runtime_globals.game_input.get_just_pressed_joystick():
+                # Convert analog actions to directional events
+                if action in ("ANALOG_UP", "ANALOG_DOWN", "ANALOG_LEFT", "ANALOG_RIGHT"):
+                    from core.game_input.input_event import create_simple_event
+                    directional = action.replace("ANALOG_", "")
+                    self.scene.handle_event(create_simple_event(directional))
 
     def poll_gpio_inputs(self):
         from core.game_input.input_event import create_simple_event

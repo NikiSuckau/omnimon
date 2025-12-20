@@ -459,22 +459,23 @@ class PetSelector(UIComponent):
                     fill_color = self.enabled_color
                     border_color = self.highlight_color if is_highlighted else self.enabled_color
                 alpha = 255
-            elif is_selected and pet_index in self.pet_custom_themes:
-                # Selected with custom theme (normal mode)
-                custom_theme = self.pet_custom_themes[pet_index]
-                theme_colors = self.get_pet_theme_colors(pet_index, custom_theme)
-                if theme_colors:
-                    fill_color = theme_colors.get("bg", self.hexagon_color)
-                    border_color = theme_colors.get("highlight", self.highlight_color) if is_highlighted else theme_colors.get("fg", self.enabled_color)
-                else:
-                    fill_color = self.hexagon_color
-                    border_color = self.highlight_color if is_highlighted else self.enabled_color
-                alpha = 255
             elif is_selected:
-                # Selected without custom theme (normal mode)
-                fill_color = self.hexagon_color
-                border_color = self.highlight_color if is_highlighted else self.enabled_color
+                # Selected: use distinct background and highlight border
+                if self.manager:
+                    theme_colors = self.manager.get_theme_colors()
+                    fill_color = theme_colors.get("fg", self.enabled_color)
+                else:
+                    fill_color = self.enabled_color
+                border_color = self.highlight_color
                 alpha = 255
+
+                # If this pet has a custom theme, allow it to override colors
+                if pet_index in self.pet_custom_themes:
+                    custom_theme = self.pet_custom_themes[pet_index]
+                    theme_colors = self.get_pet_theme_colors(pet_index, custom_theme)
+                    if theme_colors:
+                        fill_color = theme_colors.get("fg", fill_color)
+                        border_color = theme_colors.get("highlight", border_color)
             elif is_highlighted and runtime_globals.INPUT_MODE != runtime_globals.TOUCH_MODE:
                 # Focused/highlighted: highlight border (only when component has focus)
                 # Skip in touch mode - focus highlights are for keyboard/mouse navigation only

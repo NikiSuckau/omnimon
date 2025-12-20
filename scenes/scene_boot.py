@@ -56,9 +56,9 @@ class SceneBoot:
         self.background = WindowBackground(True)
         # Use "Fit" method for logo image for both landscape and portrait devices
         if runtime_globals.SCREEN_WIDTH >= runtime_globals.SCREEN_HEIGHT:
-            self.logo = sprite_load_percent(constants.OMNIMON_LOGO_PATH, percent=100, keep_proportion=True, base_on="height")
+            self.logo = sprite_load_percent(constants.OMNIPET_LOGO_PATH, percent=100, keep_proportion=True, base_on="height")
         else:
-            self.logo = sprite_load_percent(constants.OMNIMON_LOGO_PATH, percent=100, keep_proportion=True, base_on="width")
+            self.logo = sprite_load_percent(constants.OMNIPET_LOGO_PATH, percent=100, keep_proportion=True, base_on="width")
 
         # --- Platform detection ---
         is_batocera = os.path.exists("/usr/share/batocera") or os.path.exists("/etc/batocera-release")

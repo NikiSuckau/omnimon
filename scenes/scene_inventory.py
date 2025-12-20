@@ -602,7 +602,7 @@ class SceneInventory:
         # Don't allow discarding default items (Protein/Vitamin)
         if hasattr(item, 'id') and item.id in [ditem.id for ditem in runtime_globals.default_items.values()]:
             runtime_globals.game_sound.play("cancel")
-            runtime_globals.game_console.log(f"[SceneInventory] Cannot discard default item: {item.name}")
+            #runtime_globals.game_console.log(f"[SceneInventory] Cannot discard default item: {item.name}")
             return
             
         runtime_globals.game_sound.play("menu")

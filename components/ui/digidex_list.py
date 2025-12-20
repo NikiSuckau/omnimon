@@ -4,7 +4,7 @@ from components.ui.component import UIComponent
 from core import runtime_globals
 from core.utils.sprite_utils import load_pet_sprites
 from core.utils.module_utils import get_module
-from core.utils.pygame_utils import blit_with_shadow
+from core.utils.pygame_utils import blit_with_cache, blit_with_shadow
 import core.constants as constants
 
 SPRITE_BUFFER = 10
@@ -459,7 +459,6 @@ class DigidexList(UIComponent):
             # Draw sprite
             if pet.sprite:
                 scaled_sprite = pygame.transform.scale(pet.sprite, (icon_size, icon_size))
-                from core.utils.pygame_utils import blit_with_cache
                 blit_with_cache(surface, scaled_sprite, (list_x + left_padding, y_pos + int(5 * ui_scale)))
             
             # Draw name and info with shadow
@@ -467,7 +466,6 @@ class DigidexList(UIComponent):
             blit_with_shadow(surface, name_text, (list_x + left_padding + icon_size + int(5 * ui_scale), y_pos + int(8 * ui_scale)))
             
             info_text = small_font.render(f"{pet.attribute if pet.attribute != '' else 'Free'} | Stage {constants.STAGES[pet.stage]}", True, (200, 200, 200))
-            from core.utils.pygame_utils import blit_with_shadow
             blit_with_shadow(surface, info_text, (list_x + left_padding + icon_size + int(5 * ui_scale), y_pos + int(28 * ui_scale)))
             
             # Highlight selected or hovered item

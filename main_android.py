@@ -3,6 +3,7 @@ Omnipet Virtual Pet - Android Entry Point
 """
 import sys
 import os
+
 os.environ["SDL_RENDER_SCALE_QUALITY"] = "0"
 import pygame
 
@@ -24,6 +25,8 @@ def main():
         runtime_globals.APP_ROOT = os.getcwd()
         runtime_globals.IS_ANDROID = True
         runtime_globals.INPUT_MODE = runtime_globals.TOUCH_MODE
+        from core import game_globals
+        game_globals.showClock = False
         #runtime_globals.INPUT_MODE_FORCED = True
         
         # Update runtime resolution based on actual device screen size

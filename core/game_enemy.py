@@ -24,6 +24,7 @@ class GameEnemy:
     hp: int
     unlock: str
     prize: str
+    mini_game: int = 0
 
     def load_sprite(self, module_path: str, boss: bool = False):
         """

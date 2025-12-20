@@ -101,6 +101,12 @@ class Button(UIComponent):
             self.on_manager_set()  # Reload decorator sprites
             self.needs_redraw = True
     
+    def set_text(self, text):
+        """Update button text and trigger redraw"""
+        if self.text != text:
+            self.text = text
+            self.needs_redraw = True
+            
     def get_colors(self):
         """Get colors for button based on current state, including disabled state"""
         if not self.enabled:
@@ -466,7 +472,9 @@ class Button(UIComponent):
                 if self.manager:
                     ui_scale = self.manager.ui_scale
                     sprite_scale = self.manager.get_sprite_scale()
-                    scale_factor = ui_scale / sprite_scale
+                    # Sprite scale 3 is actually for 4x UI, so adjust the effective sprite scale
+                    effective_sprite_scale = 4 if sprite_scale == 3 else sprite_scale
+                    scale_factor = ui_scale / effective_sprite_scale
                     original_size = decorator_sprite.get_size()
                     if scale_factor != 1.0:
                         new_size = (int(original_size[0] * scale_factor), int(original_size[1] * scale_factor))

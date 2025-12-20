@@ -30,8 +30,13 @@ class Menu(UIComponent):
         self.option_height = 20
         self.border_size = 2
         
-    def open(self, options, on_select=None, on_cancel=None):
-        """Open the menu with the given options"""
+    def open(self, options, on_select=None, on_cancel=None, auto_center=True):
+        """Open the menu with the given options
+
+        auto_center controls whether the menu recenters vertically based
+        on the number of options, matching the Omnimon-Online behavior
+        while defaulting to True for backward compatibility.
+        """
         self.options = options
         self.selected_index = 0
         self.visible = True
@@ -49,16 +54,39 @@ class Menu(UIComponent):
         if self.manager:
             # Use base coordinates
             self.base_rect.height = required_height
-            self.base_rect.y = (240 - required_height) // 2
+            if auto_center:
+                self.base_rect.y = (240 - required_height) // 2
             # Update screen rect
             self.rect = self.manager.scale_rect(self.base_rect)
         else:
             self.rect.height = required_height
-            self.rect.y = (240 - required_height) // 2
+            if auto_center:
+                self.rect.y = (240 - required_height) // 2
             
         self.needs_redraw = True
         
         runtime_globals.game_console.log(f"[Menu] Opened with {len(options)} options")
+
+    def update_options(self, options, auto_center=True):
+        """Update menu options dynamically."""
+        self.options = options
+        # Recalculate height
+        required_height = (len(options) * self.option_height) + (self.padding * 2)
+        
+        # Update size and center position
+        if self.manager:
+            # Use base coordinates
+            self.base_rect.height = required_height
+            if auto_center:
+                self.base_rect.y = (240 - required_height) // 2
+            # Update screen rect
+            self.rect = self.manager.scale_rect(self.base_rect)
+        else:
+            self.rect.height = required_height
+            if auto_center:
+                self.rect.y = (240 - required_height) // 2
+            
+        self.needs_redraw = True
         
     def close(self):
         """Close the menu"""

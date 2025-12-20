@@ -17,9 +17,9 @@ FRAME_RATE = 30  # Default frame rate
 MAX_PETS = 4  # Default maximum number of pets
 
 # Debug and logging configuration defaults
-DEBUG_MODE = True
+DEBUG_MODE = False
 DEBUG_FILE_LOGGING = False
-SHOW_FPS = True
+SHOW_FPS = False
 DEBUG_BLIT_LOGGING = False
 DEBUG_BATTLE_INFO = False
 
@@ -280,9 +280,22 @@ LIGHT_PARTICLE_PATH = "assets/LightParticle.png"
 DNA_PATH = "assets/Dna.png"
 UNKNOWN_SPRITE_PATH = "assets/Unknown.png"
 TRAITED_EGG_PATH = "assets/TraitedEgg.png"
-OMNIMON_LOGO_PATH = "assets/OmnipetLogo.png"
+OMNIPET_LOGO_PATH = "assets/OmnipetLogo.png"
 CONTROLLERS_PC_PATH = "assets/ControllersPC.png"
 CONTROLLERS_BATO_PATH = "assets/ControllersBato.png"
 CONTROLLERS_PI_PATH = "assets/ControllersPi.png"
 CONTROLLERS_JOY_PATH = "assets/ControllersJoy.png"
 DMC_SOUNDS_PATH = "assets/dmc_sounds"
+
+
+#=====================================================================
+# Discord / Online Settings
+#=====================================================================
+# Discord bot connection
+DISCORD_BOT_URL = "http://localhost:5000"
+DISCORD_ENABLED = True
+DISCORD_DEBUG = True  # Enable detailed Discord logging
+
+# Discord UI
+DISCORD_ROOM_REFRESH_RATE = 5  # Seconds between room list refreshes
+DISCORD_POLL_RATE = 1  # Seconds between status polls

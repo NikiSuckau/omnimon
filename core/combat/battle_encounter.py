@@ -299,8 +299,16 @@ class BattleEncounter:
         
         return effect
 
-    def setup_pvp_teams(self, my_pets, enemy_pet_data):
-        """Sets up teams for PvP battle from pet data."""
+    def setup_pvp_teams(self, my_pets, enemy_pet_data, is_host: bool = True):
+        """Sets up teams for PvP battle from pet data.
+
+        Args:
+            my_pets: List of GamePet objects for the local device.
+            enemy_pet_data: List of dicts describing the remote team.
+            is_host: True if this device is the PvP host (device1),
+                     False if it's the client (device2). Used to
+                     configure the HP bar mode (pvp_host/pvp_client).
+        """
         from core.game_enemy import GameEnemy
         
         # Create enemy objects from received pet data
@@ -321,7 +329,8 @@ class BattleEncounter:
                 stage=pet_data["stage"],
                 hp=pet_data["hp"],
                 unlock="",  # No unlock requirements for PvP
-                prize=""  # No prizes in PvP
+                prize="",  # No prizes in PvP
+                mini_game=pet_data.get("mini_game", 0)  # Strength/MiniGame score for attack patterns
             )
             
             # Set additional properties that might be needed
@@ -342,9 +351,19 @@ class BattleEncounter:
         
         # Update HP bar for PvP mode
         if hasattr(self, 'hp_bar') and self.hp_bar:
-            self.hp_bar.set_mode('versus', module=self.module)
-            self.hp_bar.set_totals(self.battle_player.team1_total_hp, self.battle_player.team2_total_hp)
-            self.hp_bar.set_values(self.battle_player.team1_total_hp, self.battle_player.team2_total_hp)
+            # Use dedicated PvP modes so the local player's side is always red
+            # and the remote side blue, regardless of host/client role.
+            if is_host:
+                # Host is device1 on the left
+                self.hp_bar.set_mode('pvp_host', module=self.module)
+            else:
+                # Client is device2 on the right
+                self.hp_bar.set_mode('pvp_client', module=self.module)
+
+            # Left bar = device1 / team2_total_hp, right bar = device2 / team1_total_hp
+            # This ordering matches the adventure/PvE layout we use elsewhere.
+            self.hp_bar.set_totals(self.battle_player.team2_total_hp, self.battle_player.team1_total_hp)
+            self.hp_bar.set_values(self.battle_player.team2_total_hp, self.battle_player.team1_total_hp)
         
         # Initialize debug logs for PvP
         if constants.DEBUG_MODE:

@@ -101,6 +101,10 @@ Get-ChildItem "..\Module Editor" | Where-Object { $_.Name -ne "Source" } | ForEa
 Write-Status "Copying modules..."
 Copy-Item -Recurse "..\modules" "$TEMP_DIR\$BUILD_NAME\"
 
+# Copy network
+Write-Status "Copying network..."
+Copy-Item -Recurse "..\network" "$TEMP_DIR\$BUILD_NAME\"
+
 # Create empty save folder
 Write-Status "Creating save directory..."
 New-Item -ItemType Directory -Path "$TEMP_DIR\$BUILD_NAME\save" -Force | Out-Null

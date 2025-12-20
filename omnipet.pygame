@@ -11,7 +11,7 @@ import subprocess
 def main():
     # Set environment variables for Batocera
     os.environ["SDL_VIDEO_CENTERED"] = "1"
-    os.environ["OMNIMON_FULLSCREEN"] = "1"
+    os.environ["OMNIPET_FULLSCREEN"] = "1"
     os.environ["AUTO_RESOLUTION"] = "1"
     
     # Change to the game directory (where this script is located)

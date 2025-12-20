@@ -9,8 +9,8 @@ REM Set environment variables for better compatibility
 set SDL_VIDEO_CENTERED=1
 
 REM Check if fullscreen was requested
-if "%1"=="--fullscreen" set OMNIMON_FULLSCREEN=1
-if "%1"=="-f" set OMNIMON_FULLSCREEN=1
+if "%1"=="--fullscreen" set OMNIPET_FULLSCREEN=1
+if "%1"=="-f" set OMNIPET_FULLSCREEN=1
 
 REM Check for Python
 python --version >nul 2>&1

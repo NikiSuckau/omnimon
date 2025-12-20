@@ -497,20 +497,18 @@ class InputManager:
 
         # --- Joystick Axis (analog sticks) ---
         elif event.type == pygame.JOYAXISMOTION:
-            # Auto-detect keyboard input mode (axis counts as keyboard)
             from core import runtime_globals
+            if runtime_globals.IS_ANDROID:
+                return None  # ignore motion-mapped axes completely
+
+            # Auto-detect keyboard input mode (axis counts as keyboard)
             if not runtime_globals.INPUT_MODE_FORCED and abs(event.value) > self.analog_deadzone:
                 runtime_globals.INPUT_MODE = runtime_globals.KEYBOARD_MODE
-            
-            # Only end drag if axis moved significantly
+
             if self.mouse_dragging and abs(event.value) > self.analog_deadzone:
-                should_end_drag = True
-                
-            jid = self._event_instance_id(event)
-            
-            if should_end_drag:
                 self._end_drag()
-                
+
+            jid = self._event_instance_id(event)
             self._update_axis_state(jid, event.axis, event.value)
             return None
 
@@ -834,6 +832,9 @@ class InputManager:
     def _update_axis_state(self, jid, axis, value):
         # ensure entry
         st = self.axis_state.setdefault(jid, {"x": 0, "y": 0})
+        from core import runtime_globals
+        if runtime_globals.IS_ANDROID:
+            return;
 
         if axis == 0:  # X
             new_dir = -1 if value < -self.analog_deadzone else +1 if value > self.analog_deadzone else 0

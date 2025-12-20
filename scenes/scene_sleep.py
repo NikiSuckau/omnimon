@@ -139,7 +139,8 @@ class SceneSleep:
             self.pet_selector = PetSelector(10, selector_y, ui_width - 20, selector_height)
             # Set pets and update enabled state
             self.pet_selector.set_pets(get_selected_pets())
-            self.pet_selector.set_interactive(False)  # Static in sleep menu
+            # Allow player to select which pets are affected by sleep/wake
+            self.pet_selector.set_interactive(True)
             self.update_pet_selector_state()
             self.ui_manager.add_component(self.pet_selector)
             
@@ -152,15 +153,15 @@ class SceneSleep:
             raise
                 
     def update_theme_and_background(self):
-        """Update theme and background based on current mode."""
-        if self.current_mode == "sleep":
+        """Update theme and background based on current scene state."""
+        if self.scene_state == "sleep":
             self.ui_manager.set_theme("BLUE")
         else:
             self.ui_manager.set_theme("YELLOW")
             
-        # Update background mode
+        # Update background mode to match the logical scene state
         if self.background:
-            self.background.set_mode(self.current_mode)
+            self.background.set_mode(self.scene_state)
 
     def update(self) -> None:
         """Update the sleep menu scene."""
@@ -273,11 +274,11 @@ class SceneSleep:
             
         # Determine which pets can perform the action based on current scene state
         if self.scene_state == "wake":
-            # Show pets that can be put to sleep as enabled
-            enabled_pets = self.pets_can_sleep()
-        else:  # wake state
-            # Show pets that can be woken up as enabled
-            enabled_pets = self.pets_can_wake()
+            # Show pets that can be put to sleep as enabled (ignore selection filter)
+            enabled_pets = self.pets_can_sleep_list(ignore_selection=True)
+        else:  # sleep state
+            # Show pets that can be woken up as enabled (ignore selection filter)
+            enabled_pets = self.pets_can_wake_list(ignore_selection=True)
             
         # Convert pet objects to indices
         all_pets = get_selected_pets()
@@ -294,18 +295,47 @@ class SceneSleep:
 
     def pets_can(self):
         """Get pets that can perform the current action."""
-        if self.current_mode == "sleep":
+        if self.scene_state == "sleep":
             return self.pets_can_sleep()
         else:
             return self.pets_can_wake()
 
     def pets_can_sleep(self):
-        """Get pets that can be put to sleep."""
-        return [pet for pet in get_selected_pets() if pet.stage > 0 and pet.state != "nap" and pet.state != "dead" and pet.sleeps and pet.wakes]
+        """Get pets that can be put to sleep (respecting selection)."""
+        return self.pets_can_sleep_list(ignore_selection=False)
+
+    def pets_can_sleep_list(self, ignore_selection=False):
+        """Helper to get list of eligible sleepers."""
+        all_pets = get_selected_pets()
+        eligible = [
+            pet for pet in all_pets
+            if pet.stage > 0 and pet.state != "nap" and pet.state != "dead" and pet.sleeps and pet.wakes
+        ]
+        
+        # Optionally filter by current selection in the pet selector
+        if not ignore_selection and self.pet_selector:
+            selected_indices = getattr(self.pet_selector, "selected_pets", None)
+            if selected_indices:
+                return [pet for i, pet in enumerate(all_pets) if pet in eligible and i in selected_indices]
+        
+        return eligible
 
     def pets_can_wake(self):
-        """Get pets that can be woken up."""
-        return [pet for pet in get_selected_pets() if pet.state == "nap"]
+        """Get pets that can be woken up (respecting selection)."""
+        return self.pets_can_wake_list(ignore_selection=False)
+
+    def pets_can_wake_list(self, ignore_selection=False):
+        """Helper to get list of eligible wakers."""
+        all_pets = get_selected_pets()
+        eligible = [pet for pet in all_pets if pet.state == "nap"]
+        
+        # Optionally filter by current selection in the pet selector
+        if not ignore_selection and self.pet_selector:
+            selected_indices = getattr(self.pet_selector, "selected_pets", None)
+            if selected_indices:
+                return [pet for i, pet in enumerate(all_pets) if pet in eligible and i in selected_indices]
+        
+        return eligible
     
     def draw(self, surface: pygame.Surface) -> None:
         """Draw the sleep menu scene."""

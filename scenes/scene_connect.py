@@ -19,6 +19,7 @@ from components.ui.button import Button
 from components.ui.label import Label
 from components.ui.pet_selector import PetSelector
 from components.ui.menu import Menu
+from components.ui.code_entry import CodeEntry
 from components.ui.ui_constants import BASE_RESOLUTION
 from components.window_background import WindowBackground
 from core import game_globals, runtime_globals
@@ -26,6 +27,234 @@ import core.constants as constants
 from core.utils.pet_utils import get_battle_pvp_targets
 from core.utils.scene_utils import change_scene
 from core.utils.pygame_utils import blit_with_shadow, get_font
+
+# Import for Discord HTTP client
+import requests
+
+
+#=====================================================================
+# Simple Discord Client (inline implementation)
+#=====================================================================
+class DiscordModule:
+    """Simple Discord client for online battles."""
+    
+    def __init__(self):
+        """Initialize Discord client."""
+        self.bot_url = getattr(constants, 'DISCORD_BOT_URL', 'http://localhost:5000').rstrip('/')
+        self.client = self
+        self.is_connected = False
+        self.linked_account = None
+        self.account_name = None
+        self.user_id = None
+        self.current_room_id = None
+        
+        # Load saved data
+        self._load_data()
+        runtime_globals.game_console.log(f"[DiscordModule] Initialized with bot URL: {self.bot_url}")
+    
+    def _get_save_path(self):
+        import os
+        return os.path.join("save", "discord_data.json")
+    
+    def _save_data(self):
+        """Save linked account data."""
+        try:
+            import os
+            if not os.path.exists("save"):
+                os.makedirs("save")
+            data = {
+                "linked_account": self.linked_account,
+                "account_name": self.account_name,
+                "user_id": self.user_id
+            }
+            with open(self._get_save_path(), 'w') as f:
+                json.dump(data, f)
+            runtime_globals.game_console.log("[DiscordModule] Saved account data")
+        except Exception as e:
+            runtime_globals.game_console.log(f"[DiscordModule] Failed to save: {e}")
+    
+    def _load_data(self):
+        """Load linked account data."""
+        try:
+            import os
+            path = self._get_save_path()
+            if os.path.exists(path):
+                with open(path, 'r') as f:
+                    data = json.load(f)
+                    self.linked_account = data.get("linked_account")
+                    self.account_name = data.get("account_name")
+                    self.user_id = data.get("user_id")
+                    if self.linked_account:
+                        runtime_globals.game_console.log(f"[DiscordModule] Loaded saved login: {self.account_name}")
+        except Exception as e:
+            runtime_globals.game_console.log(f"[DiscordModule] Failed to load: {e}")
+    
+    def check_connection(self) -> bool:
+        """Check if Discord bot is reachable."""
+        try:
+            response = requests.get(f"{self.bot_url}/health", timeout=2)
+            is_ok = response.status_code == 200
+            runtime_globals.game_console.log(f"[DiscordModule] Connection check: {is_ok}")
+            return is_ok
+        except Exception as e:
+            runtime_globals.game_console.log(f"[DiscordModule] Connection failed: {e}")
+            return False
+    
+    def get_account_name(self):
+        """Get linked Discord account name."""
+        return self.account_name
+    
+    def login(self, pairing_code: str) -> bool:
+        """Link account with Discord."""
+        try:
+            runtime_globals.game_console.log(f"[DiscordModule] Linking with code: {pairing_code}")
+            response = requests.post(
+                f"{self.bot_url}/link",
+                json={"code": pairing_code},
+                timeout=5
+            )
+            if response.status_code == 200:
+                data = response.json()
+                self.linked_account = pairing_code.upper()
+                self.account_name = data.get('username')
+                self.user_id = data.get('user_id')
+                self._save_data()
+                runtime_globals.game_console.log(f"[DiscordModule] Linked as: {self.account_name}")
+                return True
+            else:
+                runtime_globals.game_console.log(f"[DiscordModule] Link failed: {response.text}")
+                return False
+        except Exception as e:
+            runtime_globals.game_console.log(f"[DiscordModule] Link exception: {e}")
+            return False
+    
+    def logout(self):
+        """Unlink account."""
+        self.linked_account = None
+        self.account_name = None
+        self.user_id = None
+        try:
+            import os
+            path = self._get_save_path()
+            if os.path.exists(path):
+                os.remove(path)
+                runtime_globals.game_console.log("[DiscordModule] Saved data deleted")
+        except Exception as e:
+            runtime_globals.game_console.log(f"[DiscordModule] Failed to delete data: {e}")
+    
+    def create_room(self, room_name: str):
+        """Create a battle room."""
+        try:
+            if not self.linked_account:
+                return None, "Not logged in"
+            
+            runtime_globals.game_console.log(f"[DiscordModule] Creating room: {room_name}")
+            response = requests.post(
+                f"{self.bot_url}/room",
+                json={
+                    'name': room_name,
+                    'host': self.account_name,
+                    'max_players': 2,
+                    'user_id': self.user_id
+                },
+                timeout=5
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                self.current_room_id = data.get('room_id')
+                runtime_globals.game_console.log(f"[DiscordModule] Room created: {self.current_room_id}")
+                return self.current_room_id, None
+            else:
+                error = response.json().get('error', 'Unknown error')
+                runtime_globals.game_console.log(f"[DiscordModule] Create room failed: {error}")
+                return None, error
+        except Exception as e:
+            runtime_globals.game_console.log(f"[DiscordModule] Create room exception: {e}")
+            return None, str(e)
+    
+    def get_available_rooms(self):
+        """Get list of available rooms."""
+        try:
+            response = requests.get(f"{self.bot_url}/rooms", timeout=5)
+            if response.status_code == 200:
+                rooms = response.json()
+                runtime_globals.game_console.log(f"[DiscordModule] Found {len(rooms)} rooms")
+                return rooms
+            return []
+        except Exception as e:
+            runtime_globals.game_console.log(f"[DiscordModule] Get rooms exception: {e}")
+            return []
+    
+    def join_room(self, room_id: str) -> bool:
+        """Join a room."""
+        try:
+            if not self.linked_account:
+                return False
+            
+            runtime_globals.game_console.log(f"[DiscordModule] Joining room: {room_id}")
+            response = requests.post(
+                f"{self.bot_url}/room/{room_id}/join",
+                json={
+                    'player': self.account_name,
+                    'user_id': self.user_id
+                },
+                timeout=5
+            )
+            
+            if response.status_code == 200:
+                self.current_room_id = room_id
+                runtime_globals.game_console.log(f"[DiscordModule] Joined room: {room_id}")
+                return True
+            else:
+                runtime_globals.game_console.log(f"[DiscordModule] Join failed: {response.text}")
+                return False
+        except Exception as e:
+            runtime_globals.game_console.log(f"[DiscordModule] Join exception: {e}")
+            return False
+    
+    def send_data(self, data: dict) -> bool:
+        """Send data to current room."""
+        try:
+            if not self.current_room_id:
+                runtime_globals.game_console.log("[DiscordModule] No room to send to")
+                return False
+            
+            runtime_globals.game_console.log(f"[DiscordModule] Sending data to {self.current_room_id}: {data.get('type')}")
+            response = requests.post(
+                f"{self.bot_url}/room/{self.current_room_id}/data",
+                json=data,
+                timeout=5
+            )
+            
+            if response.status_code == 200:
+                runtime_globals.game_console.log("[DiscordModule] Data sent successfully")
+                return True
+            else:
+                runtime_globals.game_console.log(f"[DiscordModule] Send failed: {response.status_code}")
+                return False
+        except Exception as e:
+            runtime_globals.game_console.log(f"[DiscordModule] Send exception: {e}")
+            return False
+    
+    def poll_room(self):
+        """Poll current room for updates."""
+        try:
+            if not self.current_room_id:
+                return None
+            
+            response = requests.get(
+                f"{self.bot_url}/room/{self.current_room_id}/status",
+                timeout=0.5
+            )
+            
+            if response.status_code == 200:
+                return response.json()
+            return None
+        except Exception as e:
+            # Don't log every poll failure, too spammy
+            return None
+
 
 #=====================================================================
 # SceneConnect
@@ -51,6 +280,9 @@ class SceneConnect:
             self.ui_manager.set_input_manager(runtime_globals.game_input)
             runtime_globals.game_console.log("[SceneConnect] UI Manager created with DARK_RED theme")
             
+            # Discord Module (inline implementation)
+            self.discord = DiscordModule()
+            
             # Phase management
             self.phase = "menu"  # menu, pet_selection, host_join_menu, hosting, joining, device_list, module_check, battle_confirm, connecting
             
@@ -62,7 +294,10 @@ class SceneConnect:
             self.background = None
             self.title_scene = None
             self.wifi_button = None
+            self.online_button = None
+            self.discord_link_button = None  # Top-right link button
             self.menu_exit_button = None
+
             self.pet_selector = None
             self.pet_select_instructions = None
             self.pet_select_confirm_button = None
@@ -83,6 +318,7 @@ class SceneConnect:
             self.connection_socket = None
             self.is_host = False
             self.connection_established = False
+            self.is_online_mode = False
             
             # Battle data
             self.enemy_pet_count = 0
@@ -141,25 +377,55 @@ class SceneConnect:
         self._setup_discovery_ui()
         self._setup_module_error_ui()
         self._setup_battle_confirm_ui()
+        self._setup_module_error_ui()
+        self._setup_battle_confirm_ui()
         self._setup_connecting_ui()
+        self._setup_link_dialog_ui()
+        self._setup_discord_browser_ui()
+        self._setup_discord_browser_ui()
+        self._setup_discord_hosting_ui()
+        
+        # Initial status update
+        self._update_discord_button_text()
     
     def _setup_main_menu_ui(self):
         """Setup UI for the main menu phase."""
         button_width = 160
         button_height = 60
         button_x = (BASE_RESOLUTION - button_width) // 2
-        button_y = 80
+        button_y = 60
+        
+        # Link Button (Top Right)
+        link_w = 40
+        link_h = 24
+        link_x = BASE_RESOLUTION - link_w - 5
+        link_y = 5
+        
+        self.discord_link_button = Button(
+            link_x, link_y, link_w, link_h, "Link", 
+            self._on_discord_button_clicked,
+            shadow_mode="component"
+        )
+        self.ui_manager.add_component(self.discord_link_button)
         
         self.wifi_button = Button(
             button_x, button_y, button_width, button_height,
-            "WIFI BATTLE", self._on_wifi_selected
+            "LOCAL BATTLE", self._on_wifi_selected
         )
         self.ui_manager.add_component(self.wifi_button)
+        
+        # Online battle button
+        online_y = button_y + button_height + 10
+        self.online_button = Button(
+            button_x, online_y, button_width, button_height,
+            "ONLINE BATTLE", self._on_online_selected
+        )
+        self.ui_manager.add_component(self.online_button)
         
         exit_width = 100
         exit_height = 40
         exit_x = (BASE_RESOLUTION - exit_width) // 2
-        exit_y = 185
+        exit_y = 195
         
         self.menu_exit_button = Button(
             exit_x, exit_y, exit_width, exit_height,
@@ -318,9 +584,9 @@ class SceneConnect:
         self.battle_enemy_label.visible = False
         self.ui_manager.add_component(self.battle_enemy_label)
         
-        confirm_width = 100
+        confirm_width = 85
         confirm_height = 35
-        confirm_x = 30
+        confirm_x = 25
         confirm_y = 190
         
         self.battle_confirm_button = Button(
@@ -330,9 +596,9 @@ class SceneConnect:
         self.battle_confirm_button.visible = False
         self.ui_manager.add_component(self.battle_confirm_button)
         
-        cancel_width = 100
+        cancel_width = 85
         cancel_height = 35
-        cancel_x = BASE_RESOLUTION - cancel_width - 30
+        cancel_x = 130
         cancel_y = 190
         
         self.battle_cancel_button = Button(
@@ -356,12 +622,201 @@ class SceneConnect:
         self.connecting_wait_label.visible = False
         self.ui_manager.add_component(self.connecting_wait_label)
     
+        self.connecting_wait_label.visible = False
+        self.ui_manager.add_component(self.connecting_wait_label)
+
+    def _setup_link_dialog_ui(self):
+        """Setup UI for Discord link dialog."""
+        # Dialog Background (simple centered box)
+        # For now, just labels and components on top of dimmed background
+        
+        self.link_title = Label(
+            0, 40, "Enter Pairing Code", is_title=True
+        )
+        self.link_title.visible = False
+        self.ui_manager.add_component(self.link_title)
+        
+        # Code Entry
+        self.code_entry = CodeEntry(
+            (BASE_RESOLUTION - 190) // 2, 80, length=4
+        )
+        self.code_entry.visible = False
+        self.ui_manager.add_component(self.code_entry)
+        
+        # Helper text
+        self.link_instruction = Label(
+            0, 140, "Use !link in Discord to get code", is_title=False
+        )
+        self.link_instruction.visible = False
+        self.ui_manager.add_component(self.link_instruction)
+        
+        # Buttons
+        btn_y = 170
+        btn_w = 80
+        btn_h = 30
+        gap = 20
+        
+        self.link_confirm_btn = Button(
+            (BASE_RESOLUTION // 2) - btn_w - (gap//2), btn_y, btn_w, btn_h,
+            "Confirm", self._on_link_confirm
+        )
+        self.link_confirm_btn.visible = False
+        self.ui_manager.add_component(self.link_confirm_btn)
+        
+        self.link_cancel_btn = Button(
+            (BASE_RESOLUTION // 2) + (gap//2), btn_y, btn_w, btn_h,
+            "Cancel", self._on_link_cancel
+        )
+        self.link_cancel_btn.visible = False
+        self.ui_manager.add_component(self.link_cancel_btn)
+
+    def _setup_discord_browser_ui(self):
+        """Setup UI for browsing Discord rooms."""
+        self.browser_title = Label(
+            0, 40, "Online Rooms", is_title=True
+        )
+        self.browser_title.visible = False
+        self.ui_manager.add_component(self.browser_title)
+        
+        self.browser_status = Label(
+            0, 70, "Searching...", is_title=False
+        )
+        self.browser_status.visible = False
+        self.ui_manager.add_component(self.browser_status)
+        
+        # Using Menu component as the list
+        self.room_list_menu = Menu(
+            width=BASE_RESOLUTION-40, height=110
+        )
+        # Open with callbacks (auto_center=False to keep manual position)
+        self.room_list_menu.open(
+            options=[],
+            on_select=self._on_room_selected,
+            auto_center=False
+        )
+        
+        # Position manually
+        self.room_list_menu.set_position(20, 90)
+        
+        self.room_list_menu.visible = False
+        self.ui_manager.add_component(self.room_list_menu)
+        
+        self.browser_refresh_btn = Button(
+            20, 205, 80, 30, "Refresh", self._on_browser_refresh
+        )
+        self.browser_refresh_btn.visible = False
+        self.ui_manager.add_component(self.browser_refresh_btn)
+        
+        self.browser_back_btn = Button(
+            BASE_RESOLUTION - 100, 205, 80, 30, "Back", self._on_browser_back
+        )
+        self.browser_back_btn.visible = False
+        self.ui_manager.add_component(self.browser_back_btn)
+
+    def _setup_discord_hosting_ui(self):
+        """Setup UI for Discord hosting phase."""
+        self.discord_host_title = Label(
+            0, 40, "Hosting Room...", is_title=True
+        )
+        self.discord_host_title.visible = False
+        self.ui_manager.add_component(self.discord_host_title)
+        
+        self.discord_host_status = Label(
+            0, 80, "Creating Room...", is_title=False
+        )
+        self.discord_host_status.visible = False
+        self.ui_manager.add_component(self.discord_host_status)
+        
+        self.discord_host_cancel = Button(
+            (BASE_RESOLUTION - 120)//2, 180, 120, 30, "Cancel", self._on_discord_hosting_cancel
+        )
+        self.discord_host_cancel.visible = False
+        self.ui_manager.add_component(self.discord_host_cancel)
+    
     # Button Callbacks
     def _on_wifi_selected(self):
         """Called when WIFI BATTLE button is clicked."""
         runtime_globals.game_console.log("[SceneConnect] WiFi battle selected")
+        self.is_online_mode = False
         self.set_phase("pet_selection")
         self._show_phase_components("pet_selection")
+    
+    def _on_online_selected(self):
+        """Called when ONLINE BATTLE button is clicked."""
+        runtime_globals.game_console.log("[SceneConnect] Online battle selected")
+        
+        # Ensure connection check is performed if needed
+        self._ensure_discord_connection()
+        
+        # Check if user is logged in
+        if not self.discord or not self.discord.get_account_name():
+            runtime_globals.game_console.log("[SceneConnect] Not logged in, showing link dialog")
+            self.is_online_mode = True  # Set mode before showing link dialog
+            self.set_phase("link_dialog")
+            self._show_phase_components("link_dialog")
+            return
+        
+        self.is_online_mode = True
+        self.set_phase("pet_selection")
+        self._show_phase_components("pet_selection")
+    
+    def _on_discord_button_clicked(self):
+        """Called when Discord Link/Unlink button is clicked."""
+        if not self.discord:
+            runtime_globals.game_console.log("[SceneConnect] Discord module not available")
+            return
+            
+        if self.discord.get_account_name():
+            # Already linked -> Unlink confirmation
+            # For now, just unlink immediately or show simple confirmation
+            runtime_globals.game_console.log("[SceneConnect] Unlinking account...")
+            self.discord.logout()
+            self._update_discord_button_text()
+        else:
+            # Not linked -> Link dialog
+            self.set_phase("link_dialog")
+            self._show_phase_components("link_dialog")
+            
+    def _on_link_confirm(self):
+        """Called when Confirm button on link dialog is clicked."""
+        code = self.code_entry.get_text()
+        runtime_globals.game_console.log(f"[SceneConnect] Linking with code: {code}")
+        
+        # Link account
+        if self.discord:
+            success = self.discord.login(code)
+            if success:
+                runtime_globals.game_console.log("[SceneConnect] Link successful!")
+                self._update_discord_button_text()
+                
+                # If we came here from online battle selection, continue to pet selection
+                if self.is_online_mode:
+                    self.set_phase("pet_selection")
+                    self._show_phase_components("pet_selection")
+                else:
+                    # Otherwise return to menu
+                    self.set_phase("menu")
+                    self._show_phase_components("menu")
+            else:
+                runtime_globals.game_console.log("[SceneConnect] Link failed")
+                # TODO: Show error
+                self.link_instruction.set_text("Link Failed! Try again.")
+    
+    def _on_link_cancel(self):
+        """Called when Cancel button on link dialog is clicked."""
+        self.set_phase("menu")
+        self._show_phase_components("menu")
+            
+    def _update_discord_button_text(self):
+        """Updates the text of the Discord button based on connection status."""
+        if not self.discord_link_button:
+            return
+            
+        if self.discord and self.discord.get_account_name():
+            self.discord_link_button.set_text("Unlink")
+            # Optional: Change color to indicate connected (e.g. Green)
+        else:
+            self.discord_link_button.set_text("Link")
     
     def _on_main_menu_exit(self):
         """Called when EXIT button on main menu is clicked."""
@@ -409,10 +864,24 @@ class SceneConnect:
     def _on_battle_confirm(self):
         """Called when START button on battle confirm is clicked."""
         runtime_globals.game_console.log("[SceneConnect] Battle confirmed - starting")
-        self.set_phase("connecting")
-        self._show_phase_components("connecting")
-        self._pending_start_battle = True
-        self._pending_start_time = time.time()
+        
+        if self.is_online_mode and hasattr(self, 'discord') and self.discord:
+             runtime_globals.game_console.log("[SceneConnect] Confirmed Ready for Discord Battle")
+             self.discord_ready = True
+             msg = {"type": "ready", "sender": "host" if self.is_host else "guest"}
+             self.discord.send_data(msg)
+             # Update UI to show waiting
+             self.battle_confirm_button.visible = False
+             self.battle_ready_label.set_text("Waiting for opponent...")
+             self.battle_ready_label.visible = True
+             
+             # If host, check complete
+             self._check_start_discord_sim()
+        else:
+             self.set_phase("connecting")
+             self._show_phase_components("connecting")
+             self._pending_start_battle = True
+             self._pending_start_time = time.time()
     
     def _on_battle_cancel(self):
         """Called when GIVE UP button on battle confirm is clicked."""
@@ -424,12 +893,33 @@ class SceneConnect:
     def _on_host_join_select(self, option_index):
         """Called when an option is selected from the host/join menu."""
         option = self.host_join_menu.options[option_index]
-        runtime_globals.game_console.log(f"[SceneConnect] Host/Join selected: {option}")
+        runtime_globals.game_console.log(f"[SceneConnect] Host/Join selected: {option}, Online Mode: {self.is_online_mode}")
+        
+        # Close menu
+        if self.host_join_menu:
+            self.host_join_menu.close()
+            # Reset active menu so it doesn't eat inputs
+            if self.ui_manager.active_menu == self.host_join_menu:
+                self.ui_manager.active_menu = None
         
         if option == "Host":
-            self.start_hosting()
+            if self.is_online_mode:
+                self.is_host = True  # Set host flag for Discord hosting
+                self.set_phase("discord_hosting")
+                self._show_phase_components("discord_hosting")
+            else:
+                self.start_hosting()
         elif option == "Join":
-            self.start_joining()
+            if self.is_online_mode:
+                self.is_host = False  # Set guest flag for Discord joining
+                self.set_phase("discord_browser")
+                self._show_phase_components("discord_browser")
+            else:
+                self.start_joining()
+        elif option == "Back":
+            runtime_globals.game_sound.play("cancel")
+            self.set_phase("pet_selection")
+            self._show_phase_components("pet_selection")
     
     def _on_host_join_cancel(self):
         """Called when host/join menu is cancelled."""
@@ -460,7 +950,27 @@ class SceneConnect:
         
         if phase == "menu":
             self.wifi_button.visible = True
+            self.online_button.visible = True
+            self.discord_link_button.visible = True
             self.menu_exit_button.visible = True
+            self._update_discord_button_text()
+        
+        elif phase == "link_dialog":
+            self.link_title.visible = True
+            self.code_entry.visible = True
+            self.link_instruction.visible = True
+            self.link_confirm_btn.visible = True
+            self.link_cancel_btn.visible = True
+            
+            # Reset instruction and code entry
+            self.link_instruction.set_text("Use !link in Discord to get code")
+            # Reset code entry to default state (all 'A's)
+            self.code_entry.chars = ['A'] * self.code_entry.length
+            self.code_entry.cursor_pos = 0
+            self.code_entry.needs_redraw = True
+            
+            # Give focus to code entry so it can receive keyboard input
+            self.ui_manager.set_focused_component(self.code_entry)
         
         elif phase == "pet_selection":
             self.pet_selector.visible = True
@@ -508,12 +1018,50 @@ class SceneConnect:
         elif phase == "connecting":
             self.connecting_label.visible = True
             self.connecting_wait_label.visible = True
+            
+        elif phase == "discord_browser":
+            self.browser_title.visible = True
+            self.browser_status.visible = True
+            self.room_list_menu.visible = True
+            self.browser_refresh_btn.visible = True
+            self.browser_back_btn.visible = True
+            
+            # Start refreshing rooms
+            self._refresh_discord_rooms()
+            
+        elif phase == "discord_hosting":
+            self.discord_host_title.visible = True
+            self.discord_host_status.visible = True
+            self.discord_host_cancel.visible = True
+            
+            # Initiate hosting
+            self._start_discord_hosting()
+            
+    def _ensure_discord_connection(self):
+        """Ensure we have checked connection status at least once."""
+        if self.discord and not self.discord.is_connected:
+            runtime_globals.game_console.log("[SceneConnect] Checking Discord connection on demand...")
+            if self.discord.client:
+                self.discord.is_connected = self.discord.client.check_connection()
+                if self.discord.is_connected:
+                     runtime_globals.game_console.log("[SceneConnect] Connected!")
+                else:
+                     runtime_globals.game_console.log("[SceneConnect] Failed to connect")
     
     def _hide_all_phase_components(self):
         """Hide all phase-specific components."""
         # Menu
         self.wifi_button.visible = False
+        self.online_button.visible = False
+        self.discord_link_button.visible = False
         self.menu_exit_button.visible = False
+        
+        # Link Dialog
+        if hasattr(self, 'link_title'): self.link_title.visible = False
+        if hasattr(self, 'code_entry'): self.code_entry.visible = False
+        if hasattr(self, 'link_instruction'): self.link_instruction.visible = False
+        if hasattr(self, 'link_confirm_btn'): self.link_confirm_btn.visible = False
+        if hasattr(self, 'link_cancel_btn'): self.link_cancel_btn.visible = False
         
         # Pet Selection
         self.pet_selector.visible = False
@@ -554,6 +1102,18 @@ class SceneConnect:
             self.connecting_label.visible = False
             self.connecting_wait_label.visible = False
 
+        # Discord Browser
+        if hasattr(self, 'browser_title'): self.browser_title.visible = False
+        if hasattr(self, 'browser_status'): self.browser_status.visible = False
+        if hasattr(self, 'room_list_menu'): self.room_list_menu.visible = False
+        if hasattr(self, 'browser_refresh_btn'): self.browser_refresh_btn.visible = False
+        if hasattr(self, 'browser_back_btn'): self.browser_back_btn.visible = False
+
+        # Discord Hosting
+        if hasattr(self, 'discord_host_title'): self.discord_host_title.visible = False
+        if hasattr(self, 'discord_host_status'): self.discord_host_status.visible = False
+        if hasattr(self, 'discord_host_cancel'): self.discord_host_cancel.visible = False
+
     def update(self) -> None:
         """
         Updates the connect scene with UI manager.
@@ -561,22 +1121,95 @@ class SceneConnect:
         # Update UI manager (handles button hovers, etc.)
         self.ui_manager.update()
         
+        # Discord network updates
+        if self.is_online_mode and hasattr(self, 'discord') and self.discord:
+             self._update_discord_networking()
+        
         # Handle phase changes from network threads
         if hasattr(self, '_phase_changed'):
             delattr(self, '_phase_changed')
+            
+        # Handle async room updates
+        if getattr(self, '_rooms_updated', False):
+            self._rooms_updated = False
+            rooms = getattr(self, '_fetched_rooms', [])
+            self._current_rooms = rooms # Keep reference
+            
+            if not rooms:
+                self.browser_status.set_text("No rooms found.")
+                # Clear menu
+                self.room_list_menu.update_options([], auto_center=False)
+            else:
+                 self.browser_status.set_text(f"Found {len(rooms)} rooms")
+                 room_labels = [f"{r.get('host', '?')}" for r in rooms]
+                 self.room_list_menu.open(
+                     options=room_labels,
+                     on_select=self._on_room_selected,
+                     auto_center=False
+                 )
+        
+        # Handle async hosting updates
+        if getattr(self, '_hosting_created', False):
+            self._hosting_created = False
+            room_id = getattr(self, '_hosting_room_id', 'Unknown')
+            # For Discord, the room ID is the code. Join it ourselves to listen.
+            # self.discord.join_room(room_id) # Auto-join as host? The API might assume host is joined.
+            
+            # Show status
+            self.discord_host_status.set_text("Room Created!\nWaiting for opponent...")
+            
+            # Store room ID and initialize polling flag
+            self._hosting_room_id = room_id
+            self._polling = False  # Ensure flag is initialized
+            
+            # Now we wait for POLL updates to see if someone joined
+            # Polling is handled by _update_discord_networking() in the update loop
+
+        if getattr(self, '_hosting_error', None):
+            error = self._hosting_error
+            self._hosting_error = None
+            self.discord_host_status.set_text(f"Error: {error}")
+            
+        # Handle async polling (someone joined)
+        if getattr(self, '_discord_opponent_found', False):
+             self._discord_opponent_found = False
+             # Determine who is player 1 vs 2 based on room data?
+             # For now assume host is player 1, guest is player 2
+             runtime_globals.game_console.log("Opponent found! Starting battle...")
+             self.set_phase("connecting")
+             self._pending_start_battle = True
+             self._pending_start_time = time.time()
         
         # If a battle start was requested from the input handler, wait a small
         # amount of time to allow the UI to draw the "connecting" state, then
         # actually start the PvP sequence.
         if getattr(self, "_pending_start_battle", False):
+            current_time = time.time()
+            start_time = getattr(self, "_pending_start_time", 0)
+            elapsed = current_time - start_time
+            
             # require a short delay so draw has a chance to run at least once
-            if time.time() - getattr(self, "_pending_start_time", 0) >= 0.05:
+            if elapsed >= 0.05:
                 try:
-                    runtime_globals.game_console.log("[SceneConnect] Pending battle start - invoking start_pvp_battle()")
+                    runtime_globals.game_console.log(f"[SceneConnect] ===== EXECUTING PENDING BATTLE (elapsed: {elapsed:.3f}s) =====")
+                    runtime_globals.game_console.log(f"[SceneConnect] Phase: {self.phase}, Online: {self.is_online_mode}, Host: {self.is_host}")
                     # clear flag before calling to avoid re-entrancy
                     self._pending_start_battle = False
                     delattr(self, "_pending_start_time")
+                    runtime_globals.game_console.log("[SceneConnect] Calling start_pvp_battle()...")
                     self.start_pvp_battle()
+                    runtime_globals.game_console.log("[SceneConnect] start_pvp_battle() returned")
+                except Exception as e:
+                    runtime_globals.game_console.log(f"[SceneConnect] ===== ERROR in pending PvP battle: {e} =====")
+                    import traceback
+                    runtime_globals.game_console.log(f"[SceneConnect] Traceback: {traceback.format_exc()}")
+                    self._pending_start_battle = False
+                    self.phase = "menu"
+                    delattr(self, "_pending_start_time")
+                    if self.is_online_mode and hasattr(self, 'discord') and self.discord:
+                        self.start_discord_battle_sequence()
+                    else:
+                        self.start_pvp_battle()
                 except Exception as e:
                     runtime_globals.game_console.log(f"[SceneConnect] Error starting pending PvP battle: {e}")
                     import traceback
@@ -588,7 +1221,8 @@ class SceneConnect:
     def set_phase(self, new_phase: str) -> None:
         """Safely sets a new phase and invalidates cache."""
         if self.phase != new_phase:
-            runtime_globals.game_console.log(f"[SceneConnect] Phase change: {self.phase} -> {new_phase}")
+            runtime_globals.game_console.log(f"[SceneConnect] ===== PHASE CHANGE: {self.phase} -> {new_phase} =====")
+            runtime_globals.game_console.log(f"[SceneConnect] Online mode: {self.is_online_mode}, Host: {self.is_host}")
             self.phase = new_phase
             self._phase_changed = True
             self._cache_surface = None
@@ -647,6 +1281,12 @@ class SceneConnect:
             self.handle_module_check_input(event_type)
         elif self.phase == "battle_confirm":
             self.handle_battle_confirm_input(event_type)
+        elif self.phase == "link_dialog":
+            self.handle_link_dialog_input(event_type)
+        elif self.phase == "discord_browser":
+            self.handle_discord_browser_input(event_type)
+        elif self.phase == "discord_hosting":
+            self.handle_discord_hosting_input(event_type)
 
     def handle_menu_input(self, input_action) -> None:
         """Handles input for the main menu phase (keyboard navigation)."""
@@ -706,16 +1346,45 @@ class SceneConnect:
             self.stop_networking()
             self.phase = "menu"
 
+    def handle_link_dialog_input(self, input_action) -> None:
+        """Handles input for Discord link dialog."""
+        # B cancels, START confirms
+        if input_action == "B":
+            runtime_globals.game_sound.play("cancel")
+            self._on_link_cancel()
+        elif input_action == "START":
+            runtime_globals.game_sound.play("menu")
+            self._on_link_confirm()
+        # All other input (LEFT/RIGHT/A/UP/DOWN) goes to code_entry via UI manager
+
     def handle_battle_confirm_input(self, input_action) -> None:
         """Handles input for battle confirmation screen."""
+        runtime_globals.game_console.log(f"[SceneConnect] Battle confirm input: {input_action}, phase={self.phase}, online={self.is_online_mode}, host={self.is_host}")
         if input_action == "A":
             runtime_globals.game_sound.play("menu")
-            runtime_globals.game_console.log("[SceneConnect] Starting network battle...")
-            # Change to connecting phase and schedule the actual PvP start for
-            # the next update cycle so the connecting UI can be drawn at least once.
-            self.set_phase("connecting")
-            self._pending_start_battle = True
-            self._pending_start_time = time.time()
+            
+            if self.is_online_mode and hasattr(self, 'discord') and self.discord:
+                runtime_globals.game_console.log("[SceneConnect] ===== DISCORD BATTLE START =====")
+                runtime_globals.game_console.log(f"[SceneConnect] Role: {'HOST' if self.is_host else 'GUEST'}")
+                runtime_globals.game_console.log(f"[SceneConnect] Pets: {len(self.pets)}")
+                self.discord_ready = True
+                msg = {"type": "ready", "sender": "host" if self.is_host else "guest"}
+                runtime_globals.game_console.log(f"[SceneConnect] Sending ready message: {msg}")
+                self.discord.send_data(msg)
+                
+                # If host, check complete
+                self._check_start_discord_sim()
+            else:
+                runtime_globals.game_console.log("[SceneConnect] ===== WIFI BATTLE START =====")
+                runtime_globals.game_console.log(f"[SceneConnect] Role: {'HOST' if self.is_host else 'CLIENT'}")
+                runtime_globals.game_console.log(f"[SceneConnect] Pets: {len(self.pets)}")
+                runtime_globals.game_console.log(f"[SceneConnect] Setting phase to connecting and pending flag")
+                # Use flag-based approach - let update() handle the actual start
+                self.set_phase("connecting")
+                self._show_phase_components("connecting")
+                self._pending_start_battle = True
+                self._pending_start_time = time.time()
+                runtime_globals.game_console.log(f"[SceneConnect] Pending flag set at {self._pending_start_time}")
         elif input_action == "B":
             runtime_globals.game_sound.play("cancel")
             self.stop_networking()
@@ -740,12 +1409,12 @@ class SceneConnect:
         
         # Create menu if it doesn't exist
         if not self.host_join_menu:
-            self.host_join_menu = Menu(width=120, height=100)
+            self.host_join_menu = Menu(width=120, height=120)
             self.ui_manager.add_component(self.host_join_menu)
         
         # Open with callbacks
         self.host_join_menu.open(
-            options=["Host", "Join"],
+            options=["Host", "Join", "Back"],
             on_select=self._on_host_join_select,
             on_cancel=self._on_host_join_cancel
         )
@@ -786,6 +1455,200 @@ class SceneConnect:
         self.network_thread.start()
         
         runtime_globals.game_console.log("[SceneConnect] Started device discovery...")
+        
+    def _refresh_discord_rooms(self):
+        """Fetch available rooms from Discord."""
+        if not self.discord:
+            return
+            
+        self.browser_status.set_text("Fetching rooms...")
+        
+        # Run in thread to avoid blocking UI
+        def fetch_thread():
+            try:
+                rooms = self.discord.get_available_rooms()
+                # Schedule update on main thread (simple way: store in self)
+                self._fetched_rooms = rooms
+                self._rooms_updated = True
+            except Exception as e:
+                runtime_globals.game_console.log(f"[SceneConnect] Error fetching rooms: {e}")
+                self._fetched_rooms = []
+                self._rooms_updated = True
+        
+        threading.Thread(target=fetch_thread, daemon=True).start()
+
+    def _on_browser_refresh(self):
+        runtime_globals.game_sound.play("menu")
+        self._refresh_discord_rooms()
+        
+    def _on_browser_back(self):
+        runtime_globals.game_sound.play("cancel")
+        self.set_phase("menu")
+        self._show_phase_components("menu")
+
+    def _on_room_selected(self, index, option_text=None):
+        """Called when a room is selected from the menu."""
+        runtime_globals.game_console.log(f"[SceneConnect] ===== ROOM SELECTED (index={index}) =====")
+        if not hasattr(self, '_current_rooms') or index >= len(self._current_rooms):
+            runtime_globals.game_console.log(f"[SceneConnect] ERROR: Invalid room index or no rooms")
+            return
+            
+        selected_room = self._current_rooms[index]
+        room_id = selected_room.get('id')
+        host_name = selected_room.get('host', 'Unknown')
+        
+        runtime_globals.game_sound.play("menu")
+        runtime_globals.game_console.log(f"[SceneConnect] Room ID: {room_id}")
+        runtime_globals.game_console.log(f"[SceneConnect] Host: {host_name}")
+        runtime_globals.game_console.log(f"[SceneConnect] My pets: {len(self.pets)}")
+        
+        # Join logic
+        self.is_host = False # Force Guest Role
+        runtime_globals.game_console.log(f"[SceneConnect] Attempting to join room...")
+        success = self.discord.join_room(room_id)
+        if success:
+             runtime_globals.game_console.log("[SceneConnect] ===== JOIN SUCCESS - SHOWING CONFIRMATION =====")
+             # Set enemy count (we don't know yet, but show 1 for now)
+             self.enemy_pet_count = 1
+             self.battle_enemy_label.set_text(f"Opponent: {host_name}")
+             runtime_globals.game_console.log(f"[SceneConnect] Setting phase to battle_confirm")
+             # Go to battle_confirm phase (not connecting yet)
+             self.set_phase("battle_confirm")
+             self._show_phase_components("battle_confirm")
+             runtime_globals.game_console.log(f"[SceneConnect] Phase changed to: {self.phase}")
+        else:
+             runtime_globals.game_console.log("[SceneConnect] ===== JOIN FAILED =====")
+             self.browser_status.set_text("Failed to join!")
+
+    def handle_discord_browser_input(self, input_action) -> None:
+        """Handles input for discord browser."""
+        if input_action == "B":
+            self._on_browser_back()
+            return
+            
+        # Menu navigation
+        if hasattr(self, 'room_list_menu') and self.room_list_menu.visible:
+             if self.room_list_menu.handle_event(input_action):
+                 return
+
+        # Explicit button nav (Refresh/Back)
+        # For simple version, just use Menu for main nav, and special keys for Refresh
+        if input_action == "Y": # Refresh
+             self._on_browser_refresh()
+             
+    def _start_discord_hosting(self):
+        """Creates a new Discord room."""
+        if not self.discord:
+            return
+            
+        self.discord_host_status.set_text("Requesting room...")
+        
+        def host_thread():
+            self.is_host = True # Force Host Role
+            try:
+                # Use Tamer name from Discord or fallback
+                tamer_name = self.discord.get_account_name() or "Tamer"
+                room_name = f"{tamer_name}'s Battle"
+                room_id, error = self.discord.create_room(room_name)
+                
+                if room_id:
+                    self._hosting_room_id = room_id
+                    self._hosting_created = True
+                else:
+                    self._hosting_error = f"Error: {error}"
+            except Exception as e:
+                runtime_globals.game_console.log(f"[SceneConnect] Hosting error: {e}")
+                self._hosting_error = str(e)
+                
+        threading.Thread(target=host_thread, daemon=True).start()
+        
+    def _on_discord_hosting_cancel(self):
+        """Cancel Discord hosting."""
+        runtime_globals.game_sound.play("cancel")
+        # TODO: Send delete room request?
+        self.set_phase("host_join_menu")
+        self._show_phase_components("host_join_menu")
+
+    def handle_discord_hosting_input(self, input_action) -> None:
+        """Handles input while hosting on Discord."""
+        if input_action == "B":
+            self._on_discord_hosting_cancel()
+
+    def _start_discord_poll(self, room_id):
+        """Polls Discord room for updates (guest join)."""
+        def poll_thread():
+            self._polling = True
+            errors = 0
+            while self._polling:
+                if errors > 5:
+                    self._hosting_error = "Too many polling errors"
+                    break
+                    
+                try:
+                    status = self.discord.poll_room()
+                    if status and status.get('status') == 'ready':
+                        # Someone joined!
+                        guests = status.get('guests', [])
+                        if len(guests) > 0:
+                            runtime_globals.game_console.log(f"[SceneConnect] Guest joined: {guests[0]}")
+                            self._discord_opponent_found = True
+                            self._polling = False
+                            break
+                    time.sleep(2) # Poll every 2s
+                except Exception as e:
+                    runtime_globals.game_console.log(f"[SceneConnect] Poll error: {e}")
+                    errors += 1
+                    time.sleep(5)
+                    
+        threading.Thread(target=poll_thread, daemon=True).start()
+        
+    def stop_networking(self) -> None:
+        """Stops all networking components."""
+        try:
+            runtime_globals.game_console.log("[SceneConnect] Stopping networking components...")
+            
+            self._polling = False
+            
+            if self.server_socket:
+                try:
+                    self.server_socket.close()
+                except:
+                    pass
+                self.server_socket = None
+                
+            if self.client_socket:
+                try:
+                    self.client_socket.close()
+                except:
+                    pass
+                self.client_socket = None
+                
+            if self.connection_socket:
+                try:
+                    self.connection_socket.close()
+                except:
+                    pass
+                self.connection_socket = None
+                
+            if self.device_list_menu:
+                self.device_list_menu.close()
+                self.device_list_menu = None
+                
+            # Wait for network thread to finish
+            if self.network_thread and self.network_thread.is_alive():
+                try:
+                    self.network_thread.join(timeout=2.0)
+                except:
+                    pass
+                
+            self.connection_established = False
+            self.discovered_devices = []
+            self.host_code = ""
+            
+            runtime_globals.game_console.log("[SceneConnect] Network cleanup completed")
+            
+        except Exception as e:
+            runtime_globals.game_console.log(f"[SceneConnect] Cleanup error: {e}")
 
     def generate_host_code(self) -> str:
         """Generates a random 4-character host code."""
@@ -1217,11 +2080,15 @@ class SceneConnect:
     def request_team2_data(self) -> None:
         """Step 9: Host requests detailed pet data from team2 (non-host)."""
         try:
+            runtime_globals.game_console.log("[SceneConnect] ===== HOST: REQUEST_TEAM2_DATA =====")
+            runtime_globals.game_console.log(f"[SceneConnect] Connection socket exists: {self.connection_socket is not None}")
+            runtime_globals.game_console.log(f"[SceneConnect] Connection established: {self.connection_established}")
+            
             request = {"type": "request_pet_data"}
-            runtime_globals.game_console.log(f"[SceneConnect] Sending pet data request: {request}")
+            runtime_globals.game_console.log(f"[SceneConnect] Sending request: {request}")
             
             if not self.connection_socket:
-                runtime_globals.game_console.log("[SceneConnect] No connection socket available")
+                runtime_globals.game_console.log("[SceneConnect] ERROR: No connection socket available!")
                 self.phase = "menu"
                 return
                 
@@ -1257,8 +2124,12 @@ class SceneConnect:
     def send_team2_data_to_host(self) -> None:
         """Step 9: Non-host sends pet data to host when requested."""
         try:
+            runtime_globals.game_console.log("[SceneConnect] ===== CLIENT: SEND_TEAM2_DATA =====")
+            runtime_globals.game_console.log(f"[SceneConnect] Client socket exists: {self.client_socket is not None}")
+            runtime_globals.game_console.log(f"[SceneConnect] Connection established: {self.connection_established}")
+            
             if not self.client_socket:
-                runtime_globals.game_console.log("[SceneConnect] No client socket available")
+                runtime_globals.game_console.log("[SceneConnect] ERROR: No client socket available!")
                 self.phase = "menu"
                 return
                 
@@ -1311,7 +2182,8 @@ class SceneConnect:
                 "module": pet.module,
                 "sick": getattr(pet, "sick", 0) > 0,
                 "traited": getattr(pet, "traited", False),
-                "shook": getattr(pet, "shook", False)
+                "shook": getattr(pet, "shook", False),
+                "mini_game": getattr(pet, "strength", 0)
             }
             pet_data.append(data)
         return pet_data
@@ -1570,6 +2442,35 @@ class SceneConnect:
             # battle log so the client receives the log from its local perspective
             # and doesn't need to perform additional adjustments before playback.
             sim_payload = copy.deepcopy(self.battle_simulation_data)
+            
+            # Encapsulate in 'data' key as expected by protocol
+            message = {
+                "type": "battle_simulation",
+                "data": sim_payload
+            }
+            
+            self.connection_socket.send(json.dumps(message).encode())
+            runtime_globals.game_console.log("[SceneConnect] Sent RAW battle simulation data to client")
+            
+            # Wait for client acknowledgment
+            runtime_globals.game_console.log("[SceneConnect] Waiting for client's sim_ready ack...")
+            self.connection_socket.settimeout(10.0)
+            resp_raw = self.connection_socket.recv(1024).decode()
+            runtime_globals.game_console.log(f"[SceneConnect] Received post-sim response: {resp_raw}")
+            
+            try:
+                resp = json.loads(resp_raw)
+            except Exception:
+                resp = {}
+
+            if resp.get('type') == 'sim_ready':
+                runtime_globals.game_console.log("[SceneConnect] Client ready - starting host battle scene")
+            else:
+                runtime_globals.game_console.log(f"[SceneConnect] Unexpected response: {resp}, starting anyway")
+            
+            # Step 14: Start battle scene for host
+            self.start_battle_scene(is_host=True)
+            return
 
             def _swap_serialized_battle_log(bl):
                 # Handle dict-shaped BattleResult.to_dict() output
@@ -1714,6 +2615,15 @@ class SceneConnect:
                 return
             
             # Store PvP battle data in runtime globals for the battle scene
+            # Get player names for alert screen
+            my_player_name = "YOU"
+            enemy_player_name = "ENEMY"
+            if self.is_online_mode and hasattr(self, 'discord') and self.discord:
+                my_player_name = self.discord.get_account_name() or "YOU"
+                # Enemy name would be from the handshake data if we stored it
+                # For now default to ENEMY for WiFi, or could be extracted from discord room
+                enemy_player_name = "ENEMY"
+            
             runtime_globals.pvp_battle_data = {
                 "simulation_data": self.battle_simulation_data,
                 "original_battle_log": getattr(self, 'original_battle_log', None),
@@ -1721,7 +2631,10 @@ class SceneConnect:
                 "my_pets": self.pets,  # Always the current device's pets
                 "my_team_data": my_team_data,
                 "enemy_team_data": enemy_team_data,
-                "module": self.chosen_module
+                "module": self.chosen_module,
+                "my_player_name": my_player_name,
+                "enemy_player_name": enemy_player_name,
+                "is_online_mode": self.is_online_mode
             }
             
             runtime_globals.game_console.log(f"[SceneConnect] PvP battle data configured:")
@@ -1753,7 +2666,12 @@ class SceneConnect:
         
         ready_text = font_large.render("Connection Established!", True, constants.FONT_COLOR_GREEN)
         enemy_text = font_small.render(f"Enemy has {self.enemy_pet_count} pets", True, constants.FONT_COLOR_DEFAULT)
-        confirm_text = font_small.render("Press A to start battle", True, constants.FONT_COLOR_GREEN)
+        if getattr(self, 'discord_ready', False):
+            confirm_text = font_small.render("Waiting for opponent...", True, constants.FONT_COLOR_YELLOW)
+        elif getattr(self, 'opponent_ready', False):
+            confirm_text = font_small.render("Opponent Ready! Press A!", True, constants.FONT_COLOR_GREEN)
+        else:
+            confirm_text = font_small.render("Press A to start battle", True, constants.FONT_COLOR_DEFAULT)
         cancel_text = font_small.render("Press B to give up", True, constants.FONT_COLOR_RED)
         
         ready_x = (runtime_globals.SCREEN_WIDTH - ready_text.get_width()) // 2
@@ -1780,4 +2698,228 @@ class SceneConnect:
         
         base_y = runtime_globals.SCREEN_HEIGHT // 2 - int(40 * runtime_globals.UI_SCALE)
         blit_with_shadow(surface, connecting_text, (connecting_x, base_y))
-        blit_with_shadow(surface, wait_text, (wait_x, base_y + int(40 * runtime_globals.UI_SCALE)))
+        blit_with_shadow(surface, wait_text, (wait_x, base_y + int(40 * constants.UI_SCALE)))
+
+    # ==========================================
+    # Discord Network Logic (Added for fix)
+    # ==========================================
+
+    def _update_discord_networking(self):
+        """Polls Discord room for data and handles battle sequence."""
+        if not self.phase in ["discord_hosting", "connecting", "battle_confirm"]:
+             return
+             
+        # Throttle polling to every 2 seconds
+        now = time.time()
+        if now - getattr(self, '_last_discord_poll', 0) < 2.0:
+             return
+        self._last_discord_poll = now
+        
+        status = self.discord.poll_room()
+        if not status:
+             runtime_globals.game_console.log("[SceneConnect] Poll returned None")
+             return
+        
+        runtime_globals.game_console.log(f"[SceneConnect] Poll status: {status.get('status')}, guests: {status.get('guests')}")
+             
+        # Check players (Handshake Phase 1)
+        players = status.get('guests', [])
+        host = status.get('host')
+        if host: players.append(host)
+        
+        # If hosting and guest joined
+        if self.phase == "discord_hosting":
+             guests = status.get('guests', [])
+             # Filter out yourself from the guests list (Discord bot bug includes host in guests)
+             # Only remove ONE instance of your name (in case someone joins with same account for testing)
+             my_name = self.discord.get_account_name() if self.discord else None
+             actual_guests = guests.copy()
+             if my_name and my_name in actual_guests:
+                 actual_guests.remove(my_name)  # Remove only first instance
+             runtime_globals.game_console.log(f"[SceneConnect] Hosting phase, raw guests: {guests}, actual guests: {actual_guests}")
+             if len(actual_guests) > 0:
+                  runtime_globals.game_console.log("[SceneConnect] Guest joined! Starting battle sequence...")
+                  # Ensure we set is_host correctly (should already be set)
+                  self.is_host = True 
+                  self.start_discord_battle_sequence()
+                  # Don't set _discord_opponent_found - that's for WiFi battles only!
+                  
+        # Process Message Queue (Handshake Phase 2)
+        queue = status.get('data_queue', [])
+        
+        # Initialize last timestamp to None on first run
+        if not hasattr(self, '_last_msg_ts'):
+            self._last_msg_ts = None
+        
+        # DEBUG: Log queue stats
+        if len(queue) > 0:
+             runtime_globals.game_console.log(f"[SceneConnect] Polling... Queue: {len(queue)}, LastTS: {self._last_msg_ts}")
+
+        for msg in queue:
+             ts = msg.get('ts')
+             
+             # Skip already processed messages
+             if self._last_msg_ts and ts <= self._last_msg_ts: 
+                 runtime_globals.game_console.log(f"[SceneConnect] Skipping old msg: {ts} <= {self._last_msg_ts}")
+                 continue
+             
+             runtime_globals.game_console.log(f"[SceneConnect] Processing new msg! Type: {msg.get('data', {}).get('type')}, TS: {ts}")
+             self._last_msg_ts = ts
+             self._process_discord_message(msg.get('data', {}))
+
+    def start_discord_battle_sequence(self):
+        """Initiates Discord battle by sending local pet data."""
+        runtime_globals.game_console.log("[SceneConnect] ===== START DISCORD BATTLE SEQUENCE =====")
+        runtime_globals.game_console.log(f"[SceneConnect] Current phase: {self.phase}")
+        
+        self.set_phase("connecting")
+        runtime_globals.game_console.log(f"[SceneConnect] Changed phase to: {self.phase}")
+        
+        # Send my pet data
+        my_data = self.create_pet_data()
+        
+        # Determine role
+        am_i_host = getattr(self, 'is_host', False)
+        role = "host" if am_i_host else "guest"
+        
+        runtime_globals.game_console.log(f"[SceneConnect] Role: {role}")
+        runtime_globals.game_console.log(f"[SceneConnect] My pets: {len(self.pets)}")
+        runtime_globals.game_console.log(f"[SceneConnect] Sending handshake...")
+        
+        msg = {
+            "type": "battle_handshake",
+            "sender": role,
+            "pets": my_data,
+            "pet_count": len(self.pets)
+        }
+        
+        result = self.discord.send_data(msg)
+        runtime_globals.game_console.log(f"[SceneConnect] Handshake sent, result: {result}")
+
+
+
+
+    def _process_discord_message(self, data):
+        """Handle incoming Discord battle messages."""
+        msg_type = data.get('type')
+        runtime_globals.game_console.log(f"[SceneConnect] Processing Msg Type: {msg_type} from {data.get('sender')}")
+        sender = data.get('sender')
+        
+        # Ignore my own messages
+        am_i_host = getattr(self, 'is_host', False)
+        my_role = "host" if am_i_host else "guest"
+        if sender == my_role:
+             return
+
+        runtime_globals.game_console.log(f"[SceneConnect] Received Discord Msg: {msg_type} from {sender}")
+
+        if msg_type == "battle_handshake":
+             # Received enemy pets
+             self.enemies = data.get('pets', [])
+             self.enemy_pet_count = len(self.enemies)
+             runtime_globals.game_console.log(f"[SceneConnect] Enemy has {self.enemy_pet_count} pets")
+             
+             # Extract modules from enemy pets to ensure compatibility check (or at least storage)
+             self.enemy_modules = []
+             for pet_dict in self.enemies:
+                 if 'module' in pet_dict:
+                     self.enemy_modules.append(pet_dict['module'])
+             
+             runtime_globals.game_console.log(f"[SceneConnect] Enemy modules: {self.enemy_modules}")
+             
+             # Transition to confirmation screen
+             self.set_phase("battle_confirm")
+             # Ensure UI is updated
+             self._show_phase_components("battle_confirm")
+             self.connection_established = True
+             
+             # If I am guest, I must send my handshake back so Host knows my pets
+             if not am_i_host and not getattr(self, 'handshake_sent', False):
+                 runtime_globals.game_console.log("[SceneConnect] Guest responding to handshake...")
+                 self.start_discord_battle_sequence() # This sends the handshake
+                 self.handshake_sent = True
+
+        elif msg_type == "ready":
+             # Opponent is ready
+             runtime_globals.game_console.log("[SceneConnect] Opponent is READY")
+             self.opponent_ready = True
+             self._check_start_discord_sim()
+
+        elif msg_type == "battle_sim":
+             # Received simulation result (Guest only)
+             self.battle_simulation_data = data.get('data')
+             # Need to set module for guest context
+             self.chosen_module = self.battle_simulation_data.get('module', 'dm_classic')
+             runtime_globals.game_console.log("[SceneConnect] Received Battle Sim! Starting Battle.")
+             self.start_battle_scene(is_host=False)
+
+    def _check_start_discord_sim(self):
+        """Host checks if both are ready to simulate."""
+        if not getattr(self, 'is_host', False):
+            return
+            
+        if getattr(self, 'discord_ready', False) and getattr(self, 'opponent_ready', False):
+             runtime_globals.game_console.log("[SceneConnect] Both ready - Simulating!")
+             self._run_discord_simulation()
+
+    def _run_discord_simulation(self):
+        """Host runs simulation and sends result."""
+        try:
+            from core.combat.battle_encounter import BattleEncounter
+            
+            # Use the module of the first pet, or fallback to a safe default if needed
+            if self.pets and hasattr(self.pets[0], 'module'):
+                self.chosen_module = self.pets[0].module
+            else:
+                # Retrieve first available module key as fallback
+                self.chosen_module = next(iter(runtime_globals.game_modules.keys())) if runtime_globals.game_modules else "dm_classic"
+            
+            # Setup teams
+            battle = BattleEncounter(self.chosen_module, area=0, round=0, version=1, pvp_mode=True)
+            battle.setup_pvp_teams(self.pets, self.enemies)
+            battle.simulate_global_combat()
+            
+            # Serialize Log
+            # Keep the full BattleResult object for local host usage (BattleEncounter expects it)
+            result_obj = getattr(battle, 'global_battle_log', [])
+            self.original_battle_log = result_obj
+
+            # Prepare serialized version for Guest (JSON)
+            if hasattr(result_obj, 'battle_log'):
+                log_list = result_obj.battle_log
+            else:
+                log_list = result_obj
+                
+            serialized_log = [x.to_dict() if hasattr(x, 'to_dict') else x for x in log_list]
+            
+            sim_data = {
+                 "battle_log": serialized_log,
+                 "team1": self.create_pet_data(),
+                 "team2": self.enemies,
+                 "module": self.chosen_module,
+                 # Ensure victory status is a string
+                 "victory_status": str(battle.victory_status) if battle.victory_status else "Defeat"
+            }
+            
+            self.battle_simulation_data = sim_data
+            
+            # Send to Guest
+            msg = {
+                 "type": "battle_sim",
+                 "sender": "host",
+                 "data": sim_data
+            }
+            self.discord.send_data(msg)
+            
+            # Start Local
+            self.start_battle_scene(is_host=True)
+            
+        except Exception as e:
+            runtime_globals.game_console.log(f"[SceneConnect] Sim error: {e}")
+            import traceback
+            runtime_globals.game_console.log(traceback.format_exc())
+            
+            # Show error on UI
+            if hasattr(self, 'battle_enemy_label'):
+                 self.battle_enemy_label.set_text(f"Error: {str(e)[:20]}")
+                 self.battle_enemy_label.visible = True

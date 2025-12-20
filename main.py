@@ -175,7 +175,7 @@ def setup_display():
     fullscreen_requested = (
         "--fullscreen" in sys.argv or
         "-f" in sys.argv or
-        os.getenv("OMNIMON_FULLSCREEN", "").lower() in ("1", "true", "yes") or
+        os.getenv("OMNIPET_FULLSCREEN", "").lower() in ("1", "true", "yes") or
         config.get("FULLSCREEN", False) or
         os.getenv("SDL_VIDEODRIVER") == "kmsdrm" or
         (platform.system() == "Linux" and os.path.exists("/usr/bin/batocera-info"))
